@@ -1,60 +1,95 @@
 import React from 'react';
-import { motion, Variants } from 'framer-motion';
+import { motion, useTransform, useSpring, useMotionValue, Variants } from 'framer-motion';
 import { Link } from 'react-router';
-import { ArrowRight, Waves, Activity, Users, Shield, Globe, CheckCircle, Award, Quote, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { ArrowRight, Waves, Activity, Users, Shield, Globe, CheckCircle, Award, Quote, Facebook, Twitter, Instagram, Linkedin, PlayCircle } from 'lucide-react';
 import { Button } from '@/react-app/components/ui/button';
 
 const LandingPage = () => {
-    // Animation variants
-    const fadeIn: Variants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    // Mouse move parallax effect
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const { clientX, clientY } = e;
+        const { innerWidth, innerHeight } = window;
+        mouseX.set(clientX / innerWidth - 0.5);
+        mouseY.set(clientY / innerHeight - 0.5);
     };
+
+    const heroParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 });
+    const heroParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 });
+    const bgParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
+    const bgParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
+
+    // Animation variants
+
 
     const staggerContainer: Variants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.2
+                staggerChildren: 0.15,
+                delayChildren: 0.2
             }
         }
     };
 
+    const fadeIn: Variants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+    };
+
     const bubbleVariants: Variants = {
         animate: () => ({
-            y: [0, -1000],
-            opacity: [0, 0.5, 0],
+            y: [0, -1200],
+            x: [0, Math.random() * 50 - 25],
+            opacity: [0, 0.4, 0],
+            scale: [0.5, 1.5, 0.5],
             transition: {
-                duration: Math.random() * 10 + 10,
+                duration: Math.random() * 15 + 15,
                 repeat: Infinity,
-                delay: Math.random() * 5,
+                delay: Math.random() * 10,
                 ease: "linear"
             }
         })
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white font-sans overflow-x-hidden relative selection:bg-cyan-500/30">
-            {/* Deep Ocean Gradient Background */}
-            <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-900 via-blue-950 to-slate-950 z-0"></div>
+        <div
+            className="min-h-screen bg-slate-950 text-white font-sans overflow-x-hidden relative selection:bg-cyan-500/30"
+            onMouseMove={handleMouseMove}
+        >
+            {/* Deep Ocean Gradient Background with Caustics Simulation */}
+            <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/40 via-blue-950 to-slate-950 z-0"></div>
+            <motion.div
+                style={{ x: bgParallaxX, y: bgParallaxY }}
+                className="fixed inset-0 opacity-30 z-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat opacity-5"
+            ></motion.div>
 
-            {/* Ambient Light Effects */}
-            <div className="fixed top-0 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen animate-pulse"></div>
-            <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"></div>
+            {/* Ambient Light Effects - Dynamic */}
+            <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="fixed top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
+            ></motion.div>
+            <motion.div
+                animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                className="fixed bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
+            ></motion.div>
 
-            {/* Bubble Particles */}
+            {/* High Density Bubble Particles */}
             <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                {[...Array(20)].map((_, i) => (
+                {[...Array(40)].map((_, i) => (
                     <motion.div
                         key={i}
-                        custom={i}
                         variants={bubbleVariants}
                         animate="animate"
-                        className="absolute rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
+                        className="absolute rounded-full bg-cyan-200/10 backdrop-blur-[1px] border border-white/5"
                         style={{
-                            width: Math.random() * 20 + 10,
-                            height: Math.random() * 20 + 10,
+                            width: Math.random() * 15 + 5,
+                            height: Math.random() * 15 + 5,
                             left: `${Math.random() * 100}%`,
                             bottom: '-10%'
                         }}
@@ -62,132 +97,182 @@ const LandingPage = () => {
                 ))}
             </div>
 
-            {/* Navbar - Dark Glass */}
-            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center backdrop-blur-md bg-slate-900/50 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_15px_rgba(6,182,212,0.5)]">
-                        <Waves className="w-6 h-6 text-white" />
+            {/* Navbar - Glass Morphism */}
+            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center backdrop-blur-xl bg-slate-950/30 border-b border-white/5 transition-all duration-300">
+                <div className="flex items-center gap-3 group cursor-pointer">
+                    <div className="relative p-2.5 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_25px_rgba(6,182,212,0.4)] group-hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all overflow-hidden">
+                        <Waves className="w-6 h-6 text-white relative z-10" />
+                        <div className="absolute inset-0 bg-white/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                     </div>
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 to-blue-400">
+                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 to-blue-400 group-hover:text-cyan-300 transition-colors">
                         OceanGuardian
                     </span>
                 </div>
-                <div className="hidden md:flex items-center gap-8">
-                    <a href="#features" className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors">Features</a>
-                    <a href="#impact" className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors">Impact</a>
-                    <a href="#howitworks" className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors">How it Works</a>
+                <div className="hidden md:flex items-center gap-10">
+                    {['Features', 'Impact', 'How it Works'].map((item) => (
+                        <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '')}`} className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors relative group">
+                            {item}
+                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 transition-all group-hover:w-full"></span>
+                        </a>
+                    ))}
                 </div>
                 <div className="flex gap-4">
                     <Link to="/login">
-                        <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10">Log In</Button>
+                        <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/5 rounded-full px-6">Log In</Button>
                     </Link>
                     <Link to="/dashboard">
-                        <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] rounded-full px-6 border border-white/10">
+                        <Button className="bg-white/10 hover:bg-white/20 hover:scale-105 text-white shadow-[0_0_20px_rgba(6,182,212,0.2)] rounded-full px-6 border border-white/20 backdrop-blur-md transition-all">
                             Get Started
                         </Button>
                     </Link>
                 </div>
             </nav>
 
-            {/* Hero Section */}
-            <header className="relative pt-32 pb-20 px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-between min-h-screen z-10">
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={staggerContainer}
-                    className="lg:w-1/2 z-10"
-                >
-                    <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-cyan-900/30 border border-cyan-500/30 text-cyan-300 font-semibold text-sm uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-                        </span>
-                        Join the Movement
-                    </motion.div>
+            {/* HERO SECTION - "WOW" FACTOR */}
+            <header className="relative pt-40 pb-32 px-6 lg:px-12 min-h-screen flex items-center z-10 perspective-3000">
+                <div className="max-w-[1400px] mx-auto w-full grid lg:grid-cols-2 gap-16 items-center">
 
-                    <motion.h1 variants={fadeIn} className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6 text-white drop-shadow-lg">
-                        Protect Our <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-200 to-purple-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
-                            Future Today
-                        </span>
-                    </motion.h1>
-
-                    <motion.p variants={fadeIn} className="text-lg text-slate-300 mb-8 max-w-lg leading-relaxed">
-                        Dive into a global mission to restore marine ecosystems. Gamified actions, real-time AI monitoring, and a community that creates waves of change.
-                    </motion.p>
-
-                    <motion.div variants={fadeIn} className="flex flex-wrap gap-4">
-                        <Link to="/dashboard">
-                            <button className="px-8 py-4 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white font-bold shadow-[0_10px_30px_rgba(6,182,212,0.4)] hover:shadow-[0_10px_40px_rgba(6,182,212,0.6)] hover:-translate-y-1 transition-all flex items-center gap-2 group border border-white/10">
-                                Start Your Journey
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </button>
-                        </Link>
-                        <a href="#features">
-                            <button className="px-8 py-4 rounded-xl bg-white/5 border border-white/20 hover:bg-white/10 hover:border-white/40 transition-all font-medium text-white backdrop-blur-sm">
-                                Learn More
-                            </button>
-                        </a>
-                    </motion.div>
-
-                    <motion.div variants={fadeIn} className="mt-12 flex items-center gap-8">
-                        <div className="flex -space-x-4">
-                            {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative">
-                                    <img src={`https://i.pravatar.cc/100?img=${10 + i}`} alt="User" className="w-full h-full object-cover" />
-                                </div>
-                            ))}
-                        </div>
-                        <div className="text-sm font-medium text-slate-400">
-                            <span className="text-cyan-400 font-bold">2,000+</span> Guardians Active
-                        </div>
-                    </motion.div>
-                </motion.div>
-
-                {/* Hero Visual - Deep Glass Card */}
-                <motion.div
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="lg:w-1/2 mt-12 lg:mt-0 relative perspective-1000"
-                >
-                    <div className="relative z-10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform rotate-y-6 hover:rotate-y-0 transition-transform duration-700">
-                        <img
-                            src="https://images.unsplash.com/photo-1583212235753-b254a44f9979?q=80&w=2070&auto=format&fit=crop"
-                            alt="Ocean Life"
-                            className="rounded-2xl shadow-inner w-full h-auto object-cover max-h-[500px]"
-                        />
-
-                        {/* Floating Glass Stats */}
-                        <motion.div
-                            animate={{ y: [0, -15, 0] }}
-                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                            className="absolute -left-6 top-10 bg-slate-900/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center gap-3"
-                        >
-                            <div className="p-2 bg-green-500/20 rounded-lg border border-green-500/30">
-                                <Shield className="w-6 h-6 text-green-400" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Coral Health</p>
-                                <p className="text-sm font-bold text-green-400">Optimal</p>
-                            </div>
+                    {/* Left: Content */}
+                    <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={staggerContainer}
+                        className="z-10 relative"
+                    >
+                        <motion.div variants={fadeIn} className="inline-flex items-center gap-3 px-5 py-2 mb-8 rounded-full bg-cyan-950/50 border border-cyan-500/20 backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.1)] group cursor-default hover:border-cyan-500/40 transition-colors">
+                            <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                            </span>
+                            <span className="text-cyan-300 font-bold text-xs uppercase tracking-widest group-hover:text-cyan-200 transition-colors">Join the Global Cleanup</span>
                         </motion.div>
 
+                        <motion.h1 variants={fadeIn} className="text-6xl md:text-8xl font-black leading-[1.05] mb-8 text-white tracking-tight relative">
+                            Protect Our
+                            <br />
+                            <span className="relative inline-block mt-2">
+                                <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 blur-2xl opacity-30 animate-pulse"></span>
+                                <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-200 to-purple-200 bg-[length:200%_auto] animate-gradient">
+                                    Future Today
+                                </span>
+                            </span>
+                        </motion.h1>
+
+                        <motion.p variants={fadeIn} className="text-xl text-slate-300 mb-10 max-w-xl leading-relaxed font-light">
+                            Dive into a global mission to restore marine ecosystems.
+                            <span className="text-cyan-200 font-medium"> Gamified actions</span>,
+                            <span className="text-purple-200 font-medium"> real-time AI monitoring</span>, and a community creating waves of change.
+                        </motion.p>
+
+                        <motion.div variants={fadeIn} className="flex flex-wrap gap-5">
+                            <Link to="/dashboard">
+                                <button className="group relative px-8 py-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg shadow-[0_10px_40px_rgba(6,182,212,0.4)] hover:shadow-[0_20px_60px_rgba(6,182,212,0.6)] hover:-translate-y-1 transition-all overflow-hidden">
+                                    <span className="relative z-10 flex items-center gap-3">
+                                        Start Your Journey
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </span>
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                                </button>
+                            </Link>
+                            <button className="flex items-center gap-3 px-8 py-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all font-semibold text-white backdrop-blur-md group">
+                                <PlayCircle className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                Watch Demo
+                            </button>
+                        </motion.div>
+
+                        <motion.div variants={fadeIn} className="mt-16 flex items-center gap-6 p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-sm max-w-md hover:bg-white/10 transition-colors">
+                            <div className="flex -space-x-4 pl-2">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="w-12 h-12 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative shadow-lg hover:scale-110 hover:z-10 transition-transform cursor-pointer">
+                                        <img src={`https://i.pravatar.cc/100?img=${10 + i}`} alt="User" className="w-full h-full object-cover" />
+                                    </div>
+                                ))}
+                                <div className="w-12 h-12 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white relative hover:scale-110 hover:z-10 transition-transform cursor-pointer bg-gradient-to-br from-cyan-600 to-blue-700">
+                                    +2k
+                                </div>
+                            </div>
+                            <div className="h-10 w-[1px] bg-white/10"></div>
+                            <div className="text-sm">
+                                <div className="text-slate-400">Total Guardians</div>
+                                <div className="text-lg font-bold text-white">2,458 Active</div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+
+                    {/* Right: Immersive Visual Composition */}
+                    <div className="relative h-[600px] w-full perspective-1000 hidden lg:block">
                         <motion.div
-                            animate={{ y: [0, 15, 0] }}
-                            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
-                            className="absolute -right-6 bottom-16 bg-slate-900/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center gap-3"
+                            style={{ x: heroParallaxX, y: heroParallaxY, rotateX: useTransform(heroParallaxY, (y) => typeof y === 'number' ? y * 0.5 : 0), rotateY: useTransform(heroParallaxX, (x) => typeof x === 'number' ? x * 0.5 : 0) }}
+                            className="relative w-full h-full preserve-3d"
                         >
-                            <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
-                                <Activity className="w-6 h-6 text-blue-400" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">New Mission</p>
-                                <p className="text-sm font-bold text-blue-400">Reef Cleanup</p>
-                            </div>
+                            {/* 1. Back Layer - Abstract Shape */}
+                            <div className="absolute top-10 right-10 w-[500px] h-[500px] rounded-[100px] bg-gradient-to-tr from-cyan-900/40 to-blue-900/40 blur-3xl mix-blend-screen animate-pulse-slow"></div>
+
+                            {/* 2. Main Visual - The Portal */}
+                            <motion.div
+                                animate={{ y: [0, -20, 0] }}
+                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute inset-0 z-10"
+                            >
+                                <div className="relative w-full h-[550px] rounded-[40px] overflow-hidden border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.5)] group">
+                                    <img
+                                        src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop"
+                                        alt="Diver"
+                                        className="w-full h-full object-cover scale-110 group-hover:scale-105 transition-transform duration-1000"
+                                    />
+                                    {/* Overlay Gradient */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+
+                                    {/* Inner Floating Element in Card */}
+                                    <div className="absolute bottom-8 left-8 right-8 p-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-between">
+                                        <div>
+                                            <div className="text-xs text-cyan-300 uppercase tracking-widest font-bold mb-1">Current Mission</div>
+                                            <div className="text-xl font-bold text-white">Great Barrier Reef Restoration</div>
+                                        </div>
+                                        <div className="h-12 w-12 rounded-full border-4 border-cyan-500 flex items-center justify-center text-xs font-bold text-white bg-slate-900">
+                                            85%
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* 3. Floating Front Elements - Parallax Enhanced */}
+                            <motion.div
+                                style={{ x: useTransform(heroParallaxX, (x) => typeof x === 'number' ? x * -1.5 : 0), y: useTransform(heroParallaxY, (y) => typeof y === 'number' ? y * -1.5 : 0) }}
+                                className="absolute -left-12 top-20 z-20"
+                            >
+                                <div className="p-5 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-2xl flex items-center gap-4 animate-float-slow">
+                                    <div className="p-3 bg-green-500/20 rounded-2xl border border-green-500/30">
+                                        <Shield className="w-8 h-8 text-green-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Eco Status</p>
+                                        <p className="text-lg font-bold text-green-400">Restored</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            <motion.div
+                                style={{ x: useTransform(heroParallaxX, (x) => typeof x === 'number' ? x * -2 : 0), y: useTransform(heroParallaxY, (y) => typeof y === 'number' ? y * -2 : 0) }}
+                                className="absolute -right-8 bottom-32 z-20"
+                            >
+                                <div className="p-5 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-2xl flex items-center gap-4 animate-float-delay">
+                                    <div className="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/30">
+                                        <Activity className="w-8 h-8 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">AI Confidence</p>
+                                        <p className="text-lg font-bold text-blue-400">98.5%</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Decorative Elements */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400 rounded-full mix-blend-multiply blur-xl opacity-20 animate-blob"></div>
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-400 rounded-full mix-blend-multiply blur-xl opacity-20 animate-blob animation-delay-2000"></div>
                         </motion.div>
                     </div>
-                </motion.div>
+                </div>
             </header>
 
             {/* Features Section - Deep Glass Cards */}

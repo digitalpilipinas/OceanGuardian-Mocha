@@ -51,47 +51,47 @@
   }
 
   .dark {
-    --background: 200 30% 8%;
+    --background: 222 47% 11%;
     --foreground: 210 20% 98%;
-    --card: 200 25% 10%;
+    --card: 217 33% 17%;
     --card-foreground: 210 20% 98%;
-    --popover: 200 25% 10%;
+    --popover: 222 47% 11%;
     --popover-foreground: 210 20% 98%;
-    --primary: 200 100% 45%;
+    --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 145 60% 45%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 200 20% 14%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 145 60% 45%;
+    --accent: 199 89% 48%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 12 80% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 200 25% 15%;
-    --input: 200 25% 15%;
-    --ring: 200 100% 45%;
-    --chart-1: 200 100% 45%;
-    --chart-2: 145 60% 45%;
-    --chart-3: 12 80% 55%;
-    --chart-4: 40 40% 65%;
-    --chart-5: 200 80% 60%;
-    --sidebar: 200 30% 7%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 199 89% 48%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar: 222 47% 11%;
     --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 200 100% 45%;
+    --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 20% 12%;
+    --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 200 25% 15%;
-    --sidebar-ring: 200 100% 45%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 199 89% 48%;
 
-    /* Neomorphic Shadow Variables Dark */
-    --neo-shadow-light: -6px -6px 12px rgba(255, 255, 255, 0.05);
-    --neo-shadow-dark: 6px 6px 12px rgba(0, 0, 0, 0.4);
-    --neo-inset-light: inset -4px -4px 8px rgba(255, 255, 255, 0.05);
-    --neo-inset-dark: inset 4px 4px 8px rgba(0, 0, 0, 0.4);
+    /* Neomorphic Shadow Variables Dark - Deep Ocean */
+    --neo-shadow-light: -4px -4px 10px rgba(255, 255, 255, 0.05);
+    --neo-shadow-dark: 4px 4px 10px rgba(0, 0, 0, 0.5);
+    --neo-inset-light: inset -2px -2px 5px rgba(255, 255, 255, 0.05);
+    --neo-inset-dark: inset 2px 2px 5px rgba(0, 0, 0, 0.5);
 
-    /* Liquid Glass Variables Dark */
-    --glass-bg: rgba(0, 0, 0, 0.4);
+    /* Liquid Glass Variables Dark - Deep Ocean */
+    --glass-bg: rgba(15, 23, 42, 0.6);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
   }
@@ -101,13 +101,13 @@
   .neo-flat {
     background: hsl(var(--card));
     box-shadow: var(--neo-shadow-light), var(--neo-shadow-dark);
-    @apply transition-all duration-300;
+    @apply transition-all duration-300 border border-white/5;
   }
 
   .neo-pressed {
     background: hsl(var(--card));
     box-shadow: var(--neo-inset-light), var(--neo-inset-dark);
-    @apply transition-all duration-300;
+    @apply transition-all duration-300 border border-transparent;
   }
 
   .neo-interactive {
@@ -116,8 +116,8 @@
 
   .glass-liquid {
     background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
     position: relative;
     overflow: hidden;
@@ -136,7 +136,7 @@
   }
 
   .glass-liquid-hover {
-    @apply glass-liquid hover:bg-opacity-60 transition-all duration-300;
+    @apply glass-liquid hover:bg-slate-800/80 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-900/20;
   }
 }
 
