@@ -70,9 +70,9 @@ export default function Missions() {
       <div className="mb-10">
         <Tabs defaultValue="upcoming" onValueChange={setFilter} className="w-full">
           <TabsList className="bg-transparent p-1 neo-pressed rounded-2xl h-14">
-            <TabsTrigger value="upcoming" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-white px-8 transition-colors">Upcoming</TabsTrigger>
-            <TabsTrigger value="active" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-white px-8 transition-colors">Active Now</TabsTrigger>
-            <TabsTrigger value="completed" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-white px-8 transition-colors">Completed</TabsTrigger>
+            <TabsTrigger value="upcoming" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8 transition-colors">Upcoming</TabsTrigger>
+            <TabsTrigger value="active" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8 transition-colors">Active Now</TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8 transition-colors">Completed</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
