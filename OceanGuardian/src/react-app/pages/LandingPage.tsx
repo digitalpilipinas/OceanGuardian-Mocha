@@ -219,7 +219,7 @@ const LandingPage = () => {
                             >
                                 <div className="relative w-full h-[550px] rounded-[40px] overflow-hidden border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.5)] group">
                                     <img
-                                        src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop"
+                                        src="/src/react-app/assets/hero-diver.png"
                                         alt="Diver"
                                         className="w-full h-full object-cover scale-110 group-hover:scale-105 transition-transform duration-1000"
                                     />
@@ -242,7 +242,7 @@ const LandingPage = () => {
                             {/* 3. Floating Front Elements - Parallax Enhanced */}
                             <motion.div
                                 style={{ x: useTransform(heroParallaxX, (x) => typeof x === 'number' ? x * -1.5 : 0), y: useTransform(heroParallaxY, (y) => typeof y === 'number' ? y * -1.5 : 0) }}
-                                className="absolute -left-12 top-20 z-20"
+                                className="absolute -left-12 top-10 z-20"
                             >
                                 <div className="p-5 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-2xl flex items-center gap-4 animate-float-slow">
                                     <div className="p-3 bg-green-500/20 rounded-2xl border border-green-500/30">
@@ -257,7 +257,7 @@ const LandingPage = () => {
 
                             <motion.div
                                 style={{ x: useTransform(heroParallaxX, (x) => typeof x === 'number' ? x * -2 : 0), y: useTransform(heroParallaxY, (y) => typeof y === 'number' ? y * -2 : 0) }}
-                                className="absolute -right-8 bottom-32 z-20"
+                                className="absolute -right-8 bottom-48 z-20"
                             >
                                 <div className="p-5 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-2xl flex items-center gap-4 animate-float-delay">
                                     <div className="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/30">
@@ -491,8 +491,13 @@ const LandingPage = () => {
                             Join the world's most active community of ocean defenders. Together, we can turn the tide on plastic pollution and restore our marine ecosystems.
                         </p>
                         <div className="flex gap-4">
-                            {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-                                <a key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 hover:bg-blue-600 hover:text-white hover:scale-110 flex items-center justify-center transition-all">
+                            {[
+                                { Icon: Facebook, href: "https://facebook.com/rogemarbravo" },
+                                { Icon: Twitter, href: "https://x.com/rogemar_dev" },
+                                { Icon: Instagram, href: "https://instagram.com/rogemar2.0" },
+                                { Icon: Linkedin, href: "https://linkedin.com/in/rogemarbravo" }
+                            ].map(({ Icon, href }, i) => (
+                                <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 hover:bg-blue-600 hover:text-white hover:scale-110 flex items-center justify-center transition-all">
                                     <Icon className="w-5 h-5 text-slate-400 hover:text-white" />
                                 </a>
                             ))}
