@@ -1,7 +1,7 @@
 -- Seed Data for Learning System
 
 -- Quizzes
-INSERT INTO quiz_questions (question, options, correct_answer, explanation, category, difficulty) VALUES
+INSERT OR IGNORE INTO quiz_questions (question, options, correct_answer, explanation, category, difficulty) VALUES
 ('What percentage of the Earth''s surface is covered by oceans?', '["50%", "60%", "71%", "85%"]', 2, 'The ocean covers approximately 71% of the Earth''s surface.', 'General', 'easy'),
 ('Which of these is NOT a type of coral reef?', '["Fringing", "Barrier", "Atoll", "Continental"]', 3, 'Continental is not a standard classification for coral reefs. The main types are fringing, barrier, and atolls.', 'Marine Life', 'medium'),
 ('How long does it take for a plastic bottle to decompose in the ocean?', '["10 years", "50 years", "450 years", "It never decomposes"]', 2, 'Plastic bottles take approximately 450 years to decompose, and even then, they break down into microplastics.', 'Pollution', 'medium'),
@@ -14,7 +14,7 @@ INSERT INTO quiz_questions (question, options, correct_answer, explanation, cate
 ('What is the Great Pacific Garbage Patch?', '["A landfill on an island", "A collection of marine debris in the North Pacific", "A recycling center", "A new continent"]', 1, 'It is a massive collection of marine debris, mostly plastics, floating in the North Pacific Ocean.', 'Pollution', 'easy');
 
 -- Facts
-INSERT INTO facts (content, category, source, tags) VALUES
+INSERT OR IGNORE INTO facts (content, category, source, tags) VALUES
 ('The ocean contains 97% of Earth''s water.', 'General', 'NOAA', 'water,earth'),
 ('Less than 5% of the ocean has been explored.', 'General', 'NOAA', 'exploration,mystery'),
 ('Sharks have existed for more than 400 million years, long before dinosaurs.', 'Marine Life', 'NatGeo', 'sharks,history'),
@@ -27,7 +27,7 @@ INSERT INTO facts (content, category, source, tags) VALUES
 ('Ocean acidification is often called "climate change''s evil twin."', 'Climate Change', 'NOAA', 'acidification,climate');
 
 -- Lessons
-INSERT INTO lessons (title, slug, description, content, unlock_level, xp_reward) VALUES 
+INSERT OR IGNORE INTO lessons (title, slug, description, content, unlock_level, xp_reward) VALUES 
 ('Introduction to Marine Ecosystems', 'intro-marine-ecosystems', 'Learn about the diverse habitats that make up our oceans.', 
 '# Introduction to Marine Ecosystems
 

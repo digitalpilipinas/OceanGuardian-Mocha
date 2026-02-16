@@ -56,6 +56,7 @@
     "dev": "vite",
     "knip": "knip",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed": "npx tsx scripts/seed_db.ts"
   }
 }
