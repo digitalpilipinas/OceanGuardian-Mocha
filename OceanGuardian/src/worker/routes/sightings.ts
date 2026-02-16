@@ -302,6 +302,11 @@ app.get("/api/sightings/:id/photo", async (c) => {
 
   const imageKey = result.rows[0].image_key as string;
 
+  // If it's a full URL, redirect directly
+  if (imageKey.startsWith("http")) {
+    return c.redirect(imageKey);
+  }
+
   if (seedMap[imageKey]) {
     return c.redirect(seedMap[imageKey]);
   }
