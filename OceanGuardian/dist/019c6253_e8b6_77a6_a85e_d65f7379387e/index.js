@@ -6463,7 +6463,7 @@ function calculateLevel(xp) {
   }
   return Math.min(level, 50);
 }
-const app$3 = new Hono2();
+const app$4 = new Hono2();
 const LEVEL_PERKS = [
   { level: 5, title: "Regional Explorer", description: "Unlock regional leaderboards", icon: "🗺️" },
   { level: 10, title: "Mission Creator", description: "Create private cleanup missions", icon: "🎯" },
@@ -6534,7 +6534,7 @@ async function checkAndAwardBadges(db, userId) {
   }
   return newlyEarned;
 }
-app$3.get("/api/badges", async (c) => {
+app$4.get("/api/badges", async (c) => {
   const db = getTursoClient(c.env);
   const result = await db.execute({
     sql: "SELECT * FROM badges ORDER BY requirement_value ASC",
@@ -6542,7 +6542,7 @@ app$3.get("/api/badges", async (c) => {
   });
   return c.json(result.rows);
 });
-app$3.get("/api/profiles/me/level-perks", authMiddleware, async (c) => {
+app$4.get("/api/profiles/me/level-perks", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6559,8 +6559,8 @@ app$3.get("/api/profiles/me/level-perks", authMiddleware, async (c) => {
   }));
   return c.json({ level: userLevel, perks });
 });
-const app$2 = new Hono2();
-app$2.get("/api/sightings", async (c) => {
+const app$3 = new Hono2();
+app$3.get("/api/sightings", async (c) => {
   const db = getTursoClient(c.env);
   const type = c.req.query("type");
   const status = c.req.query("status");
@@ -6585,7 +6585,7 @@ app$2.get("/api/sightings", async (c) => {
   const result = await db.execute({ sql, args });
   return c.json(result.rows);
 });
-app$2.get("/api/sightings/:id", async (c) => {
+app$3.get("/api/sightings/:id", async (c) => {
   const id = c.req.param("id");
   const db = getTursoClient(c.env);
   const result = await db.execute({
@@ -6600,7 +6600,7 @@ app$2.get("/api/sightings/:id", async (c) => {
   }
   return c.json(result.rows[0]);
 });
-app$2.post(
+app$3.post(
   "/api/sightings",
   authMiddleware,
   zValidator("json", CreateSightingSchema),
@@ -6720,7 +6720,7 @@ app$2.post(
     );
   }
 );
-app$2.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
+app$3.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const user = c.get("user");
   if (!user) {
@@ -6765,7 +6765,7 @@ app$2.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   }
   return c.json({ imageKey: key, xp_bonus: 5 });
 });
-app$2.get("/api/sightings/:id/photo", async (c) => {
+app$3.get("/api/sightings/:id/photo", async (c) => {
   const id = c.req.param("id");
   const db = getTursoClient(c.env);
   const result = await db.execute({
@@ -6784,7 +6784,7 @@ app$2.get("/api/sightings/:id/photo", async (c) => {
   headers.set("etag", object.httpEtag);
   return c.body(object.body, { headers });
 });
-app$2.delete("/api/sightings/:id", authMiddleware, async (c) => {
+app$3.delete("/api/sightings/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const user = c.get("user");
   if (!user) {
@@ -6808,8 +6808,8 @@ app$2.delete("/api/sightings/:id", authMiddleware, async (c) => {
   });
   return c.json({ success: true });
 });
-const app$1 = new Hono2();
-app$1.get("/api/profiles/me", authMiddleware, async (c) => {
+const app$2 = new Hono2();
+app$2.get("/api/profiles/me", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6839,7 +6839,7 @@ app$1.get("/api/profiles/me", authMiddleware, async (c) => {
   });
   return c.json(newProfile.rows[0], 201);
 });
-app$1.patch("/api/profiles/me", authMiddleware, async (c) => {
+app$2.patch("/api/profiles/me", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6870,7 +6870,7 @@ app$1.patch("/api/profiles/me", authMiddleware, async (c) => {
   });
   return c.json(updated.rows[0]);
 });
-app$1.get("/api/profiles/:id", async (c) => {
+app$2.get("/api/profiles/:id", async (c) => {
   const id = c.req.param("id");
   const db = getTursoClient(c.env);
   const result = await db.execute({
@@ -6884,7 +6884,7 @@ app$1.get("/api/profiles/:id", async (c) => {
   }
   return c.json(result.rows[0]);
 });
-app$1.get("/api/profiles/me/badges", authMiddleware, async (c) => {
+app$2.get("/api/profiles/me/badges", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6900,7 +6900,7 @@ app$1.get("/api/profiles/me/badges", authMiddleware, async (c) => {
   });
   return c.json(result.rows);
 });
-app$1.get("/api/profiles/me/activity", authMiddleware, async (c) => {
+app$2.get("/api/profiles/me/activity", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6915,11 +6915,107 @@ app$1.get("/api/profiles/me/activity", authMiddleware, async (c) => {
   });
   return c.json(result.rows);
 });
+const app$1 = new Hono2();
+const toDateString = (date) => date.toISOString().split("T")[0];
+app$1.get("/api/streak", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const today = /* @__PURE__ */ new Date();
+  const todayStr = toDateString(today);
+  const profileResult = await db.execute({
+    sql: "SELECT streak_days, streak_freezes, last_check_in FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  if (profileResult.rows.length === 0) {
+    return c.json({ error: "Profile not found" }, 404);
+  }
+  const profile = profileResult.rows[0];
+  let streakDays = Number(profile.streak_days);
+  let freezes = Number(profile.streak_freezes);
+  const lastCheckIn = profile.last_check_in ? String(profile.last_check_in).split("T")[0] : null;
+  let status = "pending";
+  let restoredDays = 0;
+  if (lastCheckIn === todayStr) {
+    status = "checked_in";
+  } else if (lastCheckIn) {
+    const lastDate = new Date(lastCheckIn);
+    const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1e3 * 60 * 60 * 24)) - 1;
+    if (diffDays > 0) {
+      if (freezes >= diffDays) {
+        freezes -= diffDays;
+        restoredDays = diffDays;
+        const freezeInserts = [];
+        for (let i = 0; i < diffDays; i++) {
+          const freezeDate = new Date(lastDate);
+          freezeDate.setDate(freezeDate.getDate() + i + 1);
+          freezeInserts.push(`('${user.id}', '${toDateString(freezeDate)}', 'freeze')`);
+        }
+        await db.executeMultiple(`
+                    UPDATE user_profiles SET streak_freezes = ${freezes} WHERE id = '${user.id}';
+                    INSERT INTO streak_log (user_id, activity_date, type) VALUES ${freezeInserts.join(",")};
+                `);
+      } else {
+        streakDays = 0;
+        await db.execute({
+          sql: "UPDATE user_profiles SET streak_days = 0 WHERE id = ?",
+          args: [user.id]
+        });
+      }
+    }
+  }
+  const historyResult = await db.execute({
+    sql: `SELECT activity_date, type FROM streak_log 
+              WHERE user_id = ? AND activity_date >= date('now', '-30 days')`,
+    args: [user.id]
+  });
+  return c.json({
+    streakDays,
+    streakFreezes: freezes,
+    status,
+    restoredDays,
+    history: historyResult.rows,
+    lastCheckIn
+  });
+});
+app$1.post("/api/streak/check-in", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const todayStr = toDateString(/* @__PURE__ */ new Date());
+  const checkResult = await db.execute({
+    sql: "SELECT id FROM streak_log WHERE user_id = ? AND activity_date = ? AND type = 'check_in'",
+    args: [user.id, todayStr]
+  });
+  if (checkResult.rows.length > 0) {
+    return c.json({ error: "Already checked in today" }, 400);
+  }
+  await db.executeMultiple(`
+        INSERT INTO streak_log (user_id, activity_date, type) VALUES ('${user.id}', '${todayStr}', 'check_in');
+        UPDATE user_profiles SET streak_days = streak_days + 1, last_check_in = '${todayStr}', xp = xp + 10 WHERE id = '${user.id}';
+        INSERT INTO activity_log (user_id, type, description, xp_earned) VALUES ('${user.id}', 'streak', 'Daily Plastic-Free Pledge', 10);
+    `);
+  const newBadges = await checkAndAwardBadges(db, user.id);
+  const profileResult = await db.execute({
+    sql: "SELECT streak_days, streak_freezes FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const profile = profileResult.rows[0];
+  return c.json({
+    success: true,
+    streakDays: profile.streak_days,
+    streakFreezes: profile.streak_freezes,
+    xpEarned: 10,
+    newBadges
+  });
+});
 const app = new Hono2();
 app.route("/", auth);
-app.route("/", app$2);
-app.route("/", app$1);
 app.route("/", app$3);
+app.route("/", app$2);
+app.route("/", app$4);
+app.route("/", app$1);
 const workerEntry = app ?? {};
 export {
   workerEntry as default

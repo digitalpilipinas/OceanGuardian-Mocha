@@ -114,3 +114,15 @@ INSERT OR IGNORE INTO badges (name, description, category, rarity, icon, require
   ('Coral Protector', 'Submit 10 coral bleaching reports', 'specialty', 'rare', '🪸', 'sightings', 10),
   ('Mission Rookie', 'Complete your first cleanup mission', 'mission', 'common', '🎯', 'missions', 1),
   ('Mission Master', 'Complete 10 cleanup missions', 'mission', 'rare', '🏅', 'missions', 10);
+
+-- Streak Log
+CREATE TABLE IF NOT EXISTS streak_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  activity_date TEXT NOT NULL, -- YYYY-MM-DD
+  type TEXT NOT NULL CHECK(type IN ('check_in','freeze','restore')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES user_profiles(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_streak_log_user_date ON streak_log(user_id, activity_date);

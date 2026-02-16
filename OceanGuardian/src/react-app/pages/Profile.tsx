@@ -10,6 +10,10 @@ import { useAuth } from "@getmocha/users-service/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { xpProgressInLevel } from "@/shared/types";
 import type { UserProfile, UserBadge, ActivityLog, Badge as BadgeType } from "@/shared/types";
+import StreakCalendar from "@/react-app/components/StreakCalendar";
+import StreakCard from "@/react-app/components/StreakCard";
+import DailyCheckIn from "@/react-app/components/DailyCheckIn";
+import { useGamification } from "@/react-app/components/GamificationProvider";
 
 interface LevelPerk {
   level: number;
@@ -21,11 +25,16 @@ interface LevelPerk {
 
 export default function Profile() {
   const { user, redirectToLogin } = useAuth();
+  const { triggerBadgeUnlock, triggerLevelUp } = useGamification();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
   const [activity, setActivity] = useState<ActivityLog[]>([]);
   const [levelPerks, setLevelPerks] = useState<LevelPerk[]>([]);
+
+  // Streak State
+  const [streakData, setStreakData] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,12 +42,13 @@ export default function Profile() {
 
     const fetchProfile = async () => {
       try {
-        const [profileRes, badgesRes, activityRes, allBadgesRes, perksRes] = await Promise.all([
+        const [profileRes, badgesRes, activityRes, allBadgesRes, perksRes, streakRes] = await Promise.all([
           fetch("/api/profiles/me"),
           fetch("/api/profiles/me/badges"),
           fetch("/api/profiles/me/activity"),
           fetch("/api/badges"),
           fetch("/api/profiles/me/level-perks"),
+          fetch("/api/streak"),
         ]);
 
         if (profileRes.ok) setProfile(await profileRes.json());
@@ -48,6 +58,9 @@ export default function Profile() {
         if (perksRes.ok) {
           const perksData = await perksRes.json();
           setLevelPerks(perksData.perks || []);
+        }
+        if (streakRes.ok) {
+          setStreakData(await streakRes.json());
         }
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -95,6 +108,54 @@ export default function Profile() {
   const xpProgress = (xpInLevel / xpRequired) * 100;
 
   const earnedBadgeIds = new Set(badges.map((b) => b.badge_id));
+
+  const handleCheckIn = async () => {
+    try {
+      const res = await fetch("/api/streak/check-in", { method: "POST" });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // Update local state
+        setStreakData((prev: any) => ({
+          ...prev,
+          streakDays: data.streakDays,
+          streakFreezes: data.streakFreezes,
+          status: "checked_in",
+          history: [
+            { activity_date: new Date().toISOString().split("T")[0], type: "check_in" },
+            ...(prev?.history || [])
+          ]
+        }));
+
+        // Force refresh profile/badges if needed, or just partial update
+        // We can just add the badges to local state if returned
+        if (data.newBadges && data.newBadges.length > 0) {
+          // Trigger modals
+          data.newBadges.forEach((b: any) => triggerBadgeUnlock(b));
+          // Append to badges list
+          // Re-fetching might be easier to keep consistency but let's try to append
+          // Assuming data.newBadges are Badge definitions. We need UserBadge format. 
+          // Actually the backend returns Badge definitions. 
+          // We can refresh badges.
+          const badgesRes = await fetch("/api/profiles/me/badges");
+          if (badgesRes.ok) setBadges(await badgesRes.json());
+        }
+
+        // Check for level up? The backend awarded XP.
+        // We should re-fetch profile to get new XP/Level
+        const profileRes = await fetch("/api/profiles/me");
+        if (profileRes.ok) {
+          const newProfile = await profileRes.json();
+          if (newProfile.level > (profile?.level || 1)) {
+            triggerLevelUp((profile?.level || 1), newProfile.level);
+          }
+          setProfile(newProfile);
+        }
+      }
+    } catch (e) {
+      console.error("Check-in failed", e);
+    }
+  };
 
   const rarityColors: Record<string, string> = {
     common: "bg-gray-500",
@@ -207,12 +268,29 @@ export default function Profile() {
 
       {/* Stats and Content Tabs */}
       <Tabs defaultValue="stats" className="mt-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="stats">Stats</TabsTrigger>
+          <TabsTrigger value="streak">Streak</TabsTrigger>
           <TabsTrigger value="badges">Badges</TabsTrigger>
           <TabsTrigger value="perks">Perks</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
+
+        {/* Streak Tab */}
+        <TabsContent value="streak" className="space-y-6">
+          <DailyCheckIn
+            checkedIn={streakData?.status === "checked_in"}
+            onCheckIn={handleCheckIn}
+            streakDays={streakData?.streakDays || 0}
+          />
+
+          <StreakCard
+            streakDays={streakData?.streakDays || 0}
+            streakFreezes={streakData?.streakFreezes || 0}
+          />
+
+          <StreakCalendar history={streakData?.history || []} />
+        </TabsContent>
 
         {/* Stats Tab */}
         <TabsContent value="stats" className="space-y-4">
