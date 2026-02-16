@@ -99,15 +99,18 @@ const LandingPage = () => {
 
             {/* Navbar - Glass Morphism */}
             <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center backdrop-blur-xl bg-slate-950/30 border-b border-white/5 transition-all duration-300">
-                <div className="flex items-center gap-3 group cursor-pointer">
-                    <div className="relative p-2.5 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_25px_rgba(6,182,212,0.4)] group-hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all overflow-hidden">
-                        <Waves className="w-6 h-6 text-white relative z-10" />
-                        <div className="absolute inset-0 bg-white/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <Link to="/" className="flex items-center gap-3 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
+                    <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(6,182,212,0.4)] group-hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all">
+                        <img
+                            src="/src/react-app/assets/logo.png"
+                            alt="OceanGuardian Logo"
+                            className="w-full h-full object-cover"
+                        />
                     </div>
-                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 to-blue-400 group-hover:text-cyan-300 transition-colors">
+                    <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 to-blue-400 group-hover:text-cyan-300 transition-colors tracking-tighter">
                         OceanGuardian
                     </span>
-                </div>
+                </Link>
                 <div className="hidden md:flex items-center gap-10">
                     {['Features', 'Impact', 'How it Works'].map((item) => (
                         <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '')}`} className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors relative group">

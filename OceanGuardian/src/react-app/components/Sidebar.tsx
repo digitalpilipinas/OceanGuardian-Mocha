@@ -37,12 +37,21 @@ export default function Sidebar() {
 
             {/* Logo */}
             <Link to="/dashboard" className="flex items-center gap-3 px-2 relative z-10 transition-transform hover:scale-105 active:scale-95">
-                <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20">
-                    <Waves className="text-white w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-lg shadow-accent/20 border border-white/10">
+                    <img
+                        src="/src/react-app/assets/logo.png"
+                        alt="OceanGuardian Logo"
+                        className="w-full h-full object-cover"
+                    />
                 </div>
-                <span className="font-black text-xl tracking-tighter text-white">
-                    Ocean<span className="text-accent italic">Guardian</span>
-                </span>
+                <div className="flex flex-col -gap-1">
+                    <span className="font-black text-xl tracking-tighter text-white leading-none">
+                        Ocean
+                    </span>
+                    <span className="font-black text-lg tracking-tighter text-accent italic leading-none">
+                        Guardian
+                    </span>
+                </div>
             </Link>
 
             {/* Navigation Links */}
