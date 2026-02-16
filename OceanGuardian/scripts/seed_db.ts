@@ -1,10 +1,19 @@
 import { createClient } from "@libsql/client";
 import * as fs from "fs";
 import * as path from "path";
+import * as dotenv from "dotenv";
 
-// Load environment variables via --env-file=.dev.vars
-const dbUrl = process.env.TURSO_DATABASE_URL || "file:./local.db";
-const authToken = process.env.TURSO_AUTH_TOKEN;
+// Load environment variables from .dev.vars if available
+const devVarsPath = path.join(process.cwd(), ".dev.vars");
+if (fs.existsSync(devVarsPath)) {
+    const envConfig = dotenv.parse(fs.readFileSync(devVarsPath));
+    for (const k in envConfig) {
+        process.env[k] = envConfig[k];
+    }
+}
+
+const dbUrl = process.env.TURSO_DB_URL || process.env.TURSO_DATABASE_URL || "file:./local.db";
+const authToken = process.env.TURSO_DB_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
 console.log(`Connecting to database at ${dbUrl}...`);
 

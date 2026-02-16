@@ -44,6 +44,8 @@ export default function CoralScan() {
         }
     };
 
+    const [saving, setSaving] = useState(false);
+
     const handleSaveReport = async () => {
         // This would ideally pre-fill the Report Sighting form or post directly.
         // Since we recycled the sightings table, we can just navigate to ReportSighting 
@@ -69,6 +71,7 @@ export default function CoralScan() {
             return;
         }
 
+        setSaving(true);
         navigator.geolocation.getCurrentPosition(async (pos) => {
             try {
                 const sightingData = {
@@ -92,7 +95,12 @@ export default function CoralScan() {
                     // We should probably modify /api/sightings to accept an `image_key` if provided (e.g. from AI scan).
                     // OR: we just assume the user will re-upload or we simple-fix this later. 
                     // Let's just create the sighting and then update it with the image_key manually via a specialized call or modify the create endpoint.
-                    // Easier: Modify `src/worker/routes/sightings.ts` to accept `image_key` in creation if sent.
+                    // Easier: Modify `src/worker/routes/sightings.ts` to allow `image_key` in POST body.
+
+                    // Note: image_key is not natively supported in create sighting yet, 
+                    // but we will send it anyway as per our plan to support it in the backend if we modify it.
+                    // For now, let's rely on the fact that we might need to update it or just let the backend handle it if we updated the schema/route.
+                    image_key: result.imageKey
                 };
 
                 const res = await fetch("/api/sightings", {
@@ -101,7 +109,10 @@ export default function CoralScan() {
                     body: JSON.stringify(sightingData),
                 });
 
-                if (!res.ok) throw new Error("Failed to save report");
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to save report");
+                }
 
                 await res.json();
                 // If we have an imageKey from analysis, we need to link it.
@@ -112,13 +123,19 @@ export default function CoralScan() {
                 // Let's Update sightings.ts quickly to allow `image_key` in POST body.
 
                 // For now, let's Alert success and redirect.
-                alert("Report saved successfully!");
+                alert("Report saved successfully! Your contribution helps protect our oceans.");
                 navigate("/map");
 
-            } catch (e) {
+            } catch (e: any) {
                 console.error(e);
-                alert("Error saving report.");
+                alert(`Error saving report: ${e.message}`);
+            } finally {
+                setSaving(false);
             }
+        }, (err) => {
+            console.error(err);
+            alert("Could not get location. Please enable location services.");
+            setSaving(false);
         });
     };
 
@@ -203,8 +220,15 @@ export default function CoralScan() {
                                 <Button variant="outline" className="flex-1" onClick={() => { setFile(null); setPreview(null); setResult(null); }}>
                                     Scan Another
                                 </Button>
-                                <Button className="flex-1" onClick={handleSaveReport}>
-                                    Save Report
+                                <Button className="flex-1" onClick={handleSaveReport} disabled={saving}>
+                                    {saving ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        "Save Report"
+                                    )}
                                 </Button>
                             </div>
 
