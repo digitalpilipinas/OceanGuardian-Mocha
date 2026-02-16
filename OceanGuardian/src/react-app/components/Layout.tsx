@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router";
-import { Waves, Map, Target, User, Plus, LogOut, Globe, Settings } from "lucide-react";
+import { Waves, Map, Target, User, Plus, LogOut, Globe, Settings, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, redirectToLogin, logout } = useAuth();
+  const { profile } = useUserProfile();
 
   const navItems = [
     { path: "/", icon: Waves, label: "Home" },
@@ -27,6 +29,19 @@ export default function Layout({ children }: LayoutProps) {
     { path: "/leaderboard", icon: Globe, label: "Leaderboard" },
     { path: "/profile", icon: User, label: "Profile" },
   ];
+
+  if (profile?.role === "admin") {
+    navItems.push({ path: "/admin", icon: Shield, label: "Admin" });
+  }
+  if (profile?.role === "ambassador") {
+    navItems.push({ path: "/ambassador", icon: Globe, label: "Region" });
+  }
+  if (profile?.role === "scientist" || profile?.role === "admin") {
+    // Admins often want access to everything
+    if (!navItems.find(i => i.path === "/scientist/dashboard")) {
+      navItems.push({ path: "/scientist/dashboard", icon: FlaskConical, label: "Science" });
+    }
+  }
 
   const isActive = (path: string) => location.pathname === path;
 

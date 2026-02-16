@@ -15,6 +15,8 @@ import SettingsPage from "@/react-app/pages/Settings";
 
 import CoralScan from "@/react-app/pages/CoralScan";
 import ScientistDashboard from "@/react-app/pages/ScientistDashboard";
+import AdminDashboard from "@/react-app/pages/AdminDashboard";
+import AmbassadorDashboard from "@/react-app/pages/AmbassadorDashboard";
 import { Toaster } from "@/react-app/components/ui/toaster";
 import LearningHub from "@/react-app/pages/LearningHub";
 import DailyQuiz from "@/react-app/components/DailyQuiz";
@@ -34,6 +36,8 @@ export default function App() {
               <Route path="/report" element={<ReportSighting />} />
               <Route path="/coral-scan" element={<CoralScan />} />
               <Route path="/scientist/dashboard" element={<ScientistDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/ambassador" element={<AmbassadorDashboard />} />
               <Route path="/missions" element={<MissionsPage />} />
               <Route path="/missions/create" element={<CreateMission />} />
               <Route path="/missions/:id" element={<MissionDetail />} />

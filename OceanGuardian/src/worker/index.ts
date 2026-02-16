@@ -11,6 +11,10 @@ import leaderboard from "./routes/leaderboard";
 
 import coral from "./routes/coral";
 import learning from "./routes/learning";
+import admin from "./routes/admin";
+import ambassador from "./routes/ambassador";
+import scientist from "./routes/scientist";
+
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -23,7 +27,12 @@ app.route("/", missions);
 app.route("/", social);
 app.route("/", leaderboard);
 app.route("/", coral);
+app.route("/", coral);
 app.route("/", learning);
+app.route("/", admin);
+app.route("/", ambassador);
+app.route("/", scientist);
+
 import comments from "./routes/comments";
 
 app.route("/", comments);

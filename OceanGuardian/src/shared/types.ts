@@ -273,3 +273,42 @@ export const CreateImpactReportSchema = z.object({
 
 export type CreateImpactReport = z.infer<typeof CreateImpactReportSchema>;
 
+
+// ── Admin & Analytics ─────────────────────────────────────────
+
+export const AdminStatsSchema = z.object({
+    total_users: z.number(),
+    total_sightings: z.number(),
+    total_missions: z.number(),
+    active_now: z.number(),
+    users_by_role: z.record(z.number()), // "player": 100, "ambassador": 5
+    recent_signups: z.array(UserProfileSchema),
+});
+
+export type AdminStats = z.infer<typeof AdminStatsSchema>;
+
+// ── Ambassador & Regional ─────────────────────────────────────
+
+export const RegionalStatsSchema = z.object({
+    region: z.string(),
+    total_users: z.number(),
+    total_impact: z.number(), // e.g. trash weight
+    active_missions: z.number(),
+    top_contributors: z.array(z.object({
+        user_id: z.string(),
+        username: z.string(),
+        xp: z.number(),
+    })),
+});
+
+export type RegionalStats = z.infer<typeof RegionalStatsSchema>;
+
+// ── Scientist & Export ────────────────────────────────────────
+
+export const ExportOptionsSchema = z.object({
+    format: z.enum(["csv", "geojson"]),
+    date_range: z.enum(["7d", "30d", "90d", "all"]),
+    type: z.string().optional(), // 'coral', 'garbage', 'wildlife', or 'all'
+});
+
+export type ExportOptions = z.infer<typeof ExportOptionsSchema>;
