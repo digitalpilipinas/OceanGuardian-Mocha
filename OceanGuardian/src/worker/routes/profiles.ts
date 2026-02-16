@@ -57,7 +57,7 @@ app.patch("/api/profiles/me", authMiddleware, async (c) => {
     const body = await c.req.json();
     const db = getTursoClient(c.env);
 
-    const allowedFields = ["username", "notifications_enabled", "leaderboard_visible", "theme"];
+    const allowedFields = ["username", "notifications_enabled", "leaderboard_visible", "theme", "region", "country", "is_anonymous"];
     const updates: string[] = [];
     const values: (string | number)[] = [];
 
@@ -95,7 +95,8 @@ app.get("/api/profiles/:id", async (c) => {
 
     const result = await db.execute({
         sql: `SELECT id, username, avatar_url, role, level, xp, reputation,
-            streak_days, total_sightings, total_missions, leaderboard_visible, created_at
+            streak_days, total_sightings, total_missions, leaderboard_visible, 
+            country, region, is_anonymous, created_at
           FROM user_profiles WHERE id = ?`,
         args: [id],
     });

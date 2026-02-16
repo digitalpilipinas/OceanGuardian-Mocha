@@ -108,8 +108,9 @@ app.post(
     const result = await db.execute({
       sql: `INSERT INTO sightings (
               user_id, type, subcategory, description, severity,
-              latitude, longitude, address, bleach_percent, water_temp, depth
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              latitude, longitude, address, bleach_percent, water_temp, depth,
+              image_key, ai_analysis
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         user.id,
         data.type,
@@ -122,6 +123,8 @@ app.post(
         data.bleach_percent || null,
         data.water_temp || null,
         data.depth || null,
+        data.image_key || null,
+        data.ai_analysis || null,
       ],
     });
 

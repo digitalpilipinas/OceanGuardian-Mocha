@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { Waves, Map, Target, User, Plus, LogOut } from "lucide-react";
+import { Waves, Map, Target, User, Plus, LogOut, Globe, Settings } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { useAuth } from "@getmocha/users-service/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
@@ -23,6 +23,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: "/", icon: Waves, label: "Home" },
     { path: "/map", icon: Map, label: "Map" },
     { path: "/missions", icon: Target, label: "Missions" },
+    { path: "/leaderboard", icon: Globe, label: "Leaderboard" },
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
@@ -94,6 +95,12 @@ export default function Layout({ children }: LayoutProps) {
                       My Profile
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link to="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -154,8 +161,8 @@ export default function Layout({ children }: LayoutProps) {
           <Link
             to="/"
             className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/")
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Waves className="h-5 w-5" />
@@ -166,8 +173,8 @@ export default function Layout({ children }: LayoutProps) {
           <Link
             to="/map"
             className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/map")
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Map className="h-5 w-5" />
@@ -186,20 +193,32 @@ export default function Layout({ children }: LayoutProps) {
           <Link
             to="/missions"
             className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/missions")
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Target className="h-5 w-5" />
             <span className="text-xs font-medium">Missions</span>
           </Link>
 
+          {/* Leaderboard */}
+          <Link
+            to="/leaderboard"
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/leaderboard")
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <Globe className="h-5 w-5" />
+            <span className="text-xs font-medium">Rank</span>
+          </Link>
+
           {/* Profile */}
           <Link
             to="/profile"
             className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/profile")
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <User className="h-5 w-5" />

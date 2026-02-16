@@ -22,6 +22,9 @@ export const UserProfileSchema = z.object({
     notifications_enabled: z.number().int(),
     leaderboard_visible: z.number().int(),
     theme: z.string(),
+    region: z.string().nullable().optional(),
+    country: z.string().nullable().optional(),
+    is_anonymous: z.number().int().optional().default(0),
     created_at: z.string(),
     last_active: z.string(),
 });
@@ -45,6 +48,8 @@ export const CreateSightingSchema = z.object({
     bleach_percent: z.number().min(0).max(100).optional(),
     water_temp: z.number().optional(),
     depth: z.number().min(0).optional(),
+    image_key: z.string().optional(),
+    ai_analysis: z.string().optional(),
 });
 
 export type CreateSighting = z.infer<typeof CreateSightingSchema>;
@@ -170,8 +175,101 @@ export function xpProgressInLevel(xp: number, level: number): { current: number;
     for (let i = 26; i < Math.min(level, 51); i++) {
         consumed += 500;
     }
-
     const currentInLevel = xp - consumed;
     const required = xpForNextLevel(level);
     return { current: currentInLevel, required };
 }
+
+// ── Missions ──────────────────────────────────────────────────
+export const MissionStatusSchema = z.enum(["upcoming", "active", "completed", "cancelled"]);
+export type MissionStatus = z.infer<typeof MissionStatusSchema>;
+
+export const MissionDifficultySchema = z.number().int().min(1).max(5);
+
+export const MissionSchema = z.object({
+    id: z.number(),
+    title: z.string(),
+    description: z.string(),
+    location_name: z.string(),
+    latitude: z.number(),
+    longitude: z.number(),
+    start_time: z.string(),
+    end_time: z.string(),
+    organizer_id: z.string(),
+    difficulty: MissionDifficultySchema,
+    max_participants: z.number().nullable(),
+    status: MissionStatusSchema,
+    image_url: z.string().nullable(),
+    created_at: z.string(),
+    updated_at: z.string(),
+});
+
+export type Mission = z.infer<typeof MissionSchema>; // Added Mission type
+
+export const CreateMissionSchema = z.object({
+    title: z.string().min(3).max(100),
+    description: z.string().min(10).max(1000),
+    location_name: z.string().min(3).max(100),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    start_time: z.string().datetime(),
+    end_time: z.string().datetime(),
+    difficulty: MissionDifficultySchema,
+    max_participants: z.number().int().min(1).optional(),
+    image_url: z.string().url().optional(),
+});
+
+export type CreateMission = z.infer<typeof CreateMissionSchema>;
+
+export const MissionParticipantStatusSchema = z.enum(["rsvp", "checked_in", "cancelled"]);
+export type MissionParticipantStatus = z.infer<typeof MissionParticipantStatusSchema>;
+
+export const MissionParticipantSchema = z.object({
+    mission_id: z.number(),
+    user_id: z.string(),
+    status: MissionParticipantStatusSchema,
+    checked_in_at: z.string().nullable(),
+    xp_awarded: z.number(),
+    created_at: z.string(),
+    // Join fields
+    username: z.string().optional(),
+    avatar_url: z.string().nullable().optional(),
+});
+
+export type MissionParticipant = z.infer<typeof MissionParticipantSchema>;
+
+export const MissionChatMessageSchema = z.object({
+    id: z.number(),
+    mission_id: z.number(),
+    user_id: z.string(),
+    message: z.string(),
+    created_at: z.string(),
+    // Join fields
+    username: z.string().optional(),
+    avatar_url: z.string().nullable().optional(),
+});
+
+export type MissionChatMessage = z.infer<typeof MissionChatMessageSchema>;
+
+export const MissionImpactReportSchema = z.object({
+    mission_id: z.number(),
+    total_trash_weight: z.number().min(0),
+    trash_bags_count: z.number().int().min(0),
+    participants_count: z.number().int().min(0),
+    duration_minutes: z.number().int().min(0),
+    notes: z.string().nullable(),
+    created_at: z.string(),
+});
+
+export type MissionImpactReport = z.infer<typeof MissionImpactReportSchema>;
+
+export const CreateImpactReportSchema = z.object({
+    total_trash_weight: z.number().min(0),
+    trash_bags_count: z.number().int().min(0),
+    participants_count: z.number().int().min(0),
+    duration_minutes: z.number().int().min(0),
+    notes: z.string().optional(),
+});
+
+export type CreateImpactReport = z.infer<typeof CreateImpactReportSchema>;
+
