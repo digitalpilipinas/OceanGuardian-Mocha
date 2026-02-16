@@ -1,79 +1,58 @@
 import React, { useState } from "react";
-import { Waves, Mail, ArrowRight, UserCircle, Loader2 } from "lucide-react";
+import { Waves, Mail, ArrowRight, UserCircle, Loader2, Lock, Eye, EyeOff, Info } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { useToast } from "@/react-app/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
+type AuthMode = "signin" | "signup";
+
 export default function SignIn() {
     const [email, setEmail] = useState("");
-    const [otp, setOtp] = useState("");
-    const [step, setStep] = useState<"email" | "otp">("email");
+    const [password, setPassword] = useState("");
+    const [username, setUsername] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [mode, setMode] = useState<AuthMode>("signin");
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
-    const handleSendOtp = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+
+        const endpoint = mode === "signup" ? "/api/auth/signup" : "/api/auth/login";
+        const payload = mode === "signup"
+            ? { email, password, username: username || undefined }
+            : { email, password };
+
         try {
-            const res = await fetch("/api/auth/otp/send", {
+            const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify(payload),
             });
+
             if (res.ok) {
-                setStep("otp");
                 toast({
-                    title: "OTP Sent",
-                    description: "Check your email for the verification code.",
+                    title: mode === "signup" ? "Account Created!" : "Welcome Back!",
+                    description: mode === "signup"
+                        ? "Your guardian account is ready."
+                        : "You have signed in successfully.",
                 });
+                window.location.href = "/";
             } else {
                 const data = await res.json();
                 toast({
                     title: "Error",
-                    description: data.error || "Failed to send OTP",
+                    description: data.error || "Something went wrong",
                     variant: "destructive",
                 });
             }
-        } catch (error) {
+        } catch {
             toast({
                 title: "Error",
-                description: "Something went wrong. Please try again.",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVerifyOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const res = await fetch("/api/auth/otp/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, otp }),
-            });
-            if (res.ok) {
-                toast({
-                    title: "Welcome!",
-                    description: "You have signed in successfully.",
-                });
-                window.location.href = "/"; // Force reload to refresh auth state
-            } else {
-                const data = await res.json();
-                toast({
-                    title: "Invalid OTP",
-                    description: data.error || "Please check the code and try again.",
-                    variant: "destructive",
-                });
-            }
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Something went wrong. Please try again.",
+                description: "Connection failed. Please try again.",
                 variant: "destructive",
             });
         } finally {
@@ -98,7 +77,7 @@ export default function SignIn() {
                     variant: "destructive",
                 });
             }
-        } catch (error) {
+        } catch {
             toast({
                 title: "Error",
                 description: "Something went wrong.",
@@ -122,7 +101,7 @@ export default function SignIn() {
                         <Waves className="h-10 w-10 text-white" />
                     </div>
                     <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg text-center">
-                        Welcome Back
+                        {mode === "signin" ? "Welcome Back" : "Join Us"}
                     </h1>
                     <p className="text-cyan-100/80 text-center text-lg">Guardian</p>
                 </div>
@@ -130,87 +109,121 @@ export default function SignIn() {
                 <Card className="bg-slate-900/40 backdrop-blur-xl border-white/10 shadow-2xl rounded-3xl overflow-hidden">
                     <CardHeader className="text-center pb-2">
                         <CardTitle className="text-xl font-semibold text-white">
-                            {step === "email" ? "Sign In" : "Verify Email"}
+                            {mode === "signin" ? "Sign In" : "Create Account"}
                         </CardTitle>
                         <CardDescription className="text-slate-400">
-                            {step === "email"
-                                ? "Enter your email to access your dashboard"
-                                : `We've sent a code to ${email}`}
+                            {mode === "signin"
+                                ? "Enter your credentials to access your dashboard"
+                                : "Set up your guardian account"}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <AnimatePresence mode="wait">
-                            {step === "email" ? (
-                                <motion.form
-                                    key="email-step"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    onSubmit={handleSendOtp}
-                                    className="space-y-4"
-                                >
-                                    <div className="space-y-2">
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-3.5 h-5 w-5 text-cyan-500/70" />
-                                            <Input
-                                                type="email"
-                                                placeholder="email@example.com"
-                                                className="pl-10 h-12 rounded-xl bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        className="w-full h-12 rounded-xl text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all"
-                                        disabled={loading}
-                                    >
-                                        {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                                        {loading ? "Sending..." : "Send Code"}
-                                        {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
-                                    </Button>
-                                </motion.form>
-                            ) : (
-                                <motion.form
-                                    key="otp-step"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    onSubmit={handleVerifyOtp}
-                                    className="space-y-4"
-                                >
-                                    <div className="space-y-2">
+                            <motion.form
+                                key={mode}
+                                initial={{ opacity: 0, x: mode === "signup" ? 20 : -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: mode === "signup" ? -20 : 20 }}
+                                onSubmit={handleSubmit}
+                                className="space-y-4"
+                            >
+                                {/* Username (sign-up only) */}
+                                {mode === "signup" && (
+                                    <div className="relative">
+                                        <UserCircle className="absolute left-3 top-3.5 h-5 w-5 text-cyan-500/70" />
                                         <Input
                                             type="text"
-                                            placeholder="000000"
-                                            className="h-14 text-center text-3xl tracking-[0.5em] rounded-xl bg-slate-950/50 border-white/10 text-white focus:ring-cyan-500/50 focus:border-cyan-500/50 font-mono"
-                                            value={otp}
-                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                            required
-                                            autoFocus
+                                            placeholder="Display name (optional)"
+                                            className="pl-10 h-12 rounded-xl bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
                                         />
                                     </div>
-                                    <Button
-                                        type="submit"
-                                        className="w-full h-12 rounded-xl text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all"
-                                        disabled={loading || otp.length < 6}
-                                    >
-                                        {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                                        {loading ? "Verifying..." : "Sign In"}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
+                                )}
+
+                                {/* Email */}
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3.5 h-5 w-5 text-cyan-500/70" />
+                                    <Input
+                                        type="email"
+                                        placeholder="email@example.com"
+                                        className="pl-10 h-12 rounded-xl bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                {/* Password */}
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-cyan-500/70" />
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder={mode === "signup" ? "Create a password (min 6 chars)" : "Password"}
+                                        className="pl-10 pr-12 h-12 rounded-xl bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={6}
+                                    />
+                                    <button
                                         type="button"
-                                        className="w-full text-slate-400 hover:text-white hover:bg-white/5"
-                                        onClick={() => setStep("email")}
-                                        disabled={loading}
+                                        className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 transition-colors"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        tabIndex={-1}
                                     >
-                                        Change Email
-                                    </Button>
-                                </motion.form>
-                            )}
+                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </button>
+                                </div>
+
+                                {/* OTP Note */}
+                                <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                    <Info className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                                    <p className="text-xs text-amber-200/80 leading-relaxed">
+                                        OTP (one-time password) login is currently unavailable. Please use email and password to sign in or create an account.
+                                    </p>
+                                </div>
+
+                                {/* Submit Button */}
+                                <Button
+                                    type="submit"
+                                    className="w-full h-12 rounded-xl text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all"
+                                    disabled={loading}
+                                >
+                                    {loading && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
+                                    {loading
+                                        ? (mode === "signup" ? "Creating..." : "Signing in...")
+                                        : (mode === "signup" ? "Create Account" : "Sign In")}
+                                    {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
+                                </Button>
+
+                                {/* Toggle mode */}
+                                <p className="text-center text-sm text-slate-400">
+                                    {mode === "signin" ? (
+                                        <>
+                                            Don't have an account?{" "}
+                                            <button
+                                                type="button"
+                                                className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
+                                                onClick={() => { setMode("signup"); setPassword(""); }}
+                                            >
+                                                Sign Up
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            Already have an account?{" "}
+                                            <button
+                                                type="button"
+                                                className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
+                                                onClick={() => { setMode("signin"); setPassword(""); }}
+                                            >
+                                                Sign In
+                                            </button>
+                                        </>
+                                    )}
+                                </p>
+                            </motion.form>
                         </AnimatePresence>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4 pb-8">

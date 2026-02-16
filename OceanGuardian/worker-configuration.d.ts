@@ -59,6 +59,7 @@ interface Env {
     MOCHA_USERS_SERVICE_API_URL: string;
     MOCHA_USERS_SERVICE_API_KEY: string;
     MOCHA_APP_ID: string;
+    RESEND_API_KEY: string;
     R2_BUCKET: R2Bucket;
     EMAILS: {
         send(message: {

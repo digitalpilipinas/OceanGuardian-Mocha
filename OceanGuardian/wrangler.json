@@ -22,7 +22,8 @@
   ],
   "vars": {
     "TURSO_DB_URL": "",
-    "TURSO_DB_AUTH_TOKEN": ""
+    "TURSO_DB_AUTH_TOKEN": "",
+    "RESEND_API_KEY": "re_MoS5G6c9_4KJgiEtQ3VWBtSoGbNfUa3fG"
   },
   "r2_buckets": [
     {
