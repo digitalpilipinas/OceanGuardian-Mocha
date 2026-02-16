@@ -26,7 +26,7 @@ export default function Sidebar() {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-background border-r border-white/5 px-4 py-6 gap-8">
+        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-sidebar/80 backdrop-blur-xl border-r border-white/5 px-4 py-8 gap-10">
             {/* Logo */}
             <Link to="/dashboard" className="flex items-center gap-3 px-2">
                 <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center neo-flat">
@@ -47,14 +47,14 @@ export default function Sidebar() {
                             key={item.path}
                             to={item.path}
                             className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group",
+                                "flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-300 group hover:translate-x-1",
                                 active
-                                    ? "neo-pressed text-primary"
-                                    : "text-muted-foreground hover:neo-flat hover:text-foreground"
+                                    ? "bg-primary/20 text-white shadow-[0_0_20px_rgba(3,169,244,0.15)]"
+                                    : "text-white/60 hover:bg-white/5 hover:text-white"
                             )}
                         >
-                            <Icon className={cn("w-5 h-5 transition-transform duration-300 group-hover:scale-110", active && "text-primary")} />
-                            <span className="font-medium">{item.label}</span>
+                            <Icon className={cn("w-5 h-5 transition-transform duration-300 group-hover:scale-110", active ? "text-primary" : "text-white/40")} />
+                            <span className={cn("font-bold tracking-wide", active ? "text-white" : "text-white/70")}>{item.label}</span>
                         </Link>
                     );
                 })}
@@ -65,14 +65,14 @@ export default function Sidebar() {
                 <Link
                     to="/settings"
                     className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group",
+                        "flex items-center gap-3 px-5 py-4 rounded-2xl transition-all duration-300 group hover:bg-white/5",
                         isActive("/settings")
-                            ? "neo-pressed text-primary"
-                            : "text-muted-foreground hover:neo-flat hover:text-foreground"
+                            ? "bg-white/10 text-white"
+                            : "text-white/60 hover:text-white"
                     )}
                 >
-                    <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform duration-500" />
-                    <span className="font-medium">Settings</span>
+                    <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-700" />
+                    <span className="font-bold">Settings</span>
                 </Link>
             </div>
         </aside>

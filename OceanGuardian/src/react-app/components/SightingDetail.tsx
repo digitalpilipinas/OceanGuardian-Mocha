@@ -5,7 +5,7 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { Input } from "@/react-app/components/ui/input";
-import { X, MapPin, Calendar, User, Waves, Trash2, Fish, Anchor, Thermometer, Droplets, ArrowDown, ThumbsUp, MessageSquare, Send, AlertTriangle } from "lucide-react";
+import { X, MapPin, Calendar, User, Waves, Trash2, Fish, Anchor, Thermometer, Droplets, ArrowDown, ThumbsUp, MessageSquare, Send, AlertTriangle, Loader2 } from "lucide-react";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import type { Sighting } from "@/react-app/pages/MapView";
 
@@ -166,153 +166,158 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                 onClick={onClose}
             />
 
-            <Card className="rounded-t-2xl rounded-b-none shadow-2xl max-h-[70vh] overflow-y-auto mx-auto max-w-lg">
+            <Card variant="glass" className="rounded-t-[3rem] rounded-b-none shadow-[0_-20px_50px_rgba(0,0,0,0.5)] max-h-[85vh] overflow-y-auto mx-auto max-w-lg border-white/10 !bg-black/80 backdrop-blur-2xl">
                 {/* Drag handle */}
-                <div className="flex justify-center pt-2">
-                    <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                <div className="flex justify-center pt-4">
+                    <div className="w-16 h-1.5 rounded-full bg-white/10" />
                 </div>
 
-                <CardContent className="p-4 space-y-4">
+                <CardContent className="p-8 space-y-8">
                     {/* Header */}
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2.5 rounded-xl ${config.bg}`}>
-                                <config.icon className={`h-5 w-5 ${config.color}`} />
+                    <div className="flex items-start justify-between gap-6">
+                        <div className="flex items-center gap-5">
+                            <div className={`p-4 rounded-[1.5rem] bg-white/5 border border-white/10 shadow-inner ${config.bg.replace('dark:', '')}`}>
+                                <config.icon className={`h-6 w-6 ${config.color}`} />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-lg">{sighting.subcategory}</h3>
-                                <p className={`text-sm font-medium ${config.color}`}>{config.label}</p>
+                                <h3 className="font-black text-2xl text-white tracking-tight">{sighting.subcategory}</h3>
+                                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${config.color} brightness-125`}>{config.label}</p>
                             </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 shrink-0">
-                            <X className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" onClick={onClose} className="h-10 w-10 p-0 shrink-0 rounded-full hover:bg-white/10 text-white/40 hover:text-white">
+                            <X className="h-6 w-6" />
                         </Button>
                     </div>
 
                     {/* Status & Severity Row */}
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Badge className={statusColors[sighting.status] || statusColors.pending}>
+                        <div className="flex items-center gap-3">
+                            <Badge className={`${statusColors[sighting.status] || statusColors.pending} border-none font-black text-[10px] uppercase tracking-widest px-4 py-1.5 rounded-full !bg-white/5 !text-white/80`}>
                                 {sighting.status || "pending"}
                             </Badge>
-                            <Badge variant="outline" className="text-sm gap-1.5">
-                                <AlertTriangle className={`h-3 w-3 ${sighting.severity >= 4 ? "text-red-500 animate-pulse" :
+                            <Badge variant="outline" className="text-[10px] gap-2 font-black uppercase tracking-widest border-white/10 text-white/40 px-4 py-1.5 rounded-full">
+                                <AlertTriangle className={`h-3.5 w-3.5 ${sighting.severity >= 4 ? "text-red-500 animate-pulse" :
                                     sighting.severity >= 3 ? "text-orange-500" :
-                                        "text-muted-foreground"
+                                        "text-white/20"
                                     }`} />
-                                Severity {sighting.severity}/5
+                                <span className="opacity-60">Level</span> <span className="text-white">{sighting.severity}/5</span>
                             </Badge>
                         </div>
 
                         <Button
                             variant={hasValidated ? "default" : "outline"}
                             size="sm"
-                            className={`gap-1.5 h-8 ${hasValidated ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                            className={`gap-3 h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all ${hasValidated ? "bg-primary text-white shadow-lg shadow-primary/30 border-none" : "border-white/10 text-white/60 hover:bg-white/5"}`}
                             onClick={handleValidate}
                             disabled={!user}
                         >
-                            <ThumbsUp className={`h-3.5 w-3.5 ${hasValidated ? "fill-current" : ""}`} />
+                            <ThumbsUp className={`h-4 w-4 ${hasValidated ? "fill-current" : ""}`} />
                             <span>{validationCount}</span>
-                            <span className="sr-only">Validations</span>
                         </Button>
                     </div>
 
                     {/* Photo */}
                     {sighting.image_key && (
-                        <div className="rounded-xl overflow-hidden border">
+                        <div className="rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl relative group">
                             <img
                                 src={`/api/sightings/${sighting.id}/photo`}
                                 alt="Sighting photo"
-                                className="w-full h-48 object-cover"
+                                className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                                 loading="lazy"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                <p className="text-white/60 text-[10px] font-black uppercase tracking-widest italic">Verification Photo 01</p>
+                            </div>
                         </div>
                     )}
 
                     {/* Description */}
-                    <div>
-                        <p className="text-sm leading-relaxed">{sighting.description}</p>
+                    <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5 italic">
+                        <p className="text-sm leading-relaxed text-white/80 font-medium">"{sighting.description}"</p>
                     </div>
 
                     {/* Coral Data */}
                     {sighting.type === "coral" && (sighting.water_temp || sighting.bleach_percent || sighting.depth) && (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-4">
                             {sighting.water_temp && (
-                                <div className="bg-muted/50 rounded-lg p-2.5 text-center">
-                                    <Thermometer className="h-4 w-4 mx-auto text-orange-500 mb-1" />
-                                    <p className="text-sm font-bold">{sighting.water_temp}°C</p>
-                                    <p className="text-[10px] text-muted-foreground">Water Temp</p>
+                                <div className="bg-white/5 rounded-3xl p-4 text-center border border-white/5 shadow-inner">
+                                    <Thermometer className="h-5 w-5 mx-auto text-orange-500 mb-2" />
+                                    <p className="text-lg font-black text-white">{sighting.water_temp}°C</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Water Temp</p>
                                 </div>
                             )}
                             {sighting.bleach_percent != null && (
-                                <div className="bg-muted/50 rounded-lg p-2.5 text-center">
-                                    <Droplets className="h-4 w-4 mx-auto text-blue-500 mb-1" />
-                                    <p className="text-sm font-bold">{sighting.bleach_percent}%</p>
-                                    <p className="text-[10px] text-muted-foreground">Bleaching</p>
+                                <div className="bg-white/5 rounded-3xl p-4 text-center border border-white/5 shadow-inner">
+                                    <Droplets className="h-5 w-5 mx-auto text-blue-500 mb-2" />
+                                    <p className="text-lg font-black text-white">{sighting.bleach_percent}%</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Bleaching</p>
                                 </div>
                             )}
                             {sighting.depth && (
-                                <div className="bg-muted/50 rounded-lg p-2.5 text-center">
-                                    <ArrowDown className="h-4 w-4 mx-auto text-cyan-500 mb-1" />
-                                    <p className="text-sm font-bold">{sighting.depth}m</p>
-                                    <p className="text-[10px] text-muted-foreground">Depth</p>
+                                <div className="bg-white/5 rounded-3xl p-4 text-center border border-white/5 shadow-inner">
+                                    <ArrowDown className="h-5 w-5 mx-auto text-cyan-500 mb-2" />
+                                    <p className="text-lg font-black text-white">{sighting.depth}m</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Depth</p>
                                 </div>
                             )}
                         </div>
                     )}
 
                     {/* Meta */}
-                    <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-3">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5">
-                                <User className="h-3.5 w-3.5" />
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/40 border-t border-white/5 pt-6">
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2 text-primary/80">
+                                <User className="h-4 w-4" />
                                 <span>
                                     {sighting.user_name || "Anonymous"}
                                     {sighting.user_level ? ` · Lvl ${sighting.user_level}` : ""}
                                 </span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1.5" title={formatTimestamp(sighting.created_at)}>
-                            <Calendar className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-2 hover:text-white transition-colors cursor-help" title={formatTimestamp(sighting.created_at)}>
+                            <Calendar className="h-4 w-4" />
                             <span>{formatRelativeTime(sighting.created_at)}</span>
                         </div>
                     </div>
 
                     {/* Location */}
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 shrink-0" />
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 italic">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
                         <span>{sighting.address || `${sighting.latitude.toFixed(4)}, ${sighting.longitude.toFixed(4)}`}</span>
                     </div>
 
                     {/* Comments Section */}
-                    <div className="border-t pt-4 space-y-4">
-                        <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <div className="border-t border-white/5 pt-8 space-y-6">
+                        <h4 className="font-black text-xs uppercase tracking-[0.3em] text-primary flex items-center gap-3">
                             <MessageSquare className="h-4 w-4" />
-                            Comments ({comments.length})
+                            Guardian Discussion ({comments.length})
                         </h4>
 
-                        <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                        <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                             {loadingComments ? (
-                                <p className="text-xs text-muted-foreground text-center py-2">Loading comments...</p>
+                                <div className="flex flex-col items-center py-10 gap-3">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Syncing logs...</p>
+                                </div>
                             ) : comments.length === 0 ? (
-                                <p className="text-xs text-muted-foreground text-center py-2">No comments yet. Be the first!</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-white/20 text-center py-10 italic">No reports in this frequency yet.</p>
                             ) : (
                                 comments.map(comment => (
-                                    <div key={comment.id} className="flex gap-2.5 text-sm">
+                                    <div key={comment.id} className="flex gap-4 group/comment">
                                         <Link to={`/profile/${comment.user_id}`}>
-                                            <Avatar className="h-6 w-6 border">
+                                            <Avatar className="h-10 w-10 border-2 border-white/5 shadow-lg group-hover/comment:border-primary/50 transition-colors">
                                                 <AvatarImage src={comment.avatar_url || undefined} />
-                                                <AvatarFallback className="text-[10px]">{comment.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                                                <AvatarFallback className="text-xs font-black bg-white/5 text-white/60">{comment.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
                                             </Avatar>
                                         </Link>
-                                        <div className="flex-1 space-y-1">
+                                        <div className="flex-1 space-y-1.5 bg-white/5 p-4 rounded-2xl rounded-tl-none border border-white/5">
                                             <div className="flex items-center justify-between">
-                                                <Link to={`/profile/${comment.user_id}`} className="font-medium hover:underline text-xs">
+                                                <Link to={`/profile/${comment.user_id}`} className="font-black text-[10px] uppercase tracking-widest text-primary/80 hover:text-primary transition-colors">
                                                     {comment.username || "Anonymous"}
                                                 </Link>
-                                                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(comment.created_at)}</span>
+                                                <span className="text-[8px] font-black text-white/20 uppercase tracking-tighter">{formatRelativeTime(comment.created_at)}</span>
                                             </div>
-                                            <p className="text-muted-foreground leading-snug">{comment.content}</p>
+                                            <p className="text-xs font-medium text-white/70 leading-relaxed font-bold">{comment.content}</p>
                                         </div>
                                     </div>
                                 ))
@@ -320,21 +325,21 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                         </div>
 
                         {user ? (
-                            <form onSubmit={handleSubmitComment} className="flex gap-2">
+                            <form onSubmit={handleSubmitComment} className="flex gap-3 pt-2">
                                 <Input
-                                    placeholder="Add a comment..."
+                                    placeholder="Transmit data..."
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
-                                    className="h-8 text-sm"
+                                    className="h-12 bg-white/5 border-white/10 rounded-2xl text-xs font-bold text-white placeholder:text-white/20 focus:bg-white/10 transition-all px-6"
                                     disabled={submittingComment}
                                 />
-                                <Button size="sm" type="submit" disabled={!newComment.trim() || submittingComment} className="h-8 w-8 p-0 shrink-0">
-                                    <Send className="h-3.5 w-3.5" />
+                                <Button size="sm" type="submit" disabled={!newComment.trim() || submittingComment} className="h-12 w-12 p-0 shrink-0 rounded-2xl bg-primary text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                                    <Send className="h-5 w-5" />
                                 </Button>
                             </form>
                         ) : (
-                            <div className="bg-muted/50 rounded-lg p-2 text-center text-xs">
-                                <Link to="/login" className="text-primary hover:underline">Log in</Link> to comment
+                            <div className="bg-white/5 rounded-2xl p-4 text-center text-[10px] font-black uppercase tracking-widest text-white/40 border border-white/5 italic">
+                                <Link to="/login" className="text-primary hover:text-primary/80 transition-colors">Log in</Link> to join the frequency
                             </div>
                         )}
                     </div>

@@ -15,33 +15,33 @@ export default function Home() {
 
   if (user) {
     return (
-      <div className="container mx-auto py-4">
+      <div className="container mx-auto py-8">
         <WelcomeHeader />
 
         <DashboardStats />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-10">
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-12">
 
             {/* Live Map Preview */}
-            <Card variant="neomorph" className="p-1">
-              <div className="h-[450px] rounded-2xl overflow-hidden border border-white/5 shadow-inner">
+            <Card variant="glass" className="p-2 border-white/10 !bg-black/40 shadow-2xl overflow-hidden">
+              <div className="h-[500px] rounded-[2.5rem] overflow-hidden border border-white/5 shadow-inner">
                 <MapPreview />
               </div>
             </Card>
 
             {/* Active Missions */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold flex items-center gap-3">
-                  <div className="p-2 rounded-xl neo-flat">
-                    <Award className="h-6 w-6 text-primary" />
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black text-white tracking-tighter flex items-center gap-4">
+                  <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/10 shadow-inner">
+                    <Award className="h-8 w-8 text-primary brightness-125" />
                   </div>
-                  Active Missions
+                  Active <span className="text-primary brightness-125 italic">Missions</span>
                 </h2>
-                <Button variant="ghost" className="neo-interactive rounded-xl px-4 h-10 group">
-                  View All <TrendingUp className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <Button variant="ghost" className="h-12 rounded-2xl px-6 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-all group">
+                  View All <TrendingUp className="ml-3 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
               <MissionsCarousel />
@@ -50,19 +50,21 @@ export default function Home() {
           </div>
 
           {/* Sidebar Area */}
-          <div className="space-y-8">
+          <div className="space-y-12">
             <DailyQuizCTA />
 
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl neo-flat">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+            <div className="space-y-8">
+              <h2 className="text-2xl font-black text-white tracking-tighter flex items-center gap-4">
+                <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/10 shadow-inner">
+                  <TrendingUp className="h-6 w-6 text-primary brightness-125" />
                 </div>
-                Guardian Pulse
+                Guardian <span className="text-primary brightness-125 italic">Pulse</span>
               </h2>
-              <div className="h-[550px]">
-                <ActivityFeed />
-              </div>
+              <Card variant="glass" className="h-[600px] border-white/10 !bg-black/40 backdrop-blur-md overflow-hidden rounded-[2.5rem]">
+                <CardContent className="p-0 h-full">
+                  <ActivityFeed />
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

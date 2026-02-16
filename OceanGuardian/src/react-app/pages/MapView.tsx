@@ -212,7 +212,7 @@ export default function MapView() {
         center={defaultCenter}
         zoom={13}
         className="h-full w-full"
-        style={{ background: "#e0f2fe" }}
+        style={{ background: "#0a192f" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -242,11 +242,11 @@ export default function MapView() {
       </MapContainer>
 
       {/* Stats Badge */}
-      <div className="absolute bottom-20 md:bottom-4 right-4 z-[1000]">
-        <Card variant="neomorph" className="bg-card/90">
-          <CardContent className="p-3">
-            <div className="text-sm font-bold flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+      <div className="absolute bottom-20 md:bottom-6 right-6 z-[1000]">
+        <Card variant="glass" className="border-white/5 !bg-black/40 backdrop-blur-md">
+          <CardContent className="p-4">
+            <div className="text-[10px] font-black uppercase tracking-widest flex items-center gap-3 text-white/90">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]" />
               {filteredSightings.length} Reports Found
             </div>
           </CardContent>
@@ -254,10 +254,10 @@ export default function MapView() {
       </div>
 
       {/* Floating Action Button */}
-      <div className="absolute bottom-24 md:bottom-16 right-4 z-[1000]">
-        <Button asChild size="lg" className="h-14 w-14 rounded-full shadow-lg">
+      <div className="absolute bottom-24 md:bottom-20 right-6 z-[1000]">
+        <Button asChild size="lg" className="h-16 w-16 rounded-full shadow-2xl shadow-primary/40 bg-primary hover:bg-primary/90 text-white border-none transition-all hover:scale-110 active:scale-95">
           <Link to="/report">
-            <Plus className="h-6 w-6" />
+            <Plus className="h-8 w-8 stroke-[3]" />
           </Link>
         </Button>
       </div>

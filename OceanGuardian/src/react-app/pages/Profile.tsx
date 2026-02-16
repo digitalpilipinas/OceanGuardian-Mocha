@@ -278,74 +278,74 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* Profile Header */}
-      <Card variant="glass" className="border-0 overflow-hidden relative group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-12 translate-x-12 group-hover:bg-primary/20 transition-all duration-1000" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-3xl translate-y-8 -translate-x-8 group-hover:bg-secondary/20 transition-all duration-1000" />
-        <CardContent className="p-10 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-8">
+      <Card variant="glass" className="border-white/5 overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none transition-all duration-1000" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none transition-all duration-1000" />
+        <CardContent className="p-12 relative z-10">
+          <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="relative">
-              <Avatar className="w-32 h-32 border-4 border-white/10 shadow-2xl rounded-3xl overflow-hidden">
+              <Avatar className="w-40 h-40 border-8 border-white/5 shadow-2xl rounded-[2.5rem] overflow-hidden">
                 <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-                <AvatarFallback className="text-5xl font-bold bg-primary/20 text-primary">
+                <AvatarFallback className="text-6xl font-black bg-primary/20 text-white">
                   {displayName[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-xl flex items-center justify-center neo-flat border border-white/10">
-                <Shield className="text-white w-5 h-5" />
+              <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-xl border-4 border-background">
+                <Shield className="text-white w-6 h-6" />
               </div>
             </div>
 
-            <div className="text-center md:text-left flex-1">
-              <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <h1 className="text-4xl font-black text-foreground tracking-tight">{displayName}</h1>
-                <div className="flex items-center justify-center md:justify-start gap-2">
+            <div className="text-center md:text-left flex-1 py-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
+                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter drop-shadow-sm">{displayName}</h1>
+                <div className="flex items-center justify-center md:justify-start gap-4">
                   {!isOwnProfile && user && (
                     <Button
-                      size="sm"
+                      size="lg"
                       variant={isFollowing ? "neomorph" : "neomorph-primary"}
-                      className="px-6 h-10"
+                      className="px-8 h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20"
                       onClick={handleFollowToggle}
                     >
-                      {isFollowing ? <UserMinus className="w-4 h-4 mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
+                      {isFollowing ? <UserMinus className="w-5 h-5 mr-3" /> : <UserPlus className="w-5 h-5 mr-3" />}
                       {isFollowing ? "Unfollow" : "Follow"}
                     </Button>
                   )}
                   {isOwnProfile && (
-                    <Button size="icon" variant="neomorph" className="h-10 w-10" asChild>
+                    <Button size="icon" variant="neomorph" className="h-12 w-12 rounded-2xl" asChild>
                       <Link to="/settings">
-                        <Settings className="w-5 h-5 text-primary" />
+                        <Settings className="w-6 h-6 text-primary group-hover:rotate-90 transition-transform duration-500" />
                       </Link>
                     </Button>
                   )}
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3 justify-center md:justify-start mb-6">
-                <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-1 text-sm rounded-lg flex items-center gap-1.5">
-                  <Star className="h-4 w-4 fill-primary" />
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-10">
+                <Badge className="bg-white/5 text-white border-white/10 px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl flex items-center gap-2.5">
+                  <Star className="h-4 w-4 fill-primary text-primary" />
                   Level {level}
                 </Badge>
-                <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/20 px-3 py-1 text-sm rounded-lg flex items-center gap-1.5">
-                  <Flame className="h-4 w-4" />
-                  {profile.streak_days || 0} day streak
+                <Badge className="bg-white/5 text-white border-white/10 px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl flex items-center gap-2.5">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  {profile.streak_days || 0} Day Streak
                 </Badge>
-                <Badge className="bg-cyan-500/10 text-cyan-500 border-cyan-500/20 px-3 py-1 text-sm rounded-lg flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" />
-                  {profile.total_sightings || 0} sightings
+                <Badge className="bg-white/5 text-white border-white/10 px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl flex items-center gap-2.5">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  {profile.total_sightings || 0} Sightings
                 </Badge>
-                <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20 px-3 py-1 text-sm rounded-lg capitalize">
+                <Badge className="bg-primary/20 text-white border-none px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl italic">
                   {profile.role || "player"}
                 </Badge>
               </div>
 
-              <div className="max-w-md">
-                <div className="flex justify-between items-end text-sm mb-2">
-                  <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Rank Progress</span>
-                  <span className="font-black text-primary">
-                    {xpInLevel} / {xpRequired} XP
+              <div className="max-w-md w-full">
+                <div className="flex justify-between items-end text-[10px] mb-3 font-black uppercase tracking-[0.2em]">
+                  <span className="text-white/30">Guardian Progress</span>
+                  <span className="text-primary font-black">
+                    {xpInLevel.toLocaleString()} / {xpRequired.toLocaleString()} XP
                   </span>
                 </div>
-                <div className="neo-pressed p-1 rounded-full overflow-hidden">
+                <div className="bg-black/30 p-1.5 rounded-full border border-white/5 overflow-hidden shadow-inner">
                   <Progress value={xpProgress} className="h-3 bg-transparent" />
                 </div>
               </div>
@@ -356,18 +356,18 @@ export default function Profile() {
 
       {/* Only show detailed tabs if own profile for now, or if we implemented public endpoints */}
       {isOwnProfile ? (
-        <Tabs defaultValue="stats" className="mt-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="streak">Streak</TabsTrigger>
-            <TabsTrigger value="badges">Badges</TabsTrigger>
-            <TabsTrigger value="perks">Perks</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+        <Tabs defaultValue="stats" className="mt-12">
+          <TabsList className="bg-black/20 p-2 rounded-[2rem] h-18 w-full mb-12 border border-white/5">
+            <TabsTrigger value="stats" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Stats</TabsTrigger>
+            <TabsTrigger value="streak" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Streak</TabsTrigger>
+            <TabsTrigger value="badges" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Badges</TabsTrigger>
+            <TabsTrigger value="perks" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Perks</TabsTrigger>
+            <TabsTrigger value="activity" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Activity</TabsTrigger>
           </TabsList>
 
           {/* ... (Existing TabsContent for streak, stats, badges, perks, activity - copy from original) */}
           {/* Streak Tab */}
-          <TabsContent value="streak" className="space-y-6">
+          <TabsContent value="streak" className="space-y-12">
             <DailyCheckIn
               checkedIn={streakData?.status === "checked_in"}
               onCheckIn={handleCheckIn}
@@ -383,80 +383,80 @@ export default function Profile() {
           </TabsContent>
 
           {/* Stats Tab */}
-          <TabsContent value="stats" className="space-y-8 pt-4">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Total XP</CardTitle>
+          <TabsContent value="stats" className="space-y-12 pt-4">
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+              <Card variant="glass" className="border-white/5 pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Total XP</CardTitle>
                   <TrendingUp className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-black">{xp.toLocaleString()}</div>
-                  <p className="text-xs text-primary font-medium mt-1 uppercase tracking-tight">Level {level} Guardian</p>
+                  <div className="text-4xl font-black text-white tracking-tighter">{xp.toLocaleString()}</div>
+                  <p className="text-[10px] text-primary brightness-125 font-black mt-2 uppercase tracking-widest">Level {level} Guardian</p>
                 </CardContent>
               </Card>
 
-              <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Sightings</CardTitle>
+              <Card variant="glass" className="border-white/5 pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Sightings</CardTitle>
                   <Camera className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-black">{profile?.total_sightings || 0}</div>
-                  <p className="text-xs text-muted-foreground font-medium mt-1">Marine observations</p>
+                  <div className="text-4xl font-black text-white tracking-tighter">{profile?.total_sightings || 0}</div>
+                  <p className="text-[10px] text-white/30 font-black mt-2 uppercase tracking-widest">Marine observations</p>
                 </CardContent>
               </Card>
 
-              <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Missions</CardTitle>
+              <Card variant="glass" className="border-white/5 pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Missions</CardTitle>
                   <Target className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-black">{profile?.total_missions || 0}</div>
-                  <p className="text-xs text-muted-foreground font-medium mt-1">Cleanups joined</p>
+                  <div className="text-4xl font-black text-white tracking-tighter">{profile?.total_missions || 0}</div>
+                  <p className="text-[10px] text-white/30 font-black mt-2 uppercase tracking-widest">Cleanups joined</p>
                 </CardContent>
               </Card>
 
-              <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Badges</CardTitle>
+              <Card variant="glass" className="border-white/5 pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Badges</CardTitle>
                   <Award className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-black">{badges.length} / {allBadges.length}</div>
-                  <p className="text-xs text-muted-foreground font-medium mt-1">Achievements earned</p>
+                  <div className="text-4xl font-black text-white tracking-tighter">{badges.length} / {allBadges.length}</div>
+                  <p className="text-[10px] text-white/30 font-black mt-2 uppercase tracking-widest">Achievements earned</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Achievement Tiers */}
-            <Card variant="neomorph">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold flex items-center gap-3">
-                  <div className="p-2 rounded-xl neo-flat">
+            <Card variant="glass" className="border-white/5">
+              <CardHeader className="pb-8">
+                <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/5">
                     <Sparkles className="h-5 w-5 text-amber-500" />
                   </div>
                   Achievement Tiers
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-8">
-                <div className="space-y-6">
+              <CardContent className="pb-12">
+                <div className="space-y-8">
                   {badgesByTier.map((tier) => {
                     const TierIcon = tier.icon;
                     return (
-                      <div key={tier.rarity} className="flex items-center gap-6">
-                        <div className="flex items-center gap-3 w-40">
+                      <div key={tier.rarity} className="flex items-center gap-8">
+                        <div className="flex items-center gap-4 w-48">
                           <TierIcon className="h-5 w-5 text-primary" />
-                          <span className="text-sm font-bold text-foreground">{tier.label}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white">{tier.label}</span>
                         </div>
-                        <div className="flex-1 neo-pressed p-1 rounded-full">
+                        <div className="flex-1 bg-black/20 p-1.5 rounded-full border border-white/5 overflow-hidden">
                           <Progress
                             value={tier.total > 0 ? (tier.earned / tier.total) * 100 : 0}
-                            className="h-2 bg-transparent"
+                            className="h-2.5 bg-transparent"
                           />
                         </div>
-                        <span className="text-sm font-black text-primary w-16 text-right">
+                        <span className="text-xs font-black text-primary w-24 text-right tracking-[0.1em]">
                           {tier.earned} / {tier.total}
                         </span>
                       </div>
@@ -469,31 +469,31 @@ export default function Profile() {
 
           {/* Badges Tab */}
           <TabsContent value="badges" className="pt-4">
-            <Card variant="neomorph">
-              <CardHeader>
+            <Card variant="glass" className="border-white/5">
+              <CardHeader className="pb-10">
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl neo-flat">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-white/5 border border-white/5">
                       <Trophy className="h-5 w-5 text-primary" />
                     </div>
-                    <span>Achievement Collection</span>
+                    <span className="text-xs font-black uppercase tracking-[0.3em] text-primary">Achievement Collection</span>
                   </div>
-                  <Badge variant="neomorph" className="px-4 py-1.5 font-bold">{badges.length} / {allBadges.length} Earned</Badge>
+                  <Badge variant="neomorph" className="px-6 py-2.5 font-black text-[10px] uppercase tracking-widest bg-primary/20 text-white border-none">{badges.length} / {allBadges.length} Earned</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-8">
+              <CardContent className="pb-14">
                 {allBadges.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 neo-flat">
-                      <Star className="h-8 w-8 text-muted-foreground" />
+                  <div className="text-center py-20">
+                    <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+                      <Star className="h-10 w-10 text-white/20" />
                     </div>
-                    <p className="text-muted-foreground font-medium">
+                    <p className="text-white/40 font-black uppercase tracking-widest text-xs italic">
                       No badges available yet. New achievements coming soon!
                     </p>
                   </div>
                 ) : (
                   <TooltipProvider>
-                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-8">
                       {allBadges.map((badge) => {
                         const isEarned = earnedBadgeIds.has(badge.id);
                         const earnedBadge = badges.find((b) => b.badge_id === badge.id);
@@ -504,39 +504,39 @@ export default function Profile() {
                             <TooltipTrigger asChild>
                               <div
                                 className={`
-                                    relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all duration-300 cursor-default
+                                    relative flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border transition-all duration-500 cursor-default group/badge
                                     ${isEarned
-                                    ? `neo-flat !bg-card border-primary/20`
-                                    : "border-dashed border-muted-foreground/10 bg-muted/5 opacity-40 grayscale"
+                                    ? `glass-liquid !bg-white/5 border-white/10 hover:!bg-white/10 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20`
+                                    : "border-dashed border-white/5 bg-black/20 opacity-30 grayscale"
                                   }
                                 `}
                               >
-                                <div className="w-16 h-16 flex items-center justify-center">
-                                  <span className="text-4xl">{badge.is_hidden && !isEarned ? <Lock className="w-8 h-8 text-muted-foreground" /> : badge.icon}</span>
+                                <div className="w-20 h-20 flex items-center justify-center transition-transform duration-500 group-hover/badge:scale-110">
+                                  <span className="text-5xl drop-shadow-2xl">{badge.is_hidden && !isEarned ? <Lock className="w-10 h-10 text-white/30" /> : badge.icon}</span>
                                 </div>
-                                <p className="text-xs font-bold text-center leading-tight truncate w-full">
+                                <p className="text-[10px] font-black text-center leading-tight truncate w-full uppercase tracking-widest text-white/90">
                                   {badge.is_hidden && !isEarned ? "Hidden" : badge.name}
                                 </p>
                                 <Badge
-                                  className={`text-[9px] px-2 py-0 border-none uppercase ${isEarned ? rarityColors[rarity] + " text-white" : "bg-muted text-muted-foreground"}`}
+                                  className={`text-[8px] px-3 py-1 border-none uppercase font-black tracking-widest ${isEarned ? rarityColors[rarity] + " text-white shadow-lg" : "bg-white/5 text-white/30"}`}
                                 >
                                   {rarity}
                                 </Badge>
                                 {!isEarned && (
-                                  <div className="absolute top-2 right-2">
-                                    <Lock className="h-3 w-3 text-muted-foreground/30" />
+                                  <div className="absolute top-4 right-4">
+                                    <Lock className="h-4 w-4 text-white/10" />
                                   </div>
                                 )}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-[200px] p-3 rounded-xl glass-liquid border-white/10">
-                              <p className="font-bold text-foreground text-sm mb-1">{badge.is_hidden && !isEarned ? "Hidden Badge" : badge.name}</p>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
+                            <TooltipContent className="max-w-[240px] p-5 rounded-3xl glass-liquid border-white/10 shadow-2xl">
+                              <p className="font-black text-white text-xs uppercase tracking-widest mb-2">{badge.is_hidden && !isEarned ? "Hidden Badge" : badge.name}</p>
+                              <p className="text-[10px] text-white/60 leading-relaxed font-bold italic">
                                 {badge.is_hidden && !isEarned ? "Complete the secret requirement to unlock!" : badge.description}
                               </p>
                               {isEarned && earnedBadge && (
-                                <div className="flex items-center gap-1.5 mt-2 text-xs text-primary font-bold">
-                                  <CheckCircle2 className="h-3 w-3" />
+                                <div className="flex items-center gap-2 mt-4 text-[10px] text-primary brightness-125 font-black uppercase tracking-widest">
+                                  <CheckCircle2 className="h-4 w-4" />
                                   <span>Earned {formatTimestamp(earnedBadge.earned_at)}</span>
                                 </div>
                               )}
@@ -552,41 +552,49 @@ export default function Profile() {
           </TabsContent>
 
           {/* Perks Tab */}
-          <TabsContent value="perks">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-amber-500" />
-                  Level Perks
+          <TabsContent value="perks" className="pt-4">
+            <Card variant="glass" className="border-white/5">
+              <CardHeader className="pb-10">
+                <CardTitle className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/5">
+                    <Star className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-[0.3em] text-primary">Guardian Level Perks</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="pb-14 px-10">
+                <div className="grid gap-6">
                   {levelPerks.map((perk) => (
                     <div
                       key={perk.level}
                       className={`
-                        flex items-center gap-4 p-4 rounded-xl border transition-all duration-200
+                        flex items-center gap-6 p-6 rounded-3xl border transition-all duration-300 group
                         ${perk.unlocked
-                          ? "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border-amber-200 dark:border-amber-500/20"
-                          : "bg-muted/30 border-muted opacity-60"
+                          ? "bg-white/10 border-white/10 shadow-xl shadow-primary/5"
+                          : "bg-black/20 border-white/5 opacity-40 grayscale"
                         }
                         `}
                     >
-                      <span className="text-2xl">{perk.icon}</span>
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-transform duration-500 group-hover:scale-110 ${perk.unlocked ? 'bg-primary/20 shadow-lg shadow-primary/20' : 'bg-white/5'}`}>
+                        {perk.icon}
+                      </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm">{perk.title}</p>
-                          <Badge variant="outline" className="text-[10px]">
+                        <div className="flex items-center gap-3 mb-1">
+                          <p className={`font-black tracking-tight ${perk.unlocked ? 'text-white' : 'text-white/40'}`}>{perk.title}</p>
+                          <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-white/10 text-primary/80">
                             Level {perk.level}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{perk.description}</p>
+                        <p className={`text-xs font-bold leading-relaxed italic ${perk.unlocked ? 'text-white/60' : 'text-white/20'}`}>{perk.description}</p>
                       </div>
                       {perk.unlocked ? (
-                        <Shield className="h-5 w-5 text-amber-500" />
+                        <div className="p-3 rounded-full bg-primary/20">
+                          <Shield className="h-6 w-6 text-primary brightness-150" />
+                        </div>
                       ) : (
-                        <Lock className="h-5 w-5 text-muted-foreground" />
+                        <div className="p-3 rounded-full bg-white/5">
+                          <Lock className="h-6 w-6 text-white/20" />
+                        </div>
                       )}
                     </div>
                   ))}
@@ -597,54 +605,54 @@ export default function Profile() {
 
           {/* Activity Tab */}
           <TabsContent value="activity" className="pt-4">
-            <Card variant="neomorph">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl neo-flat">
+            <Card variant="glass" className="border-white/5">
+              <CardHeader className="pb-10">
+                <CardTitle className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/5">
                     <History className="h-5 w-5 text-primary" />
                   </div>
-                  <span>Guardian Journey Log</span>
+                  <span className="text-xs font-black uppercase tracking-[0.3em] text-primary">Guardian Journey Log</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-8">
+              <CardContent className="pb-14 px-10">
                 {activity.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 neo-flat">
-                      <MapIcon className="h-8 w-8 text-muted-foreground" />
+                  <div className="text-center py-20">
+                    <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+                      <MapIcon className="h-10 w-10 text-white/20" />
                     </div>
-                    <p className="text-muted-foreground font-medium">
+                    <p className="text-white/40 font-black uppercase tracking-widest text-xs italic">
                       Your journey log is empty. Submit your first sighting to begin your hero story!
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {activity.map((item) => {
                       const ActivityIcon = activityIcons[item.type] || MapPin;
                       return (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-5 rounded-2xl border border-white/5 bg-background/30 hover:neo-flat transition-all duration-300 group"
+                          className="flex items-center justify-between p-6 rounded-3xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all duration-300 group shadow-lg"
                         >
-                          <div className="flex items-center gap-5 flex-1">
-                            <div className="w-12 h-12 rounded-xl neo-pressed flex items-center justify-center group-hover:neo-flat transition-all">
-                              <ActivityIcon className="h-6 w-6 text-primary" />
+                          <div className="flex items-center gap-6 flex-1">
+                            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center transition-all group-hover:scale-110">
+                              <ActivityIcon className="h-7 w-7 text-primary" />
                             </div>
                             <div>
-                              <div className="flex items-center gap-3">
-                                <Badge variant="neomorph" className="capitalize text-[10px] bg-primary/10 text-primary border-none font-bold">
+                              <div className="flex items-center gap-4">
+                                <Badge variant="neomorph" className="capitalize text-[8px] bg-primary/20 text-white border-none font-black tracking-widest px-3 py-1">
                                   {item.type.replace("_", " ")}
                                 </Badge>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] italic">
                                   {formatTimestamp(item.created_at)}
                                 </span>
                               </div>
-                              <p className="mt-1.5 text-sm font-medium text-foreground">{item.description}</p>
+                              <p className="mt-2 text-sm font-bold text-white tracking-tight">{item.description}</p>
                             </div>
                           </div>
                           {item.xp_earned > 0 && (
-                            <div className="flex items-center gap-1 text-primary">
-                              <TrendingUp className="h-3 w-3" />
-                              <span className="font-black text-sm">+{item.xp_earned} XP</span>
+                            <div className="flex items-center gap-2 bg-primary/20 px-4 py-2 rounded-2xl border border-primary/20 shadow-lg shadow-primary/10">
+                              <TrendingUp className="h-4 w-4 text-primary brightness-150" />
+                              <span className="font-black text-xs text-white tracking-widest">+{item.xp_earned} XP</span>
                             </div>
                           )}
                         </div>

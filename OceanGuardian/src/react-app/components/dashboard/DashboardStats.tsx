@@ -31,49 +31,43 @@ export default function DashboardStats() {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Total Sightings</CardTitle>
-                    <div className="p-2 neo-pressed rounded-lg">
-                        <Map className="h-4 w-4 text-primary" />
-                    </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+            <Card variant="glass" className="border-white/5 group pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-primary transition-colors">Total Sightings</CardTitle>
+                    <Map className="h-5 w-5 text-primary opacity-50" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold">{stats?.totalSightings.toLocaleString() || 0}</div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        <TrendingUp className="inline h-3 w-3 text-secondary mr-1" />
-                        <span className="text-secondary font-medium">Verified reports</span>
+                    <div className="text-4xl font-black text-white tracking-tighter">{stats?.totalSightings.toLocaleString() || 0}</div>
+                    <p className="text-[10px] text-white/30 mt-3 font-bold uppercase tracking-widest flex items-center gap-2">
+                        <TrendingUp className="h-3 w-3 text-secondary" />
+                        Verified Reports
                     </p>
                 </CardContent>
             </Card>
 
-            <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Active Missions</CardTitle>
-                    <div className="p-2 neo-pressed rounded-lg">
-                        <Award className="h-4 w-4 text-primary" />
-                    </div>
+            <Card variant="glass" className="border-white/5 group pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-primary transition-colors">Active Missions</CardTitle>
+                    <Award className="h-5 w-5 text-primary opacity-50" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold">{stats?.activeMissions.toLocaleString() || 0}</div>
-                    <p className="text-xs text-muted-foreground mt-1 text-primary italic font-medium">
+                    <div className="text-4xl font-black text-white tracking-tighter">{stats?.activeMissions.toLocaleString() || 0}</div>
+                    <p className="text-[10px] text-primary/60 mt-3 font-black uppercase tracking-widest italic group-hover:text-primary transition-colors">
                         Join cleanup efforts
                     </p>
                 </CardContent>
             </Card>
 
-            <Card variant="neomorph">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Ocean Guardians</CardTitle>
-                    <div className="p-2 neo-pressed rounded-lg">
-                        <Users className="h-4 w-4 text-primary" />
-                    </div>
+            <Card variant="glass" className="border-white/5 group pt-8">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-primary transition-colors">Ocean Guardians</CardTitle>
+                    <Users className="h-5 w-5 text-primary opacity-50" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold">{stats?.totalGuardians.toLocaleString() || 0}</div>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium">
-                        Community pulse
+                    <div className="text-4xl font-black text-white tracking-tighter">{stats?.totalGuardians.toLocaleString() || 0}</div>
+                    <p className="text-[10px] text-white/30 mt-3 font-bold uppercase tracking-widest">
+                        Community Pulse
                     </p>
                 </CardContent>
             </Card>

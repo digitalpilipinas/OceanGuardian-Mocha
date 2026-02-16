@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
-import { Loader2, Plus, Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+import { Loader2, Plus, Calendar, MapPin, Users } from "lucide-react";
 import type { Mission, UserProfile } from "@/shared/types";
 
 export default function Missions() {
@@ -51,28 +51,28 @@ export default function Missions() {
 
   return (
     <div className="container mx-auto py-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
-          <h1 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">
-            Cleanup <span className="text-primary">Missions</span>
+          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
+            Cleanup <span className="text-primary brightness-125">Missions</span>
           </h1>
-          <p className="text-muted-foreground text-lg font-medium mt-2">Join the collective effort to restore our oceans.</p>
+          <p className="text-white/60 text-lg font-bold mt-2 tracking-wide italic">Join the collective effort to restore our oceans.</p>
         </div>
 
         {canCreate && (
-          <Button variant="neomorph-primary" size="lg" className="h-14 px-8 text-lg font-bold" onClick={() => navigate("/missions/create")}>
-            <Plus className="mr-2 h-6 w-6" />
+          <Button variant="neomorph-primary" size="lg" className="h-16 px-10 text-xl font-black shadow-2xl shadow-primary/20" onClick={() => navigate("/missions/create")}>
+            <Plus className="mr-3 h-7 w-7" />
             Create Mission
           </Button>
         )}
       </div>
 
-      <div className="mb-12">
+      <div className="mb-14">
         <Tabs defaultValue="upcoming" onValueChange={setFilter} className="w-full">
-          <TabsList className="bg-transparent p-1.5 neo-pressed rounded-3xl h-16 w-full md:w-auto">
-            <TabsTrigger value="upcoming" className="rounded-2xl h-13 text-muted-foreground font-bold data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-10 transition-all">Upcoming</TabsTrigger>
-            <TabsTrigger value="active" className="rounded-2xl h-13 text-muted-foreground font-bold data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-10 transition-all">Active Now</TabsTrigger>
-            <TabsTrigger value="completed" className="rounded-2xl h-13 text-muted-foreground font-bold data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-10 transition-all">Completed</TabsTrigger>
+          <TabsList className="bg-black/20 p-2 rounded-[2rem] h-18 w-full md:w-auto border border-white/5">
+            <TabsTrigger value="upcoming" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 px-12 transition-all">Upcoming</TabsTrigger>
+            <TabsTrigger value="active" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 px-12 transition-all">Active Now</TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 px-12 transition-all">Completed</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -95,43 +95,43 @@ export default function Missions() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {missions.map((mission) => (
-              <Card key={mission.id} variant="neomorph" className="flex flex-col h-full group/mission">
+              <Card key={mission.id} variant="glass" className="flex flex-col h-full group/mission border-white/5 hover:border-white/10 transition-colors">
                 {mission.image_url && (
-                  <div className="relative h-56 w-full overflow-hidden">
-                    <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/mission:scale-110" />
-                    <div className="absolute top-4 right-4">
-                      <Badge className="capitalize px-4 py-1.5 rounded-full glass-liquid border-none text-white font-bold shadow-xl">
+                  <div className="relative h-60 w-full overflow-hidden">
+                    <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/mission:scale-110" />
+                    <div className="absolute top-5 right-5">
+                      <Badge className="capitalize px-5 py-2 rounded-full glass-liquid border-none text-white font-black tracking-widest text-[10px] shadow-2xl">
                         {mission.status}
                       </Badge>
                     </div>
                   </div>
                 )}
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl font-bold line-clamp-1">{mission.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-1.5 font-medium text-primary">
+                <CardHeader className="pb-4 pt-8">
+                  <CardTitle className="text-2xl font-black text-white tracking-tight line-clamp-1 group-hover/mission:text-primary transition-colors">{mission.title}</CardTitle>
+                  <CardDescription className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-primary/80">
                     <MapPin className="h-3.5 w-3.5" /> {mission.location_name}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1">
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-6 bg-muted/20 p-3 rounded-xl border border-border/10">
+                <CardContent className="flex-1 px-8">
+                  <p className="text-sm text-white/50 leading-relaxed font-medium line-clamp-3 mb-8 bg-black/20 p-5 rounded-3xl border border-white/5 italic">
                     {mission.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 neo-pressed rounded-full">
+                  <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5">
                       <Calendar className="h-3.5 w-3.5 text-primary" />
                       {new Date(mission.start_time).toLocaleDateString()}
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 neo-pressed rounded-full">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5">
                       <Users className="h-3.5 w-3.5 text-primary" />
                       {mission.max_participants ? `Max ${mission.max_participants}` : "Open"}
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="pt-4">
-                  <Button variant="neomorph" className="w-full h-12 text-sm font-bold uppercase tracking-widest group-hover/mission:bg-primary group-hover/mission:text-primary-foreground transition-all duration-300" asChild>
+                <CardFooter className="pt-6 pb-10 px-8">
+                  <Button variant="neomorph" className="w-full h-14 text-xs font-black uppercase tracking-[0.3em] group-hover/mission:bg-primary group-hover/mission:text-white group-hover/mission:shadow-xl group-hover/mission:shadow-primary/30 transition-all duration-500 rounded-3xl" asChild>
                     <Link to={`/missions/${mission.id}`}>
-                      View Details <ArrowRight className="ml-2 h-4 w-4" />
+                      Deploy <Plus className="ml-3 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardFooter>

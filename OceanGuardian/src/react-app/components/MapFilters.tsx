@@ -67,28 +67,28 @@ export default function MapFilters({
   const hasActiveFilters = !allSelected || dateRange !== "all" || minSeverity > 1;
 
   return (
-    <Card className="shadow-lg backdrop-blur-sm bg-card/95">
-      <CardContent className="p-3">
+    <Card variant="glass" className="border-white/5 shadow-2xl !bg-black/60 backdrop-blur-xl">
+      <CardContent className="p-4">
         {/* Collapsed View */}
         {!isExpanded && (
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Filter className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/90">
                 {allSelected ? "All Types" : `${activeCount} Type${activeCount !== 1 ? "s" : ""}`}
               </span>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="neomorph" className="text-[10px] bg-white/5 text-white/60 border-none font-black px-2 py-0.5">
                 {totalSightings}
               </Badge>
               {hasActiveFilters && (
-                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]" />
               )}
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(true)}
-              className="h-8 px-2"
+              className="h-8 w-8 p-0 hover:bg-white/10 text-white/60 hover:text-white"
             >
               <Filter className="h-4 w-4" />
             </Button>
@@ -97,12 +97,12 @@ export default function MapFilters({
 
         {/* Expanded View */}
         {isExpanded && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">Filters</span>
-                <Badge variant="secondary" className="text-xs">
+              <div className="flex items-center gap-3">
+                <Filter className="h-4 w-4 text-primary" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Filters</span>
+                <Badge variant="neomorph" className="text-[10px] bg-white/5 text-white/40 border-none font-black px-3 py-1">
                   {totalSightings} results
                 </Badge>
               </div>
@@ -110,15 +110,15 @@ export default function MapFilters({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(false)}
-                className="h-6 w-6 p-0"
+                className="h-8 w-8 p-0 hover:bg-white/10 text-white/40 hover:text-white"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
 
             {/* Type Filters */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</span>
+            <div className="space-y-3">
+              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Category</span>
               <div className="grid grid-cols-2 gap-2">
                 {filterOptions.map((option) => {
                   const isSelected = selectedTypes.includes(option.type);
@@ -127,41 +127,41 @@ export default function MapFilters({
                       key={option.type}
                       onClick={() => toggleType(option.type)}
                       className={`
-                        flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                        flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all duration-300 border
                         ${isSelected
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                          ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
+                          : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
                         }
                       `}
                     >
-                      <option.icon className="h-4 w-4" />
-                      <span className="text-xs">{option.label}</span>
+                      <option.icon className={`h-4 w-4 ${isSelected ? "text-white" : "text-white/50"}`} />
+                      <span className="tracking-widest uppercase text-[10px]">{option.label}</span>
                     </button>
                   );
                 })}
               </div>
               {!allSelected && (
-                <button onClick={selectAll} className="text-xs text-primary hover:underline w-full text-center pt-1">
-                  Select All
+                <button onClick={selectAll} className="text-[10px] font-black uppercase tracking-widest text-primary/80 hover:text-primary transition-colors w-full text-center pt-2 italic">
+                  Reset Categories
                 </button>
               )}
             </div>
 
             {/* Date Range */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Time Range
+            <div className="space-y-3">
+              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] flex items-center gap-2">
+                <Clock className="h-3 w-3" /> Time Horizon
               </span>
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {dateRanges.map((range) => (
                   <button
                     key={range.value}
                     onClick={() => onDateRangeChange(range.value)}
                     className={`
-                      flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all
+                      flex-1 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 border
                       ${dateRange === range.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/10"
+                        : "bg-white/5 border-white/5 text-white/30 hover:bg-white/10 hover:text-white/50"
                       }
                     `}
                   >
@@ -172,30 +172,30 @@ export default function MapFilters({
             </div>
 
             {/* Severity Filter */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" /> Min Severity
+            <div className="space-y-3">
+              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3" /> Minimum Priority
               </span>
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {severityOptions.map((sev) => (
                   <button
                     key={sev.value}
                     onClick={() => onMinSeverityChange(sev.value)}
                     className={`
-                      flex-1 flex flex-col items-center gap-1 px-2 py-1.5 rounded-md transition-all
+                      flex-1 flex flex-col items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-300 border
                       ${minSeverity === sev.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/10"
+                        : "bg-white/5 border-white/5 text-white/30 hover:bg-white/10 hover:text-white/50"
                       }
                     `}
                   >
-                    <div className={`h-2.5 w-2.5 rounded-full ${sev.value === 1 ? "bg-green-500" :
-                        sev.value === 2 ? "bg-yellow-500" :
-                          sev.value === 3 ? "bg-orange-500" :
-                            sev.value === 4 ? "bg-red-500" :
-                              "bg-red-700 animate-pulse"
+                    <div className={`h-2 w-2 rounded-full ${sev.value === 1 ? "bg-green-500" :
+                      sev.value === 2 ? "bg-yellow-500" :
+                        sev.value === 3 ? "bg-orange-500" :
+                          sev.value === 4 ? "bg-red-500" :
+                            "bg-red-700 animate-pulse"
                       }`} />
-                    <span className="text-[10px] font-medium">{sev.label}</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">{sev.label}</span>
                   </button>
                 ))}
               </div>
