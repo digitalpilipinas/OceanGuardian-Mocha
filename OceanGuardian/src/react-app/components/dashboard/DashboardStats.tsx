@@ -32,41 +32,47 @@ export default function DashboardStats() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
+            <Card className="bg-slate-900/50 border-white/10 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Sightings</CardTitle>
-                    <Map className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium text-slate-400 uppercase tracking-wider">Total Sightings</CardTitle>
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                        <Map className="h-4 w-4 text-blue-400" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats?.totalSightings.toLocaleString() || 0}</div>
-                    <p className="text-xs text-muted-foreground">
-                        <TrendingUp className="inline h-3 w-3 text-secondary mr-1" />
-                        Verified reports
+                    <div className="text-2xl font-bold text-white">{stats?.totalSightings.toLocaleString() || 0}</div>
+                    <p className="text-xs text-slate-400/80 mt-1">
+                        <TrendingUp className="inline h-3 w-3 text-emerald-400 mr-1" />
+                        <span className="text-emerald-400">Verified reports</span>
                     </p>
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-slate-900/50 border-white/10 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Missions</CardTitle>
-                    <Award className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium text-slate-400 uppercase tracking-wider">Active Missions</CardTitle>
+                    <div className="p-2 bg-amber-500/10 rounded-lg">
+                        <Award className="h-4 w-4 text-amber-400" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats?.activeMissions.toLocaleString() || 0}</div>
-                    <p className="text-xs text-muted-foreground">
-                        Join the cleanup efforts
+                    <div className="text-2xl font-bold text-white">{stats?.activeMissions.toLocaleString() || 0}</div>
+                    <p className="text-xs text-slate-400/80 mt-1">
+                        Join cleanup efforts
                     </p>
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-slate-900/50 border-white/10 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ocean Guardians</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium text-slate-400 uppercase tracking-wider">Ocean Guardians</CardTitle>
+                    <div className="p-2 bg-cyan-500/10 rounded-lg">
+                        <Users className="h-4 w-4 text-cyan-400" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats?.totalGuardians.toLocaleString() || 0}</div>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="text-2xl font-bold text-white">{stats?.totalGuardians.toLocaleString() || 0}</div>
+                    <p className="text-xs text-slate-400/80 mt-1">
                         Community members
                     </p>
                 </CardContent>

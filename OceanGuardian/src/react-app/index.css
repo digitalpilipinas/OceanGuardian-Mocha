@@ -62,7 +62,7 @@
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 20% 98%;
     --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 215 20% 75%;
     --accent: 199 89% 48%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
@@ -84,34 +84,39 @@
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 199 89% 48%;
 
-    /* Neomorphic Shadow Variables Dark - Deep Ocean */
-    --neo-shadow-light: -4px -4px 10px rgba(255, 255, 255, 0.05);
-    --neo-shadow-dark: 4px 4px 10px rgba(0, 0, 0, 0.5);
-    --neo-inset-light: inset -2px -2px 5px rgba(255, 255, 255, 0.05);
-    --neo-inset-dark: inset 2px 2px 5px rgba(0, 0, 0, 0.5);
+    /* Neomorphic Shadow Variables Dark - Deep Ocean (Subtle/Clean) */
+    --neo-shadow-light: 0px 0px 0px transparent;
+    --neo-shadow-dark: 2px 2px 8px rgba(0, 0, 0, 0.4);
+    --neo-inset-light: inset 0px 0px 0px transparent;
+    --neo-inset-dark: inset 2px 2px 4px rgba(0, 0, 0, 0.4);
 
     /* Liquid Glass Variables Dark - Deep Ocean */
     --glass-bg: rgba(15, 23, 42, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    /* Reduced brightness */
+    --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
   }
 }
 
 @layer components {
   .neo-flat {
-    background: hsl(var(--card));
-    box-shadow: var(--neo-shadow-light), var(--neo-shadow-dark);
-    @apply transition-all duration-300 border border-white/5;
+    @apply bg-card border border-white/5 transition-all duration-300;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Dark mode specific override for neo-flat to remove glow completely */
+  .dark .neo-flat {
+    box-shadow: none;
+    @apply border-white/10;
   }
 
   .neo-pressed {
-    background: hsl(var(--card));
-    box-shadow: var(--neo-inset-light), var(--neo-inset-dark);
-    @apply transition-all duration-300 border border-transparent;
+    @apply bg-muted/50 border border-transparent transition-all duration-300;
+    box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.2);
   }
 
   .neo-interactive {
-    @apply neo-flat hover:neo-pressed active:neo-pressed focus:neo-pressed;
+    @apply neo-flat hover:border-primary/30 hover:bg-accent/5 active:neo-pressed;
   }
 
   .glass-liquid {

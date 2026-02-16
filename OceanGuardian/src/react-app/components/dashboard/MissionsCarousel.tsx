@@ -54,38 +54,40 @@ export default function MissionsCarousel() {
         <div className="relative">
             <div className="flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory scrollbar-hide">
                 {missions.map((mission) => (
-                    <Card key={mission.id} className="min-w-[300px] max-w-[300px] flex-shrink-0 snap-center flex flex-col h-full hover:shadow-md transition-shadow">
+                    <Card key={mission.id} className="min-w-[300px] max-w-[300px] flex-shrink-0 snap-center flex flex-col h-full hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-slate-900/40 border-white/10 backdrop-blur-sm group">
                         {mission.image_url ? (
-                            <div className="h-40 w-full overflow-hidden rounded-t-xl">
-                                <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover" />
-                            </div>
-                        ) : (
-                            <div className="h-40 w-full bg-muted flex items-center justify-center rounded-t-xl">
-                                <MapPin className="h-10 w-10 text-muted-foreground/50" />
-                            </div>
-                        )}
-                        <CardHeader className="p-4 pb-2">
-                            <div className="flex justify-between items-start">
-                                <CardTitle className="text-base line-clamp-1">{mission.title}</CardTitle>
-                                <Badge variant={mission.status === 'active' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 h-5">
+                            <div className="h-40 w-full overflow-hidden rounded-t-xl relative">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                                <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <Badge variant={mission.status === 'active' ? 'default' : 'secondary'} className="absolute top-3 right-3 z-20 shadow-sm border-none">
                                     {mission.status}
                                 </Badge>
                             </div>
-                            <CardDescription className="flex items-center gap-1 text-xs">
+                        ) : (
+                            <div className="h-40 w-full bg-slate-800/50 flex items-center justify-center rounded-t-xl relative">
+                                <MapPin className="h-10 w-10 text-slate-600" />
+                                <Badge variant={mission.status === 'active' ? 'default' : 'secondary'} className="absolute top-3 right-3 z-10 border-none">
+                                    {mission.status}
+                                </Badge>
+                            </div>
+                        )}
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base line-clamp-1 text-blue-50">{mission.title}</CardTitle>
+                            <CardDescription className="flex items-center gap-1 text-xs text-blue-200/60">
                                 <MapPin className="h-3 w-3" /> {mission.location_name}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 flex-1">
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                            <p className="text-sm text-slate-400 line-clamp-2 mb-3">
                                 {mission.description}
                             </p>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-950/30 p-2 rounded-lg w-fit">
                                 <Calendar className="h-3 w-3" />
                                 {new Date(mission.start_time).toLocaleDateString()}
                             </div>
                         </CardContent>
                         <CardFooter className="p-4 pt-0">
-                            <Button size="sm" className="w-full" asChild>
+                            <Button size="sm" className="w-full bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-500/30" asChild>
                                 <Link to={`/missions/${mission.id}`}>
                                     View Details
                                 </Link>
