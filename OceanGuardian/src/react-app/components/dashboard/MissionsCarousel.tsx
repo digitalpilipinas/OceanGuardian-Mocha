@@ -52,7 +52,7 @@ export default function MissionsCarousel() {
         <div className="relative">
             <div className="flex overflow-x-auto pb-8 gap-6 snap-x snap-mandatory hide-scrollbar">
                 {missions.map((mission) => (
-                    <div key={mission.id} className="min-w-[320px] max-w-[320px] flex-shrink-0 snap-center flex flex-col h-full bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
+                    <div key={mission.id} className="min-w-[320px] max-w-[320px] flex-shrink-0 snap-center flex flex-col h-full bg-secondary border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
                         {mission.image_url ? (
                             <div className="h-48 w-full overflow-hidden relative">
                                 <div className="absolute inset-0 bg-gradient-to-t from-secondary to-transparent z-10" />
@@ -71,17 +71,17 @@ export default function MissionsCarousel() {
                         )}
                         <div className="p-8 flex-1 flex flex-col">
                             <h3 className="text-xl font-black text-white tracking-tight line-clamp-1 mb-2 uppercase group-hover:text-primary transition-colors">{mission.title}</h3>
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/60 mb-6">
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary brightness-125 mb-6">
                                 <MapPin className="h-3.5 w-3.5" />
                                 <span className="truncate">{mission.location_name}</span>
                             </div>
 
-                            <p className="text-white/40 text-[13px] font-medium leading-relaxed italic line-clamp-2 mb-8">
+                            <p className="text-white/70 text-[13px] font-medium leading-relaxed italic line-clamp-2 mb-8">
                                 "{mission.description}"
                             </p>
 
                             <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/60">
                                     <Calendar className="h-3.5 w-3.5" />
                                     {new Date(mission.start_time).toLocaleDateString()}
                                 </div>

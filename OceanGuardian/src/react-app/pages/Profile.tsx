@@ -43,6 +43,8 @@ export default function Profile() {
 
   const isOwnProfile = !id || (user && user.id === id);
 
+  // No specific contrast issue here anymore after previous edits, just ensuring consistency.
+
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
@@ -278,7 +280,7 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* Profile Header */}
-      <div className="bg-secondary/40 border border-white/10 rounded-[3rem] overflow-hidden relative group shadow-2xl">
+      <div className="bg-secondary/90 border border-white/10 rounded-[3rem] overflow-hidden relative group shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]">
         <CardContent className="p-12 relative z-10">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="relative">
@@ -337,8 +339,8 @@ export default function Profile() {
 
               <div className="max-w-md w-full">
                 <div className="flex justify-between items-end text-[10px] mb-3 font-black uppercase tracking-[0.2em]">
-                  <span className="text-white/30">Guardian Progress</span>
-                  <span className="text-primary font-black">
+                  <span className="text-white/60">Guardian Progress</span>
+                  <span className="text-primary brightness-125 font-black">
                     {xpInLevel.toLocaleString()} / {xpRequired.toLocaleString()} XP
                   </span>
                 </div>
@@ -355,11 +357,11 @@ export default function Profile() {
       {isOwnProfile ? (
         <Tabs defaultValue="stats" className="mt-12">
           <TabsList className="bg-black/20 p-2 rounded-[2rem] h-18 w-full mb-12 border border-white/5">
-            <TabsTrigger value="stats" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Stats</TabsTrigger>
-            <TabsTrigger value="streak" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Streak</TabsTrigger>
-            <TabsTrigger value="badges" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Badges</TabsTrigger>
-            <TabsTrigger value="perks" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Perks</TabsTrigger>
-            <TabsTrigger value="activity" className="rounded-[1.5rem] h-14 text-white/40 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Activity</TabsTrigger>
+            <TabsTrigger value="stats" className="rounded-[1.5rem] h-14 text-white/60 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Stats</TabsTrigger>
+            <TabsTrigger value="streak" className="rounded-[1.5rem] h-14 text-white/60 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Streak</TabsTrigger>
+            <TabsTrigger value="badges" className="rounded-[1.5rem] h-14 text-white/60 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Badges</TabsTrigger>
+            <TabsTrigger value="perks" className="rounded-[1.5rem] h-14 text-white/60 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Perks</TabsTrigger>
+            <TabsTrigger value="activity" className="rounded-[1.5rem] h-14 text-white/60 font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/30 transition-all flex-1">Activity</TabsTrigger>
           </TabsList>
 
           {/* ... (Existing TabsContent for streak, stats, badges, perks, activity - copy from original) */}
@@ -382,10 +384,10 @@ export default function Profile() {
           {/* Stats Tab */}
           <TabsContent value="stats" className="space-y-12 pt-4">
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <Card variant="glass" className="border-white/5 pt-8">
+              <Card variant="solid" className="pt-8">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Total XP</CardTitle>
-                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Total XP</CardTitle>
+                  <TrendingUp className="h-5 w-5 text-primary brightness-125" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-black text-white tracking-tighter">{xp.toLocaleString()}</div>
@@ -393,36 +395,36 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              <Card variant="glass" className="border-white/5 pt-8">
+              <Card variant="solid" className="pt-8">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Sightings</CardTitle>
-                  <Camera className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Sightings</CardTitle>
+                  <Camera className="h-5 w-5 text-primary brightness-125" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-black text-white tracking-tighter">{profile?.total_sightings || 0}</div>
-                  <p className="text-[10px] text-white/30 font-black mt-2 uppercase tracking-widest">Marine observations</p>
+                  <p className="text-[10px] text-white/60 font-black mt-2 uppercase tracking-widest">Marine observations</p>
                 </CardContent>
               </Card>
 
-              <Card variant="glass" className="border-white/5 pt-8">
+              <Card variant="solid" className="pt-8">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Missions</CardTitle>
-                  <Target className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Missions</CardTitle>
+                  <Target className="h-5 w-5 text-primary brightness-125" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-black text-white tracking-tighter">{profile?.total_missions || 0}</div>
-                  <p className="text-[10px] text-white/30 font-black mt-2 uppercase tracking-widest">Cleanups joined</p>
+                  <p className="text-[10px] text-white/60 font-black mt-2 uppercase tracking-widest">Cleanups joined</p>
                 </CardContent>
               </Card>
 
-              <Card variant="glass" className="border-white/5 pt-8">
+              <Card variant="solid" className="pt-8">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Badges</CardTitle>
-                  <Award className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Badges</CardTitle>
+                  <Award className="h-5 w-5 text-primary brightness-125" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-black text-white tracking-tighter">{badges.length} / {allBadges.length}</div>
-                  <p className="text-[10px] text-white/30 font-black mt-2 uppercase tracking-widest">Achievements earned</p>
+                  <p className="text-[10px] text-white/60 font-black mt-2 uppercase tracking-widest">Achievements earned</p>
                 </CardContent>
               </Card>
             </div>
@@ -466,7 +468,7 @@ export default function Profile() {
 
           {/* Badges Tab */}
           <TabsContent value="badges" className="pt-4">
-            <Card variant="glass" className="border-white/5">
+            <Card variant="solid">
               <CardHeader className="pb-10">
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -503,7 +505,7 @@ export default function Profile() {
                                 className={`
                                     relative flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border transition-all duration-500 cursor-default group/badge
                                     ${isEarned
-                                    ? `glass-liquid !bg-white/5 border-white/10 hover:!bg-white/10 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20`
+                                    ? "bg-white/5 border-white/10 hover:bg-white/10 hover:scale-105 transition-all shadow-xl"
                                     : "border-dashed border-white/5 bg-black/20 opacity-30 grayscale"
                                   }
                                 `}
@@ -550,7 +552,7 @@ export default function Profile() {
 
           {/* Perks Tab */}
           <TabsContent value="perks" className="pt-4">
-            <Card variant="glass" className="border-white/5">
+            <Card variant="solid">
               <CardHeader className="pb-10">
                 <CardTitle className="flex items-center gap-4">
                   <div className="p-3 rounded-2xl bg-white/5 border border-white/5">

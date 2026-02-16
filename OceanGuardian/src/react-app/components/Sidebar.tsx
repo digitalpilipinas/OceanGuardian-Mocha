@@ -26,9 +26,9 @@ export default function Sidebar() {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-secondary/80 border-r border-white/5 px-4 py-8 gap-10 relative overflow-hidden shadow-2xl">
+        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-secondary border-r border-white/5 px-4 py-8 gap-10 relative overflow-hidden shadow-2xl">
             {/* Subtle Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/10 pointer-events-none" />
 
             {/* Logo */}
             <Link to="/dashboard" className="flex items-center gap-3 px-2 relative z-10 transition-transform hover:scale-105 active:scale-95">
@@ -53,11 +53,11 @@ export default function Sidebar() {
                                 "flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-300 group hover:translate-x-1",
                                 active
                                     ? "bg-primary/20 text-white shadow-[0_0_20px_rgba(3,169,244,0.15)] ring-1 ring-primary/20"
-                                    : "text-white/50 hover:bg-white/5 hover:text-white"
+                                    : "text-white/60 hover:bg-white/5 hover:text-white"
                             )}
                         >
-                            <Icon className={cn("w-5 h-5 transition-transform duration-300 group-hover:scale-110", active ? "text-primary" : "text-white/30")} />
-                            <span className={cn("font-black tracking-tight uppercase text-[10px]", active ? "text-white" : "text-white/50")}>{item.label}</span>
+                            <Icon className={cn("w-5 h-5 transition-transform duration-300 group-hover:scale-110", active ? "text-primary brightness-125" : "text-white/40")} />
+                            <span className={cn("font-black tracking-tight uppercase text-[10px]", active ? "text-white" : "text-white/60")}>{item.label}</span>
                         </Link>
                     );
                 })}

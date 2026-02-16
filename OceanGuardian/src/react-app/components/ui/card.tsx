@@ -9,13 +9,14 @@ function Card({
   ...props
 }: React.ComponentProps<"div"> & {
   size?: "default" | "sm",
-  variant?: "default" | "neomorph" | "glass" | "glass-interactive"
+  variant?: "default" | "neomorph" | "glass" | "glass-interactive" | "solid"
 }) {
   const variantClasses = {
     default: "ring-foreground/10 bg-card text-card-foreground ring-1",
     neomorph: "neo-flat bg-card text-card-foreground border-none",
-    glass: "glass-liquid text-card-foreground border-none",
-    "glass-interactive": "glass-liquid-hover text-card-foreground border-none"
+    glass: "glass-liquid text-card-foreground border border-white/5",
+    "glass-interactive": "glass-liquid-hover text-card-foreground border border-white/5",
+    solid: "bg-secondary/90 text-card-foreground border-white/5 shadow-2xl"
   }
 
   return (

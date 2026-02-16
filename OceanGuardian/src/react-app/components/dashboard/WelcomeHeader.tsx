@@ -18,17 +18,17 @@ export default function WelcomeHeader() {
                     <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-tight uppercase">
                         Welcome back, <span className="text-accent italic">{profile.username || "Guardian"}</span>
                     </h1>
-                    <p className="text-white/40 mt-2 text-sm font-black uppercase tracking-[0.3em] italic">
+                    <p className="text-white/60 mt-2 text-sm font-black uppercase tracking-[0.3em] italic">
                         Your ocean conservation journey continues today.
                     </p>
                 </div>
-                <div className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] bg-secondary/80 border border-white/5 shadow-2xl group">
+                <div className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] bg-secondary border border-white/5 shadow-2xl group">
                     <Award className="h-8 w-8 text-accent group-hover:scale-110 transition-transform" />
                     <span className="font-black text-3xl text-white tracking-tighter italic">Lvl {profile.level || 1}</span>
                 </div>
             </div>
 
-            <div className="bg-secondary/40 border border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+            <div className="bg-secondary border border-white/10 rounded-[2.5rem] p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden group">
                 {/* Background decorative elements */}
                 <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-primary/20 transition-colors" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
@@ -40,7 +40,7 @@ export default function WelcomeHeader() {
                             <span className="text-4xl tracking-tighter italic">{current.toLocaleString()}</span>
                             <span className="text-white/20 text-[10px] mt-1">XP Points</span>
                         </span>
-                        <span className="text-white/40 text-[10px] font-black bg-white/5 px-4 py-2 rounded-full border border-white/5 uppercase tracking-widest">
+                        <span className="text-white/60 text-[10px] font-black bg-white/5 px-4 py-2 rounded-full border border-white/5 uppercase tracking-widest">
                             {(required - current).toLocaleString()} XP TO LEVEL {(profile.level || 1) + 1}
                         </span>
                     </div>

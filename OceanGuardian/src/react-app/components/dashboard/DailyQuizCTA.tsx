@@ -32,7 +32,7 @@ export default function DailyQuizCTA() {
         <div className={cn(
             "p-8 rounded-[2.5rem] border shadow-2xl relative overflow-hidden group transition-all duration-500",
             completed
-                ? "bg-secondary/60 border-white/5"
+                ? "bg-secondary/90 border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
                 : "bg-gradient-to-br from-primary via-primary to-accent border-white/10"
         )}>
             {/* Background decorative elements */}

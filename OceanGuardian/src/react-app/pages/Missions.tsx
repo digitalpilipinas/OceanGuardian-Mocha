@@ -95,7 +95,7 @@ export default function Missions() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {missions.map((mission) => (
-              <div key={mission.id} className="flex flex-col h-full group/mission border border-white/10 bg-secondary/40 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02]">
+              <div key={mission.id} className="flex flex-col h-full group/mission border border-white/10 bg-secondary rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] transition-all hover:scale-[1.02]">
                 {mission.image_url && (
                   <div className="relative h-60 w-full overflow-hidden">
                     <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/mission:scale-110" />
@@ -113,17 +113,17 @@ export default function Missions() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 px-8">
-                  <p className="text-sm text-white/50 leading-relaxed font-medium line-clamp-3 mb-8 bg-black/20 p-5 rounded-3xl border border-white/5 italic">
+                  <p className="text-sm text-white/70 leading-relaxed font-medium line-clamp-3 mb-8 bg-black/20 p-5 rounded-3xl border border-white/5 italic">
                     {mission.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                  <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
                     <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
+                      <Calendar className="h-3.5 w-3.5 text-primary brightness-125" />
                       {new Date(mission.start_time).toLocaleDateString()}
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5">
-                      <Users className="h-3.5 w-3.5 text-primary" />
+                      <Users className="h-3.5 w-3.5 text-primary brightness-125" />
                       {mission.max_participants ? `Max ${mission.max_participants}` : "Open"}
                     </div>
                   </div>

@@ -25,7 +25,7 @@ export default function Home() {
           <div className="lg:col-span-2 space-y-12">
 
             {/* Live Map Preview */}
-            <div className="p-2 rounded-[2.5rem] bg-secondary/40 border border-white/10 shadow-2xl overflow-hidden">
+            <div className="p-2 rounded-[2.5rem] bg-secondary border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden">
               <div className="h-[500px] rounded-[2.2rem] overflow-hidden border border-white/5 shadow-inner">
                 <MapPreview />
               </div>
@@ -60,7 +60,7 @@ export default function Home() {
                 </div>
                 Guardian <span className="text-primary italic">Pulse</span>
               </h2>
-              <div className="h-[600px] border border-white/10 bg-secondary/40 overflow-hidden rounded-[2.5rem]">
+              <div className="h-[600px] border border-white/10 bg-secondary overflow-hidden rounded-[2.5rem] shadow-2xl">
                 <CardContent className="p-0 h-full">
                   <ActivityFeed />
                 </CardContent>
@@ -220,7 +220,7 @@ export default function Home() {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-24 bg-secondary/80 border border-white/5 rounded-[4rem] relative overflow-hidden shadow-2xl">
+      <section className="text-center py-24 bg-secondary border border-white/5 rounded-[4rem] relative overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]">
         <motion.div
           animate={{
             rotate: 360,

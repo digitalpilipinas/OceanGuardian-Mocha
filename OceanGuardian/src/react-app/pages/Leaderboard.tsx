@@ -198,12 +198,12 @@ export default function Leaderboard() {
                                 <>
                                     <Podium top3={top3} />
 
-                                    <div className="bg-secondary/40 border border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
+                                    <div className="bg-secondary border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] rounded-[2.5rem] overflow-hidden">
                                         <CardHeader className="border-b border-white/5 pb-6">
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-1">Rankings</CardTitle>
-                                                    <CardDescription className="text-[10px] font-black uppercase tracking-widest text-white/30">
+                                                    <CardDescription className="text-[10px] font-black uppercase tracking-widest text-white/60">
                                                         Top 50 • {activeTab === 'streak' ? 'Sorted by Streak Days' : 'Sorted by XP'}
                                                     </CardDescription>
                                                 </div>

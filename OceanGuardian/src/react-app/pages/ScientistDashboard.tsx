@@ -122,7 +122,7 @@ export default function ScientistDashboard() {
             </div>
 
             {/* Export Section */}
-            <Card variant="glass" className="relative overflow-hidden group">
+            <Card variant="solid" className="relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <CardContent className="p-8 relative z-10 flex flex-col lg:flex-row items-center gap-8">
                     <div className="flex-1">

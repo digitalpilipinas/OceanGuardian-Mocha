@@ -4,81 +4,36 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-    --card: 210 20% 98%;
-    --card-foreground: 222 47% 11%;
-    --popover: 210 20% 98%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 200 100% 37%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 200 100% 98%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 15 100% 60%;
-    /* Coral Accent */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 12 86% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 200 100% 37%;
-    --radius: 1rem;
-    --chart-1: 200 100% 37%;
-    --chart-2: 15 100% 60%;
-    --chart-3: 340 75% 55%;
-    --chart-4: 40 45% 82%;
-    --chart-5: 200 80% 50%;
-    --sidebar: 210 20% 99%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 200 100% 37%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 200 100% 37%;
-
-    /* Neomorphic Shadow Variables Light - Subtle & Clean */
-    --neo-shadow-light: -5px -5px 10px #ffffff;
-    --neo-shadow-dark: 5px 5px 10px #e2e8f0;
-    --neo-inset-light: inset -2px -2px 5px #ffffff;
-    --neo-inset-dark: inset 2px 2px 5px #e2e8f0;
-
-    /* Liquid Glass Variables Light */
-    --glass-bg: rgba(255, 255, 255, 0.4);
-    --glass-border: rgba(255, 255, 255, 0.6);
-    --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
-  }
-
-  .dark {
-    --background: 222 47% 8%;
+    /* Shallow Ocean / Base Theme - Much more blue-tinted than before */
+    --background: 222 47% 10%;
     --foreground: 210 20% 98%;
-    --card: 222 47% 12%;
+    --card: 222 47% 14%;
     --card-foreground: 210 20% 98%;
-    --popover: 222 47% 8%;
+    --popover: 222 47% 10%;
     --popover-foreground: 210 20% 98%;
     --primary: 199 89% 48%;
-    /* Deep Ocean Primary */
+    /* Ocean Blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 6%;
-    /* Even deeper for solid feel */
+    --secondary: 222 47% 8%;
     --secondary-foreground: 210 20% 98%;
-    --muted: 217 33% 17%;
+    --muted: 217 33% 20%;
     --muted-foreground: 215 25% 65%;
     --accent: 12 100% 63%;
-    /* Vibrant Coral Accent */
+    /* Vibrant Coral */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 20% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
     --ring: 199 89% 48%;
-    --chart-1: 220 70% 50%;
+    --radius: 1.5rem;
+
+    --chart-1: 199 89% 48%;
     --chart-2: 12 100% 63%;
     --chart-3: 340 75% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
     --sidebar: 222 47% 6%;
     --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 199 89% 48%;
@@ -88,16 +43,59 @@
     --sidebar-border: 217 33% 20%;
     --sidebar-ring: 199 89% 48%;
 
-    /* Neomorphic Shadow Variables Dark - Deep Ocean Crisp & Shadowy */
+    /* Neomorphic Shadow Variables - Deepened for better grounding */
+    --neo-shadow-light: -2px -2px 8px rgba(255, 255, 255, 0.02);
+    --neo-shadow-dark: 10px 10px 20px rgba(0, 0, 0, 0.5);
+    --neo-inset-light: inset -1px -1px 4px rgba(255, 255, 255, 0.02);
+    --neo-inset-dark: inset 4px 4px 10px rgba(0, 0, 0, 0.5);
+
+    /* Liquid Glass Variables - Deep Ocean Tinted */
+    --glass-bg: rgba(15, 23, 42, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+  }
+
+  .dark {
+    /* Deep Ocean Theme - Even deeper foundations */
+    --background: 222 47% 4%;
+    --foreground: 210 20% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 20% 98%;
+    --popover: 222 47% 4%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 47% 6%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 25% 65%;
+    --accent: 12 100% 63%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 217 33% 15%;
+    --input: 217 33% 15%;
+    --ring: 199 89% 48%;
+
+    --sidebar: 222 47% 3%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-ring: 199 89% 48%;
+
+    /* Neomorphic Shadow Variables Dark - Deep Ocean */
     --neo-shadow-light: -2px -2px 8px rgba(255, 255, 255, 0.01);
-    --neo-shadow-dark: 10px 10px 20px rgba(0, 0, 0, 0.6);
+    --neo-shadow-dark: 15px 15px 30px rgba(0, 0, 0, 0.8);
     --neo-inset-light: inset -1px -1px 4px rgba(255, 255, 255, 0.01);
-    --neo-inset-dark: inset 4px 4px 10px rgba(0, 0, 0, 0.6);
+    --neo-inset-dark: inset 6px 6px 15px rgba(0, 0, 0, 0.8);
 
     /* Liquid Glass Variables Dark - Deep Ocean */
-    --glass-bg: rgba(15, 23, 42, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.04);
-    --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 0, 0, 0) 100%);
+    --glass-bg: rgba(5, 10, 20, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0) 100%);
   }
 }
 
@@ -120,12 +118,12 @@
 
   .glass-liquid {
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--glass-border);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
   }
 
   .glass-liquid::before {

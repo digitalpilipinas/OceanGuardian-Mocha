@@ -217,7 +217,8 @@ export default function DailyQuiz() {
                 </div>
             </div>
 
-            <div className="bg-secondary/60 border border-white/5 rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden group">
+            <div className="bg-secondary/90 border border-white/10 rounded-[3.5rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
                     <Brain className="h-40 w-40 text-primary" />
                 </div>

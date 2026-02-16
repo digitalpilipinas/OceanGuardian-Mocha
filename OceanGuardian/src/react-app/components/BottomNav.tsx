@@ -14,7 +14,7 @@ export default function BottomNav() {
                     to="/dashboard"
                     className={cn(
                         "flex flex-col items-center gap-1.5 transition-all",
-                        isActive("/dashboard") ? "text-primary scale-110" : "text-white/50 hover:text-white/80"
+                        isActive("/dashboard") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
                     <LayoutDashboard className="w-6 h-6" />
@@ -25,7 +25,7 @@ export default function BottomNav() {
                     to="/map"
                     className={cn(
                         "flex flex-col items-center gap-1.5 transition-all",
-                        isActive("/map") ? "text-primary scale-110" : "text-white/50 hover:text-white/80"
+                        isActive("/map") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
                     <Map className="w-6 h-6" />
@@ -47,7 +47,7 @@ export default function BottomNav() {
                     to="/missions"
                     className={cn(
                         "flex flex-col items-center gap-1.5 transition-all",
-                        isActive("/missions") ? "text-primary scale-110" : "text-white/50 hover:text-white/80"
+                        isActive("/missions") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
                     <Target className="w-6 h-6" />
@@ -58,7 +58,7 @@ export default function BottomNav() {
                     to="/profile"
                     className={cn(
                         "flex flex-col items-center gap-1.5 transition-all",
-                        isActive("/profile") ? "text-primary scale-110" : "text-white/50 hover:text-white/80"
+                        isActive("/profile") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
                     <User className="w-6 h-6" />
