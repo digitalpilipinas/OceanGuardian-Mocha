@@ -120,7 +120,7 @@ const LandingPage = () => {
                     <Link to="/login">
                         <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/5 rounded-full px-6">Log In</Button>
                     </Link>
-                    <Link to="/dashboard">
+                    <Link to="/login">
                         <Button className="bg-white/10 hover:bg-white/20 hover:scale-105 text-white shadow-[0_0_20px_rgba(6,182,212,0.2)] rounded-full px-6 border border-white/20 backdrop-blur-md transition-all">
                             Get Started
                         </Button>
@@ -165,7 +165,7 @@ const LandingPage = () => {
                         </motion.p>
 
                         <motion.div variants={fadeIn} className="flex flex-wrap gap-5">
-                            <Link to="/dashboard">
+                            <Link to="/login">
                                 <button className="group relative px-8 py-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-lg shadow-[0_10px_40px_rgba(6,182,212,0.4)] hover:shadow-[0_20px_60px_rgba(6,182,212,0.6)] hover:-translate-y-1 transition-all overflow-hidden">
                                     <span className="relative z-10 flex items-center gap-3">
                                         Start Your Journey
@@ -465,7 +465,7 @@ const LandingPage = () => {
                     <div className="relative z-10">
                         <h2 className="text-3xl md:text-5xl font-bold mb-6 drop-shadow-lg">Ready to Make a Splash?</h2>
                         <p className="text-cyan-100 text-lg mb-8 max-w-2xl mx-auto">Join thousands of Ocean Guardians today and start earning rewards for saving our planet.</p>
-                        <Link to="/signup">
+                        <Link to="/login?mode=signup">
                             <button className="px-12 py-5 bg-white text-blue-900 rounded-full font-extrabold text-lg shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] hover:scale-105 transition-all">
                                 Create Free Account
                             </button>

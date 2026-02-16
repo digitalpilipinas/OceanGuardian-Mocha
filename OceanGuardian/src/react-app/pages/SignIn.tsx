@@ -6,16 +6,23 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/react-app/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { useNavigate, useSearchParams } from "react-router";
+
 type AuthMode = "signin" | "signup";
 
 export default function SignIn() {
+    const [searchParams] = useSearchParams();
+    const initialMode = (searchParams.get("mode") as AuthMode) || "signin";
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [mode, setMode] = useState<AuthMode>("signin");
+    const [mode, setMode] = useState<AuthMode>(initialMode);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
+
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,7 +47,7 @@ export default function SignIn() {
                         ? "Your guardian account is ready."
                         : "You have signed in successfully.",
                 });
-                window.location.href = "/";
+                navigate("/dashboard");
             } else {
                 const data = await res.json();
                 toast({
@@ -69,7 +76,7 @@ export default function SignIn() {
                     title: "Guest Session Started",
                     description: "You're now browsing as a guest.",
                 });
-                window.location.href = "/";
+                navigate("/dashboard");
             } else {
                 toast({
                     title: "Error",
