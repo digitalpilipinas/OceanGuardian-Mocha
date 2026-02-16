@@ -1,25 +1,15 @@
 import path from "path";
-import fs from "fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
-import { mochaPlugins } from "@getmocha/vite-plugins";
 import { VitePWA } from "vite-plugin-pwa";
-
-// Only include auxiliary workers if they exist (Mocha platform environment)
-const emailsConfigPath = "/mocha/emails-service/wrangler.json";
-const auxiliaryWorkers = fs.existsSync(emailsConfigPath)
-	? [{ configPath: emailsConfigPath }]
-	: [];
 
 export default defineConfig({
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	plugins: [
-		...mochaPlugins(process.env as any),
 		react(),
-		cloudflare({
-			auxiliaryWorkers,
-		}),
+		cloudflare(),
+
 		VitePWA({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png"],

@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment secrets
+.dev.vars
+.env
+.env.local
+.env.*.local
+
+# Wrangler
+.wrangler/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local database
+local.db
+*.db-journal
+
+# TypeScript build info
+*.tsbuildinfo

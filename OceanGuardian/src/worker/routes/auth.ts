@@ -134,7 +134,7 @@ auth.post("/api/auth/otp/send", async (c) => {
   console.log(`OTP for ${email}: ${code}`);
 
   // Send OTP email via Resend
-  const resendApiKey = c.env.RESEND_API_KEY || "re_MoS5G6c9_4KJgiEtQ3VWBtSoGbNfUa3fG";
+  const resendApiKey = c.env.RESEND_API_KEY;
   const emailResult = await sendOtpEmail(resendApiKey, email, code);
   if (!emailResult.success) {
     console.error("Failed to send OTP email:", emailResult.error);
