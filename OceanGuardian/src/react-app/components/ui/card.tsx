@@ -5,13 +5,29 @@ import { cn } from "@/react-app/lib/utils"
 function Card({
   className,
   size = "default",
+  variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & {
+  size?: "default" | "sm",
+  variant?: "default" | "neomorph" | "glass" | "glass-interactive"
+}) {
+  const variantClasses = {
+    default: "ring-foreground/10 bg-card text-card-foreground ring-1",
+    neomorph: "neo-flat bg-card text-card-foreground border-none",
+    glass: "glass-liquid text-card-foreground border-none",
+    "glass-interactive": "glass-liquid-hover text-card-foreground border-none"
+  }
+
   return (
     <div
       data-slot="card"
       data-size={size}
-      className={cn("ring-foreground/10 bg-card text-card-foreground gap-6 overflow-hidden rounded-2xl py-6 text-sm ring-1 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 [&>img:first-child]:rounded-t-xl [&>img:last-child]:rounded-b-xl group/card flex flex-col", className)}
+      data-variant={variant}
+      className={cn(
+        "overflow-hidden rounded-2xl py-6 text-sm has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 [&>img:first-child]:rounded-t-xl [&>img:last-child]:rounded-b-xl group/card flex flex-col transition-all duration-300",
+        variantClasses[variant],
+        className
+      )}
       {...props}
     />
   )

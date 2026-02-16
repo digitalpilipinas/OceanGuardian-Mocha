@@ -1,4 +1,5 @@
 import { Flame, Snowflake } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface StreakCardProps {
     streakDays: number;
@@ -7,28 +8,36 @@ interface StreakCardProps {
 
 export default function StreakCard({ streakDays, streakFreezes }: StreakCardProps) {
     return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             {/* Streak Counter */}
-            <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                    <div className="text-3xl font-bold text-orange-400">{streakDays}</div>
-                    <div className="text-xs text-orange-200/60 uppercase tracking-wider font-semibold">Current Streak</div>
+            <motion.div
+                whileHover={{ y: -5 }}
+                className="neo-flat rounded-3xl p-6 flex items-center justify-between group overflow-hidden relative"
+            >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
+                <div className="relative z-10">
+                    <div className="text-4xl font-extrabold text-orange-500">{streakDays}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">Current Streak</div>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                    <Flame className="w-6 h-6 text-orange-400 fill-orange-500/20" />
+                <div className="relative z-10 w-16 h-16 rounded-2xl neo-pressed flex items-center justify-center">
+                    <Flame className="w-8 h-8 text-orange-500 fill-orange-500/10 animate-pulse" />
                 </div>
-            </div>
+            </motion.div>
 
             {/* Freeze Inventory */}
-            <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                    <div className="text-3xl font-bold text-blue-400">{streakFreezes}</div>
-                    <div className="text-xs text-blue-200/60 uppercase tracking-wider font-semibold">Streak Freezes</div>
+            <motion.div
+                whileHover={{ y: -5 }}
+                className="neo-flat rounded-3xl p-6 flex items-center justify-between group overflow-hidden relative"
+            >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
+                <div className="relative z-10">
+                    <div className="text-4xl font-extrabold text-blue-500">{streakFreezes}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">Freezes Left</div>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Snowflake className="w-6 h-6 text-blue-400 fill-blue-500/20" />
+                <div className="relative z-10 w-16 h-16 rounded-2xl neo-pressed flex items-center justify-center">
+                    <Snowflake className="w-8 h-8 text-blue-500 fill-blue-500/10" />
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 }

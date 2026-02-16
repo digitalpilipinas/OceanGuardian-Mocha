@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Check, X, Trophy, ArrowRight, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -209,8 +209,8 @@ export default function DailyQuiz() {
                             key={idx}
                             onClick={() => handleOptionSelect(idx)}
                             className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${selectedOption === idx
-                                    ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
-                                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                                ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
+                                : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                                 }`}
                         >
                             <div className="flex items-center">
@@ -229,8 +229,8 @@ export default function DailyQuiz() {
                         onClick={handleNext}
                         disabled={selectedOption === null || submitting}
                         className={`inline-flex items-center px-6 py-3 rounded-full font-semibold transition-all ${selectedOption === null
-                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
                             }`}
                     >
                         {submitting ? "Submitting..." : (

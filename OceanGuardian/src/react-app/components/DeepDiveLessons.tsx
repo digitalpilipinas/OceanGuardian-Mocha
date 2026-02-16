@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Lock, BookOpen, CheckCircle, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, ArrowRight, Lock, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
 
 // Since I don't have a full LessonView yet, I'll inline a simple view or just list component here first.
 // Let's create the LIST component here, and a separate View if needed, or combine.

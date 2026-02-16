@@ -103,7 +103,7 @@ export default function CoralScan() {
 
                 if (!res.ok) throw new Error("Failed to save report");
 
-                const json = await res.json();
+                await res.json();
                 // If we have an imageKey from analysis, we need to link it.
                 // The analysis endpoint saved it to `coral-analysis/...`. 
                 // The sightings endpoint expects `sightings/...`. 

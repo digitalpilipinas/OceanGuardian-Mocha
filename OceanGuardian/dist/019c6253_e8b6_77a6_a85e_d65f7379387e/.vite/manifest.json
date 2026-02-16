@@ -1,4 +1,16 @@
 {
+  "_maps-l0sNRNKZ.js": {
+    "file": "assets/maps-l0sNRNKZ.js",
+    "name": "maps"
+  },
+  "_ui-l0sNRNKZ.js": {
+    "file": "assets/ui-l0sNRNKZ.js",
+    "name": "ui"
+  },
+  "_vendor-l0sNRNKZ.js": {
+    "file": "assets/vendor-l0sNRNKZ.js",
+    "name": "vendor"
+  },
   "virtual:cloudflare/worker-entry": {
     "file": "index.js",
     "name": "index",

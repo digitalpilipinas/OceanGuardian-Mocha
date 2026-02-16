@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import auth from "./routes/auth";
 import sightings from "./routes/sightings";
 import profiles from "./routes/profiles";
@@ -19,6 +20,19 @@ import dashboard from "./routes/dashboard";
 
 const app = new Hono<{ Bindings: Env }>();
 
+app.use("*", cors());
+app.use("*", async (c, next) => {
+    await next();
+    c.header("X-Frame-Options", "DENY");
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+    c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    c.header(
+        "Content-Security-Policy",
+        "default-src 'self'; connect-src 'self' *; img-src 'self' data: blob: *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+    );
+});
+
 app.route("/", auth);
 app.route("/", sightings);
 app.route("/", profiles);
@@ -28,7 +42,6 @@ app.route("/", missions);
 app.route("/", social);
 app.route("/", leaderboard);
 app.route("/", coral);
-app.route("/", coral);
 app.route("/", learning);
 app.route("/", admin);
 app.route("/", ambassador);
@@ -36,7 +49,6 @@ app.route("/", scientist);
 app.route("/", dashboard);
 
 import comments from "./routes/comments";
-
 app.route("/", comments);
 
 // Removed temporary migration route

@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router";
 import { Waves, Map, Target, User, Plus, LogOut, Globe, Settings, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
 import { useAuth } from "@getmocha/users-service/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import {
@@ -46,9 +47,9 @@ export default function Layout({ children }: LayoutProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-background dark:from-blue-950/20 dark:to-background">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full glass-liquid border-none">
         <div className="container flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl">
             <div className="bg-primary text-primary-foreground p-2 rounded-lg">
@@ -67,7 +68,7 @@ export default function Layout({ children }: LayoutProps) {
                 <Button
                   key={item.path}
                   asChild
-                  variant={isActive(item.path) ? "default" : "ghost"}
+                  variant={isActive(item.path) ? "neomorph-primary" : "ghost"}
                   size="sm"
                 >
                   <Link to={item.path} className="flex items-center gap-2">
@@ -171,33 +172,46 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="pb-20 md:pb-6"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
       {/* Bottom Navigation (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-around px-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-liquid border-none rounded-t-3xl shadow-2xl">
+        <div className="container flex h-20 items-center justify-around px-2 pb-4">
           {/* Home */}
           <Link
             to="/"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/")
-              ? "text-primary bg-primary/10"
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${isActive("/")
+              ? "text-primary neo-pressed scale-95"
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Waves className="h-5 w-5" />
-            <span className="text-xs font-medium">Home</span>
+            <span className="text-xs font-semibold">Home</span>
           </Link>
 
           {/* Map */}
           <Link
             to="/map"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/map")
-              ? "text-primary bg-primary/10"
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${isActive("/map")
+              ? "text-primary neo-pressed scale-95"
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Map className="h-5 w-5" />
-            <span className="text-xs font-medium">Map</span>
+            <span className="text-xs font-semibold">Map</span>
           </Link>
 
           {/* Center Report Button */}
@@ -211,37 +225,37 @@ export default function Layout({ children }: LayoutProps) {
           {/* Missions */}
           <Link
             to="/missions"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/missions")
-              ? "text-primary bg-primary/10"
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${isActive("/missions")
+              ? "text-primary neo-pressed scale-95"
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Target className="h-5 w-5" />
-            <span className="text-xs font-medium">Missions</span>
+            <span className="text-xs font-semibold">Missions</span>
           </Link>
 
           {/* Leaderboard */}
           <Link
             to="/leaderboard"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/leaderboard")
-              ? "text-primary bg-primary/10"
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${isActive("/leaderboard")
+              ? "text-primary neo-pressed scale-95"
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <Globe className="h-5 w-5" />
-            <span className="text-xs font-medium">Rank</span>
+            <span className="text-xs font-semibold">Rank</span>
           </Link>
 
           {/* Profile */}
           <Link
             to="/profile"
-            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${isActive("/profile")
-              ? "text-primary bg-primary/10"
+            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${isActive("/profile")
+              ? "text-primary neo-pressed scale-95"
               : "text-muted-foreground hover:text-foreground"
               }`}
           >
             <User className="h-5 w-5" />
-            <span className="text-xs font-medium">Profile</span>
+            <span className="text-xs font-semibold">Profile</span>
           </Link>
         </div>
       </nav>

@@ -1,4 +1,5 @@
 import { Waves, Map, Award, TrendingUp } from "lucide-react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import ActivityFeed from "@/react-app/components/ActivityFeed";
@@ -58,9 +59,26 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* Hero Section */}
-      <section className="text-center py-12 md:py-20">
-        <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-6">
-          <Waves className="h-12 w-12 text-primary" />
+      <section className="text-center py-12 md:py-20 relative overflow-hidden">
+        <motion.div
+          animate={{
+            rotate: [0, 5, -5, 0],
+            scale: [1, 1.05, 0.95, 1]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"
+        />
+        <motion.div
+          animate={{
+            rotate: [0, -5, 5, 0],
+            scale: [1, 0.95, 1.05, 1]
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 rounded-full blur-3xl pointer-events-none"
+        />
+
+        <div className="inline-flex items-center justify-center p-4 neo-flat rounded-3xl mb-8">
+          <Waves className="h-14 w-14 text-primary animate-liquid" />
         </div>
         <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
           Welcome to OceanGuardian
@@ -72,14 +90,14 @@ export default function Home() {
           Transform beach walks into heroic conservation quests. Log debris, track coral health,
           earn badges, and help protect our oceans—one sighting at a time.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="text-lg px-8" asChild>
+        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <Button size="lg" variant="neomorph-primary" className="text-lg px-10 h-14" asChild>
             <a href="/map">
               <Map className="mr-2 h-5 w-5" />
               Explore Map
             </a>
           </Button>
-          <Button size="lg" variant="outline" className="text-lg px-8">
+          <Button size="lg" variant="neomorph" className="text-lg px-10 h-14">
             Get Started
           </Button>
         </div>
@@ -88,42 +106,48 @@ export default function Home() {
       {/* Quick Stats & Activity Feed */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card variant="neomorph">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sightings</CardTitle>
-                <Map className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Total Sightings</CardTitle>
+                <div className="p-2 neo-pressed rounded-lg">
+                  <Map className="h-4 w-4 text-primary" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">2,847</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold">2,847</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   <TrendingUp className="inline h-3 w-3 text-secondary mr-1" />
                   +12% from last week
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card variant="neomorph">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Missions</CardTitle>
-                <Award className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Active Missions</CardTitle>
+                <div className="p-2 neo-pressed rounded-lg">
+                  <Award className="h-4 w-4 text-primary" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold">12</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   Join cleanup missions near you
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card variant="neomorph">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ocean Guardians</CardTitle>
-                <Waves className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Ocean Guardians</CardTitle>
+                <div className="p-2 neo-pressed rounded-lg">
+                  <Waves className="h-4 w-4 text-primary" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">1,243</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold">1,243</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   Community members making an impact
                 </p>
               </CardContent>
@@ -193,12 +217,17 @@ export default function Home() {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-12 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl">
-        <h2 className="text-3xl font-bold mb-4">Ready to Make a Difference?</h2>
-        <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+      <section className="text-center py-16 glass-liquid border-none rounded-3xl relative overflow-hidden">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-32 -left-32 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none"
+        />
+        <h2 className="text-4xl font-bold mb-4 relative z-10">Ready to Make a Difference?</h2>
+        <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto relative z-10">
           Join thousands of ocean guardians protecting marine life and cleaning our beaches
         </p>
-        <Button size="lg" className="text-lg px-8">
+        <Button size="lg" variant="neomorph-primary" className="text-xl px-12 h-16 relative z-10">
           Sign Up with Google
         </Button>
       </section>

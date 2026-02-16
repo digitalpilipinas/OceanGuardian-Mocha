@@ -59,6 +59,10 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      boxShadow: {
+        "neo-flat": "var(--neo-shadow-light), var(--neo-shadow-dark)",
+        "neo-pressed": "var(--neo-inset-light), var(--neo-inset-dark)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -74,10 +78,21 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "liquid-sway": {
+          "0%, 100%": { transform: "translateX(0) translateY(0) rotate(0deg)" },
+          "33%": { transform: "translateX(5px) translateY(-5px) rotate(1deg)" },
+          "66%": { transform: "translateX(-5px) translateY(5px) rotate(-1deg)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "liquid": "liquid-sway 8s ease-in-out infinite",
+        "float": "float 4s ease-in-out infinite",
       },
     },
   },

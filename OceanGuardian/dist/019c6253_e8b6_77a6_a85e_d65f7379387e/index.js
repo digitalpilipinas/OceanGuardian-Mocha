@@ -2290,6 +2290,81 @@ var Hono2 = class extends Hono$1 {
     });
   }
 };
+var cors = (options) => {
+  const defaults = {
+    origin: "*",
+    allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"],
+    allowHeaders: [],
+    exposeHeaders: []
+  };
+  const opts = {
+    ...defaults,
+    ...options
+  };
+  const findAllowOrigin = ((optsOrigin) => {
+    if (typeof optsOrigin === "string") {
+      if (optsOrigin === "*") {
+        return () => optsOrigin;
+      } else {
+        return (origin) => optsOrigin === origin ? origin : null;
+      }
+    } else if (typeof optsOrigin === "function") {
+      return optsOrigin;
+    } else {
+      return (origin) => optsOrigin.includes(origin) ? origin : null;
+    }
+  })(opts.origin);
+  return async function cors2(c, next) {
+    function set(key, value) {
+      c.res.headers.set(key, value);
+    }
+    const allowOrigin = findAllowOrigin(c.req.header("origin") || "", c);
+    if (allowOrigin) {
+      set("Access-Control-Allow-Origin", allowOrigin);
+    }
+    if (opts.origin !== "*") {
+      const existingVary = c.req.header("Vary");
+      if (existingVary) {
+        set("Vary", existingVary);
+      } else {
+        set("Vary", "Origin");
+      }
+    }
+    if (opts.credentials) {
+      set("Access-Control-Allow-Credentials", "true");
+    }
+    if (opts.exposeHeaders?.length) {
+      set("Access-Control-Expose-Headers", opts.exposeHeaders.join(","));
+    }
+    if (c.req.method === "OPTIONS") {
+      if (opts.maxAge != null) {
+        set("Access-Control-Max-Age", opts.maxAge.toString());
+      }
+      if (opts.allowMethods?.length) {
+        set("Access-Control-Allow-Methods", opts.allowMethods.join(","));
+      }
+      let headers = opts.allowHeaders;
+      if (!headers?.length) {
+        const requestHeaders = c.req.header("Access-Control-Request-Headers");
+        if (requestHeaders) {
+          headers = requestHeaders.split(/\s*,\s*/);
+        }
+      }
+      if (headers?.length) {
+        set("Access-Control-Allow-Headers", headers.join(","));
+        c.res.headers.append("Vary", "Access-Control-Request-Headers");
+      }
+      c.res.headers.delete("Content-Length");
+      c.res.headers.delete("Content-Type");
+      return new Response(null, {
+        headers: c.res.headers,
+        status: 204,
+        statusText: "No Content"
+      });
+    }
+    await next();
+  };
+};
 var validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/;
 var validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/;
 var parse = (cookie, name) => {
@@ -5601,6 +5676,59 @@ ZodTuple.create = (schemas, params) => {
     ...processCreateParams(params)
   });
 };
+class ZodRecord extends ZodType {
+  get keySchema() {
+    return this._def.keyType;
+  }
+  get valueSchema() {
+    return this._def.valueType;
+  }
+  _parse(input) {
+    const { status, ctx } = this._processInputParams(input);
+    if (ctx.parsedType !== ZodParsedType.object) {
+      addIssueToContext(ctx, {
+        code: ZodIssueCode.invalid_type,
+        expected: ZodParsedType.object,
+        received: ctx.parsedType
+      });
+      return INVALID;
+    }
+    const pairs = [];
+    const keyType = this._def.keyType;
+    const valueType = this._def.valueType;
+    for (const key in ctx.data) {
+      pairs.push({
+        key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, key)),
+        value: valueType._parse(new ParseInputLazyPath(ctx, ctx.data[key], ctx.path, key)),
+        alwaysSet: key in ctx.data
+      });
+    }
+    if (ctx.common.async) {
+      return ParseStatus.mergeObjectAsync(status, pairs);
+    } else {
+      return ParseStatus.mergeObjectSync(status, pairs);
+    }
+  }
+  get element() {
+    return this._def.valueType;
+  }
+  static create(first, second, third) {
+    if (second instanceof ZodType) {
+      return new ZodRecord({
+        keyType: first,
+        valueType: second,
+        typeName: ZodFirstPartyTypeKind.ZodRecord,
+        ...processCreateParams(third)
+      });
+    }
+    return new ZodRecord({
+      keyType: ZodString.create(),
+      valueType: first,
+      typeName: ZodFirstPartyTypeKind.ZodRecord,
+      ...processCreateParams(second)
+    });
+  }
+}
 class ZodMap extends ZodType {
   get keySchema() {
     return this._def.keyType;
@@ -6342,17 +6470,18 @@ var ZodFirstPartyTypeKind;
 const stringType = ZodString.create;
 const numberType = ZodNumber.create;
 ZodNever.create;
-ZodArray.create;
+const arrayType = ZodArray.create;
 const objectType = ZodObject.create;
 ZodUnion.create;
 ZodIntersection.create;
 ZodTuple.create;
+const recordType = ZodRecord.create;
 const enumType = ZodEnum.create;
 ZodPromise.create;
 ZodOptional.create;
 ZodNullable.create;
 const UserRoleSchema = enumType(["guest", "player", "ambassador", "scientist", "admin"]);
-objectType({
+const UserProfileSchema = objectType({
   id: stringType(),
   username: stringType().nullable(),
   avatar_url: stringType().nullable(),
@@ -6370,6 +6499,9 @@ objectType({
   notifications_enabled: numberType().int(),
   leaderboard_visible: numberType().int(),
   theme: stringType(),
+  region: stringType().nullable().optional(),
+  country: stringType().nullable().optional(),
+  is_anonymous: numberType().int().optional().default(0),
   created_at: stringType(),
   last_active: stringType()
 });
@@ -6385,7 +6517,9 @@ const CreateSightingSchema = objectType({
   address: stringType().optional(),
   bleach_percent: numberType().min(0).max(100).optional(),
   water_temp: numberType().optional(),
-  depth: numberType().min(0).optional()
+  depth: numberType().min(0).optional(),
+  image_key: stringType().optional(),
+  ai_analysis: stringType().optional()
 });
 objectType({
   id: numberType(),
@@ -6463,7 +6597,103 @@ function calculateLevel(xp) {
   }
   return Math.min(level, 50);
 }
-const app$4 = new Hono2();
+const MissionStatusSchema = enumType(["upcoming", "active", "completed", "cancelled"]);
+const MissionDifficultySchema = numberType().int().min(1).max(5);
+objectType({
+  id: numberType(),
+  title: stringType(),
+  description: stringType(),
+  location_name: stringType(),
+  latitude: numberType(),
+  longitude: numberType(),
+  start_time: stringType(),
+  end_time: stringType(),
+  organizer_id: stringType(),
+  difficulty: MissionDifficultySchema,
+  max_participants: numberType().nullable(),
+  status: MissionStatusSchema,
+  image_url: stringType().nullable(),
+  created_at: stringType(),
+  updated_at: stringType()
+});
+const CreateMissionSchema = objectType({
+  title: stringType().min(3).max(100),
+  description: stringType().min(10).max(1e3),
+  location_name: stringType().min(3).max(100),
+  latitude: numberType().min(-90).max(90),
+  longitude: numberType().min(-180).max(180),
+  start_time: stringType().datetime(),
+  end_time: stringType().datetime(),
+  difficulty: MissionDifficultySchema,
+  max_participants: numberType().int().min(1).optional(),
+  image_url: stringType().url().optional()
+});
+const MissionParticipantStatusSchema = enumType(["rsvp", "checked_in", "cancelled"]);
+objectType({
+  mission_id: numberType(),
+  user_id: stringType(),
+  status: MissionParticipantStatusSchema,
+  checked_in_at: stringType().nullable(),
+  xp_awarded: numberType(),
+  created_at: stringType(),
+  // Join fields
+  username: stringType().optional(),
+  avatar_url: stringType().nullable().optional()
+});
+objectType({
+  id: numberType(),
+  mission_id: numberType(),
+  user_id: stringType(),
+  message: stringType(),
+  created_at: stringType(),
+  // Join fields
+  username: stringType().optional(),
+  avatar_url: stringType().nullable().optional()
+});
+objectType({
+  mission_id: numberType(),
+  total_trash_weight: numberType().min(0),
+  trash_bags_count: numberType().int().min(0),
+  participants_count: numberType().int().min(0),
+  duration_minutes: numberType().int().min(0),
+  notes: stringType().nullable(),
+  created_at: stringType()
+});
+const CreateImpactReportSchema = objectType({
+  total_trash_weight: numberType().min(0),
+  trash_bags_count: numberType().int().min(0),
+  participants_count: numberType().int().min(0),
+  duration_minutes: numberType().int().min(0),
+  notes: stringType().optional()
+});
+objectType({
+  total_users: numberType(),
+  total_sightings: numberType(),
+  total_missions: numberType(),
+  active_now: numberType(),
+  users_by_role: recordType(numberType()),
+  // "player": 100, "ambassador": 5
+  recent_signups: arrayType(UserProfileSchema)
+});
+objectType({
+  region: stringType(),
+  total_users: numberType(),
+  total_impact: numberType(),
+  // e.g. trash weight
+  active_missions: numberType(),
+  top_contributors: arrayType(objectType({
+    user_id: stringType(),
+    username: stringType(),
+    xp: numberType()
+  }))
+});
+objectType({
+  format: enumType(["csv", "geojson"]),
+  date_range: enumType(["7d", "30d", "90d", "all"]),
+  type: stringType().optional()
+  // 'coral', 'garbage', 'wildlife', or 'all'
+});
+const app$e = new Hono2();
 const LEVEL_PERKS = [
   { level: 5, title: "Regional Explorer", description: "Unlock regional leaderboards", icon: "🗺️" },
   { level: 10, title: "Mission Creator", description: "Create private cleanup missions", icon: "🎯" },
@@ -6534,7 +6764,7 @@ async function checkAndAwardBadges(db, userId) {
   }
   return newlyEarned;
 }
-app$4.get("/api/badges", async (c) => {
+app$e.get("/api/badges", async (c) => {
   const db = getTursoClient(c.env);
   const result = await db.execute({
     sql: "SELECT * FROM badges ORDER BY requirement_value ASC",
@@ -6542,7 +6772,7 @@ app$4.get("/api/badges", async (c) => {
   });
   return c.json(result.rows);
 });
-app$4.get("/api/profiles/me/level-perks", authMiddleware, async (c) => {
+app$e.get("/api/profiles/me/level-perks", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6559,8 +6789,8 @@ app$4.get("/api/profiles/me/level-perks", authMiddleware, async (c) => {
   }));
   return c.json({ level: userLevel, perks });
 });
-const app$3 = new Hono2();
-app$3.get("/api/sightings", async (c) => {
+const app$d = new Hono2();
+app$d.get("/api/sightings", async (c) => {
   const db = getTursoClient(c.env);
   const type = c.req.query("type");
   const status = c.req.query("status");
@@ -6585,7 +6815,7 @@ app$3.get("/api/sightings", async (c) => {
   const result = await db.execute({ sql, args });
   return c.json(result.rows);
 });
-app$3.get("/api/sightings/:id", async (c) => {
+app$d.get("/api/sightings/:id", async (c) => {
   const id = c.req.param("id");
   const db = getTursoClient(c.env);
   const result = await db.execute({
@@ -6600,7 +6830,7 @@ app$3.get("/api/sightings/:id", async (c) => {
   }
   return c.json(result.rows[0]);
 });
-app$3.post(
+app$d.post(
   "/api/sightings",
   authMiddleware,
   zValidator("json", CreateSightingSchema),
@@ -6637,8 +6867,9 @@ app$3.post(
     const result = await db.execute({
       sql: `INSERT INTO sightings (
               user_id, type, subcategory, description, severity,
-              latitude, longitude, address, bleach_percent, water_temp, depth
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              latitude, longitude, address, bleach_percent, water_temp, depth,
+              image_key, ai_analysis
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         user.id,
         data.type,
@@ -6650,7 +6881,9 @@ app$3.post(
         data.address || null,
         data.bleach_percent || null,
         data.water_temp || null,
-        data.depth || null
+        data.depth || null,
+        data.image_key || null,
+        data.ai_analysis || null
       ]
     });
     const sightingId = Number(result.lastInsertRowid);
@@ -6720,7 +6953,7 @@ app$3.post(
     );
   }
 );
-app$3.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
+app$d.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const user = c.get("user");
   if (!user) {
@@ -6765,7 +6998,7 @@ app$3.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   }
   return c.json({ imageKey: key, xp_bonus: 5 });
 });
-app$3.get("/api/sightings/:id/photo", async (c) => {
+app$d.get("/api/sightings/:id/photo", async (c) => {
   const id = c.req.param("id");
   const db = getTursoClient(c.env);
   const result = await db.execute({
@@ -6784,7 +7017,7 @@ app$3.get("/api/sightings/:id/photo", async (c) => {
   headers.set("etag", object.httpEtag);
   return c.body(object.body, { headers });
 });
-app$3.delete("/api/sightings/:id", authMiddleware, async (c) => {
+app$d.delete("/api/sightings/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
   const user = c.get("user");
   if (!user) {
@@ -6808,8 +7041,8 @@ app$3.delete("/api/sightings/:id", authMiddleware, async (c) => {
   });
   return c.json({ success: true });
 });
-const app$2 = new Hono2();
-app$2.get("/api/profiles/me", authMiddleware, async (c) => {
+const app$c = new Hono2();
+app$c.get("/api/profiles/me", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6839,14 +7072,14 @@ app$2.get("/api/profiles/me", authMiddleware, async (c) => {
   });
   return c.json(newProfile.rows[0], 201);
 });
-app$2.patch("/api/profiles/me", authMiddleware, async (c) => {
+app$c.patch("/api/profiles/me", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
   const db = getTursoClient(c.env);
-  const allowedFields = ["username", "notifications_enabled", "leaderboard_visible", "theme"];
+  const allowedFields = ["username", "notifications_enabled", "leaderboard_visible", "theme", "region", "country", "is_anonymous"];
   const updates = [];
   const values = [];
   for (const field of allowedFields) {
@@ -6870,12 +7103,13 @@ app$2.patch("/api/profiles/me", authMiddleware, async (c) => {
   });
   return c.json(updated.rows[0]);
 });
-app$2.get("/api/profiles/:id", async (c) => {
+app$c.get("/api/profiles/:id", async (c) => {
   const id = c.req.param("id");
   const db = getTursoClient(c.env);
   const result = await db.execute({
     sql: `SELECT id, username, avatar_url, role, level, xp, reputation,
-            streak_days, total_sightings, total_missions, leaderboard_visible, created_at
+            streak_days, total_sightings, total_missions, leaderboard_visible, 
+            country, region, is_anonymous, created_at
           FROM user_profiles WHERE id = ?`,
     args: [id]
   });
@@ -6884,7 +7118,7 @@ app$2.get("/api/profiles/:id", async (c) => {
   }
   return c.json(result.rows[0]);
 });
-app$2.get("/api/profiles/me/badges", authMiddleware, async (c) => {
+app$c.get("/api/profiles/me/badges", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6900,7 +7134,7 @@ app$2.get("/api/profiles/me/badges", authMiddleware, async (c) => {
   });
   return c.json(result.rows);
 });
-app$2.get("/api/profiles/me/activity", authMiddleware, async (c) => {
+app$c.get("/api/profiles/me/activity", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -6915,14 +7149,14 @@ app$2.get("/api/profiles/me/activity", authMiddleware, async (c) => {
   });
   return c.json(result.rows);
 });
-const app$1 = new Hono2();
-const toDateString = (date) => date.toISOString().split("T")[0];
-app$1.get("/api/streak", authMiddleware, async (c) => {
+const app$b = new Hono2();
+const toDateString$1 = (date) => date.toISOString().split("T")[0];
+app$b.get("/api/streak", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
   const db = getTursoClient(c.env);
   const today = /* @__PURE__ */ new Date();
-  const todayStr = toDateString(today);
+  const todayStr = toDateString$1(today);
   const profileResult = await db.execute({
     sql: "SELECT streak_days, streak_freezes, last_check_in FROM user_profiles WHERE id = ?",
     args: [user.id]
@@ -6950,7 +7184,7 @@ app$1.get("/api/streak", authMiddleware, async (c) => {
         for (let i = 0; i < diffDays; i++) {
           const freezeDate = new Date(lastDate);
           freezeDate.setDate(freezeDate.getDate() + i + 1);
-          freezeInserts.push(`('${user.id}', '${toDateString(freezeDate)}', 'freeze')`);
+          freezeInserts.push(`('${user.id}', '${toDateString$1(freezeDate)}', 'freeze')`);
         }
         await db.executeMultiple(`
                     UPDATE user_profiles SET streak_freezes = ${freezes} WHERE id = '${user.id}';
@@ -6979,11 +7213,11 @@ app$1.get("/api/streak", authMiddleware, async (c) => {
     lastCheckIn
   });
 });
-app$1.post("/api/streak/check-in", authMiddleware, async (c) => {
+app$b.post("/api/streak/check-in", authMiddleware, async (c) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
   const db = getTursoClient(c.env);
-  const todayStr = toDateString(/* @__PURE__ */ new Date());
+  const todayStr = toDateString$1(/* @__PURE__ */ new Date());
   const checkResult = await db.execute({
     sql: "SELECT id FROM streak_log WHERE user_id = ? AND activity_date = ? AND type = 'check_in'",
     args: [user.id, todayStr]
@@ -7010,11 +7244,1229 @@ app$1.post("/api/streak/check-in", authMiddleware, async (c) => {
     newBadges
   });
 });
+const app$a = new Hono2();
+app$a.get("/api/missions", async (c) => {
+  const db = getTursoClient(c.env);
+  const status = c.req.query("status");
+  const limit = parseInt(c.req.query("limit") || "50");
+  let sql = `SELECT m.*, up.username as organizer_name
+             FROM missions m
+             LEFT JOIN user_profiles up ON m.organizer_id = up.id
+             WHERE 1=1`;
+  const args = [];
+  if (status) {
+    sql += " AND m.status = ?";
+    args.push(status);
+  } else {
+    sql += " AND m.status IN ('upcoming', 'active')";
+  }
+  sql += " ORDER BY m.start_time ASC LIMIT ?";
+  args.push(limit);
+  const result = await db.execute({ sql, args });
+  return c.json(result.rows);
+});
+app$a.get("/api/missions/:id", async (c) => {
+  const id = c.req.param("id");
+  const db = getTursoClient(c.env);
+  const missionResult = await db.execute({
+    sql: `SELECT m.*, up.username as organizer_name, up.avatar_url as organizer_avatar
+          FROM missions m
+          LEFT JOIN user_profiles up ON m.organizer_id = up.id
+          WHERE m.id = ?`,
+    args: [id]
+  });
+  if (missionResult.rows.length === 0) {
+    return c.json({ error: "Mission not found" }, 404);
+  }
+  const mission = missionResult.rows[0];
+  const participantsResult = await db.execute({
+    sql: `SELECT mp.*, up.username, up.avatar_url
+          FROM mission_participants mp
+          JOIN user_profiles up ON mp.user_id = up.id
+          WHERE mp.mission_id = ?`,
+    args: [id]
+  });
+  const impactResult = await db.execute({
+    sql: `SELECT * FROM mission_impact_reports WHERE mission_id = ?`,
+    args: [id]
+  });
+  return c.json({
+    mission,
+    participants: participantsResult.rows,
+    impact_report: impactResult.rows[0] || null
+  });
+});
+app$a.post(
+  "/api/missions",
+  authMiddleware,
+  zValidator("json", CreateMissionSchema),
+  async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    const db = getTursoClient(c.env);
+    const profileResult = await db.execute({
+      sql: "SELECT role FROM user_profiles WHERE id = ?",
+      args: [user.id]
+    });
+    const role = profileResult.rows[0]?.role;
+    if (!["admin", "ambassador"].includes(role)) {
+      return c.json({ error: "Only Ambassadors and Admins can create missions." }, 403);
+    }
+    const data = c.req.valid("json");
+    const result = await db.execute({
+      sql: `INSERT INTO missions (
+              title, description, location_name, latitude, longitude,
+              start_time, end_time, organizer_id, difficulty, max_participants, image_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        data.title,
+        data.description,
+        data.location_name,
+        data.latitude,
+        data.longitude,
+        data.start_time,
+        data.end_time,
+        user.id,
+        data.difficulty,
+        data.max_participants || null,
+        data.image_url || null
+      ]
+    });
+    return c.json({ id: result.lastInsertRowid, message: "Mission created" }, 201);
+  }
+);
+app$a.post("/api/missions/:id/join", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const missionResult = await db.execute({
+    sql: "SELECT status, max_participants FROM missions WHERE id = ?",
+    args: [id]
+  });
+  if (missionResult.rows.length === 0) return c.json({ error: "Mission not found" }, 404);
+  const mission = missionResult.rows[0];
+  if (mission.status !== "upcoming") {
+    return c.json({ error: "Cannot join a mission that is not upcoming" }, 400);
+  }
+  if (mission.max_participants) {
+    const countResult = await db.execute({
+      sql: "SELECT COUNT(*) as count FROM mission_participants WHERE mission_id = ? AND status != 'cancelled'",
+      args: [id]
+    });
+    if (Number(countResult.rows[0].count) >= Number(mission.max_participants)) {
+      return c.json({ error: "Mission is full" }, 400);
+    }
+  }
+  await db.execute({
+    sql: `INSERT INTO mission_participants (mission_id, user_id, status)
+          VALUES (?, ?, 'rsvp')
+          ON CONFLICT(mission_id, user_id) DO UPDATE SET status = 'rsvp'`,
+    args: [id, user.id]
+  });
+  return c.json({ success: true, message: "Joined mission" });
+});
+app$a.post("/api/missions/:id/check-in", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const { latitude, longitude } = await c.req.json();
+  if (!latitude || !longitude) return c.json({ error: "GPS coordinates required" }, 400);
+  const db = getTursoClient(c.env);
+  const missionResult = await db.execute({
+    sql: "SELECT latitude, longitude, start_time, end_time FROM missions WHERE id = ?",
+    args: [id]
+  });
+  if (missionResult.rows.length === 0) return c.json({ error: "Mission not found" }, 404);
+  const mission = missionResult.rows[0];
+  const now = /* @__PURE__ */ new Date();
+  const startTime = new Date(mission.start_time);
+  const endTime = new Date(mission.end_time);
+  const checkInStart = new Date(startTime.getTime() - 30 * 6e4);
+  if (now < checkInStart) return c.json({ error: "Check-in not open yet" }, 400);
+  if (now > endTime) return c.json({ error: "Mission has ended" }, 400);
+  const dist = Math.sqrt(
+    Math.pow(Number(mission.latitude) - latitude, 2) + Math.pow(Number(mission.longitude) - longitude, 2)
+  );
+  if (dist > 5e-3) {
+    return c.json({ error: "You are too far from the mission location." }, 400);
+  }
+  await db.execute({
+    sql: `UPDATE mission_participants
+          SET status = 'checked_in', checked_in_at = datetime('now')
+          WHERE mission_id = ? AND user_id = ?`,
+    args: [id, user.id]
+  });
+  return c.json({ success: true, message: "Checked in successfully!" });
+});
+app$a.get("/api/missions/:id/chat", async (c) => {
+  const id = c.req.param("id");
+  const db = getTursoClient(c.env);
+  const limit = 50;
+  const result = await db.execute({
+    sql: `SELECT mcm.*, up.username, up.avatar_url
+          FROM mission_chat_messages mcm
+          JOIN user_profiles up ON mcm.user_id = up.id
+          WHERE mcm.mission_id = ?
+          ORDER BY mcm.created_at ASC
+          LIMIT ?`,
+    args: [id, limit]
+  });
+  return c.json(result.rows);
+});
+app$a.post("/api/missions/:id/chat", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const { message } = await c.req.json();
+  if (!message || message.trim().length === 0) return c.json({ error: "Message empty" }, 400);
+  const db = getTursoClient(c.env);
+  const partResult = await db.execute({
+    sql: "SELECT status FROM mission_participants WHERE mission_id = ? AND user_id = ?",
+    args: [id, user.id]
+  });
+  if (partResult.rows.length === 0 || partResult.rows[0].status === "cancelled") {
+    return c.json({ error: "You must join the mission to chat." }, 403);
+  }
+  await db.execute({
+    sql: `INSERT INTO mission_chat_messages (mission_id, user_id, message)
+          VALUES (?, ?, ?)`,
+    args: [id, user.id, message]
+  });
+  return c.json({ success: true });
+});
+app$a.post(
+  "/api/missions/:id/complete",
+  authMiddleware,
+  zValidator("json", CreateImpactReportSchema),
+  async (c) => {
+    const id = c.req.param("id");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    const db = getTursoClient(c.env);
+    const missionResult = await db.execute({
+      sql: "SELECT organizer_id, status FROM missions WHERE id = ?",
+      args: [id]
+    });
+    if (missionResult.rows.length === 0) return c.json({ error: "Mission not found" }, 404);
+    const mission = missionResult.rows[0];
+    if (mission.organizer_id !== user.id) {
+      const profileResult = await db.execute({
+        sql: "SELECT role FROM user_profiles WHERE id = ?",
+        args: [user.id]
+      });
+      if (profileResult.rows[0]?.role !== "admin") {
+        return c.json({ error: "Only the organizer or admin can complete the mission." }, 403);
+      }
+    }
+    if (mission.status === "completed") {
+      return c.json({ error: "Mission already completed" }, 400);
+    }
+    const data = c.req.valid("json");
+    await db.execute({
+      sql: `INSERT INTO mission_impact_reports (
+                mission_id, total_trash_weight, trash_bags_count, participants_count, duration_minutes, notes
+              ) VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [id, data.total_trash_weight, data.trash_bags_count, data.participants_count, data.duration_minutes, data.notes || null]
+    });
+    await db.execute({
+      sql: "UPDATE missions SET status = 'completed' WHERE id = ?",
+      args: [id]
+    });
+    const participants = await db.execute({
+      sql: "SELECT user_id FROM mission_participants WHERE mission_id = ? AND status = 'checked_in'",
+      args: [id]
+    });
+    const missionXp = 100;
+    for (const row of participants.rows) {
+      const userId = row.user_id;
+      const profileRes = await db.execute({
+        sql: "SELECT xp, total_missions FROM user_profiles WHERE id = ?",
+        args: [userId]
+      });
+      if (profileRes.rows.length > 0) {
+        const currentXp = Number(profileRes.rows[0].xp);
+        const newXp = currentXp + missionXp;
+        const newMissions = Number(profileRes.rows[0].total_missions) + 1;
+        const newLevel = calculateLevel(newXp);
+        await db.execute({
+          sql: `UPDATE user_profiles SET xp = ?, level = ?, total_missions = ? WHERE id = ?`,
+          args: [newXp, newLevel, newMissions, userId]
+        });
+        await db.execute({
+          sql: "UPDATE mission_participants SET xp_awarded = ? WHERE mission_id = ? AND user_id = ?",
+          args: [missionXp, id, userId]
+        });
+        await db.execute({
+          sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+                      VALUES (?, 'mission', ?, ?, ?)`,
+          args: [
+            userId,
+            `Completed mission: ${mission.title || "Cleanup"}`,
+            missionXp,
+            JSON.stringify({ mission_id: id })
+          ]
+        });
+        await checkAndAwardBadges(db, userId);
+      }
+    }
+    return c.json({ success: true, message: "Mission completed and XP distributed" });
+  }
+);
+const app$9 = new Hono2();
+app$9.post("/api/users/:id/follow", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const followingId = c.req.param("id");
+  if (user.id === followingId) {
+    return c.json({ error: "Cannot follow yourself" }, 400);
+  }
+  const db = getTursoClient(c.env);
+  const targetUser = await db.execute({
+    sql: "SELECT id FROM user_profiles WHERE id = ?",
+    args: [followingId]
+  });
+  if (targetUser.rows.length === 0) {
+    return c.json({ error: "User not found" }, 404);
+  }
+  try {
+    await db.execute({
+      sql: "INSERT INTO user_follows (follower_id, following_id) VALUES (?, ?)",
+      args: [user.id, followingId]
+    });
+    return c.json({ success: true });
+  } catch (e) {
+    if (e.message?.includes("UNIQUE constraint failed")) {
+      return c.json({ error: "Already following" }, 400);
+    }
+    throw e;
+  }
+});
+app$9.delete("/api/users/:id/follow", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const followingId = c.req.param("id");
+  const db = getTursoClient(c.env);
+  await db.execute({
+    sql: "DELETE FROM user_follows WHERE follower_id = ? AND following_id = ?",
+    args: [user.id, followingId]
+  });
+  return c.json({ success: true });
+});
+app$9.get("/api/users/:id/followers", async (c) => {
+  const userId = c.req.param("id");
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: `
+            SELECT u.id, u.username, u.avatar_url, u.level, u.is_anonymous
+            FROM user_follows f
+            JOIN user_profiles u ON f.follower_id = u.id
+            WHERE f.following_id = ?
+            ORDER BY f.created_at DESC
+        `,
+    args: [userId]
+  });
+  const followers = result.rows.map((row) => {
+    if (Number(row.is_anonymous)) {
+      return {
+        ...row,
+        username: "Anonymous User",
+        avatar_url: null
+      };
+    }
+    return row;
+  });
+  return c.json(followers);
+});
+app$9.get("/api/users/:id/following", async (c) => {
+  const userId = c.req.param("id");
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: `
+             SELECT u.id, u.username, u.avatar_url, u.level, u.is_anonymous
+             FROM user_follows f
+             JOIN user_profiles u ON f.following_id = u.id
+             WHERE f.follower_id = ?
+             ORDER BY f.created_at DESC
+         `,
+    args: [userId]
+  });
+  const following = result.rows.map((row) => {
+    if (Number(row.is_anonymous)) {
+      return {
+        ...row,
+        username: "Anonymous User",
+        avatar_url: null
+      };
+    }
+    return row;
+  });
+  return c.json(following);
+});
+app$9.get("/api/activity-feed", authMiddleware, async (c) => {
+  const user = c.get("user");
+  const filter = c.req.query("filter");
+  const limit = parseInt(c.req.query("limit") || "50");
+  const db = getTursoClient(c.env);
+  let sql = `
+        SELECT a.*, up.username, up.avatar_url, up.level
+        FROM activity_log a
+        JOIN user_profiles up ON a.user_id = up.id
+        WHERE 1=1
+    `;
+  const args = [];
+  if (filter === "following" && user) {
+    sql += ` AND a.user_id IN (
+            SELECT following_id FROM user_follows WHERE follower_id = ?
+        )`;
+    args.push(user.id);
+  }
+  sql += " ORDER BY a.created_at DESC LIMIT ?";
+  args.push(limit);
+  const result = await db.execute({ sql, args });
+  return c.json(result.rows);
+});
+app$9.get("/api/notifications", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const limit = parseInt(c.req.query("limit") || "50");
+  const result = await db.execute({
+    sql: `SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+    args: [user.id, limit]
+  });
+  return c.json(result.rows);
+});
+app$9.post("/api/notifications/:id/read", authMiddleware, async (c) => {
+  const user = c.get("user");
+  const id = c.req.param("id");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  await db.execute({
+    sql: "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+    args: [id, user.id]
+  });
+  return c.json({ success: true });
+});
+app$9.post("/api/notifications/read-all", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  await db.execute({
+    sql: "UPDATE notifications SET is_read = 1 WHERE user_id = ?",
+    args: [user.id]
+  });
+  return c.json({ success: true });
+});
+const app$8 = new Hono2();
+function sanitizeLeaderboard(rows) {
+  return rows.map((row) => {
+    if (Number(row.is_anonymous)) {
+      return {
+        ...row,
+        username: "Anonymous User",
+        avatar_url: null,
+        id: row.id
+        // Keep ID for potential self-identification if needed, or maybe mask it too? 
+        // For now, keeping ID is useful for "is this me?" checks on frontend.
+      };
+    }
+    return row;
+  });
+}
+app$8.get("/api/leaderboard/global", async (c) => {
+  const db = getTursoClient(c.env);
+  const limit = 50;
+  const result = await db.execute({
+    sql: `
+            SELECT id, username, avatar_url, level, xp, country, region, streak_days, is_anonymous
+            FROM user_profiles
+            WHERE leaderboard_visible = 1
+            ORDER BY xp DESC
+            LIMIT ?
+        `,
+    args: [limit]
+  });
+  return c.json(sanitizeLeaderboard(result.rows));
+});
+app$8.get("/api/leaderboard/regional", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const profileRes = await db.execute({
+    sql: "SELECT country FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  if (profileRes.rows.length === 0 || !profileRes.rows[0].country) {
+    return c.json([]);
+  }
+  const country = profileRes.rows[0].country;
+  const result = await db.execute({
+    sql: `
+            SELECT id, username, avatar_url, level, xp, country, region, is_anonymous
+            FROM user_profiles
+            WHERE leaderboard_visible = 1 AND country = ?
+            ORDER BY xp DESC
+            LIMIT 50
+        `,
+    args: [country]
+  });
+  return c.json(sanitizeLeaderboard(result.rows));
+});
+app$8.get("/api/leaderboard/friends", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: `
+            SELECT u.id, u.username, u.avatar_url, u.level, u.xp, u.country, u.is_anonymous
+            FROM user_profiles u
+            LEFT JOIN user_follows f ON u.id = f.following_id
+            WHERE (f.follower_id = ? OR u.id = ?) AND u.leaderboard_visible = 1
+            GROUP BY u.id
+            ORDER BY u.xp DESC
+            LIMIT 50
+        `,
+    args: [user.id, user.id]
+  });
+  return c.json(sanitizeLeaderboard(result.rows));
+});
+app$8.get("/api/leaderboard/streak", async (c) => {
+  const db = getTursoClient(c.env);
+  const limit = 50;
+  const result = await db.execute({
+    sql: `
+            SELECT id, username, avatar_url, level, streak_days, country, is_anonymous
+            FROM user_profiles
+            WHERE leaderboard_visible = 1 AND streak_days > 0
+            ORDER BY streak_days DESC
+            LIMIT ?
+        `,
+    args: [limit]
+  });
+  return c.json(sanitizeLeaderboard(result.rows));
+});
+const app$7 = new Hono2();
+const analyzeCoralImage = () => {
+  const bleachPercent = Math.floor(Math.random() * 100);
+  let severity = "Healthy";
+  let color = "#10b981";
+  let recommendation = "This coral looks healthy! Keep monitoring.";
+  if (bleachPercent > 10) {
+    severity = "Low";
+    color = "#eab308";
+    recommendation = "Signs of mild stress. Check water temperature.";
+  }
+  if (bleachPercent > 30) {
+    severity = "Moderate";
+    color = "#f97316";
+    recommendation = "Moderate bleaching detected. Reduce local stressors.";
+  }
+  if (bleachPercent > 60) {
+    severity = "High";
+    color = "#ef4444";
+    recommendation = "Severe bleaching! Urgent protection needed.";
+  }
+  if (bleachPercent > 90) {
+    severity = "Severe";
+    color = "#7f1d1d";
+    recommendation = "Critical state. Mortality risk high.";
+  }
+  return {
+    bleachPercent,
+    severity,
+    color,
+    recommendation,
+    confidence: 0.85 + Math.random() * 0.14,
+    // 0.85 - 0.99
+    modelVersion: "mock-v1"
+  };
+};
+app$7.post("/api/coral/analyze", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const formData = await c.req.formData();
+  const file = formData.get("image");
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: "No image provided" }, 400);
+  }
+  const ext = file.name.split(".").pop() || "jpg";
+  const key = `coral-analysis/${user.id}/${Date.now()}.${ext}`;
+  await c.env.R2_BUCKET.put(key, file, {
+    httpMetadata: { contentType: file.type }
+  });
+  const analysis = analyzeCoralImage();
+  return c.json({
+    ...analysis,
+    imageKey: key
+  });
+});
+app$7.get("/api/coral/heatmap", async (c) => {
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: `SELECT latitude, longitude, bleach_percent, severity 
+          FROM sightings 
+          WHERE type = 'coral' AND status != 'removed'`,
+    args: []
+  });
+  return c.json(result.rows);
+});
+app$7.get("/api/coral/review-queue", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const profile = await db.execute({
+    sql: "SELECT role FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const role = String(profile.rows[0]?.role || "player");
+  if (role !== "scientist" && role !== "admin") {
+    return c.json({ error: "Access denied: Scientists only" }, 403);
+  }
+  const limit = 50;
+  const result = await db.execute({
+    sql: `SELECT s.*, up.username 
+          FROM sightings s
+          LEFT JOIN user_profiles up ON s.user_id = up.id
+          WHERE s.type = 'coral' 
+          AND (s.status = 'pending' OR s.validated = 0)
+          ORDER BY s.created_at ASC
+          LIMIT ?`,
+    args: [limit]
+  });
+  return c.json(result.rows);
+});
+app$7.post("/api/coral/review/:id", authMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const user = c.get("user");
+  const { action } = await c.req.json();
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const profile = await db.execute({
+    sql: "SELECT role FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const role = String(profile.rows[0]?.role || "player");
+  if (role !== "scientist" && role !== "admin") {
+    return c.json({ error: "Access denied" }, 403);
+  }
+  let newStatus = "approved";
+  let validated = 1;
+  if (action === "reject") {
+    newStatus = "rejected";
+    newStatus = "flagged";
+    validated = 0;
+  }
+  await db.execute({
+    sql: `UPDATE sightings 
+          SET status = ?, validated = ?, validation_count = validation_count + 1, updated_at = datetime('now')
+          WHERE id = ?`,
+    args: [newStatus, validated, id]
+  });
+  return c.json({ success: true, status: newStatus });
+});
+const app$6 = new Hono2();
+const toDateString = (date) => date.toISOString().split("T")[0];
+app$6.get("/api/learning/quiz/daily", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const todayStr = toDateString(/* @__PURE__ */ new Date());
+  const statsResult = await db.execute({
+    sql: "SELECT last_quiz_date FROM user_quiz_stats WHERE user_id = ?",
+    args: [user.id]
+  });
+  const alreadyCompleted = statsResult.rows.length > 0 && statsResult.rows[0].last_quiz_date === todayStr;
+  const questionsResult = await db.execute({
+    sql: "SELECT id, question, options, category, difficulty FROM quiz_questions ORDER BY RANDOM() LIMIT 5",
+    args: []
+  });
+  const questions = questionsResult.rows.map((q) => ({
+    ...q,
+    options: JSON.parse(q.options)
+  }));
+  return c.json({
+    questions,
+    alreadyCompleted
+  });
+});
+app$6.post("/api/learning/quiz/submit", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const { answers } = await c.req.json();
+  const db = getTursoClient(c.env);
+  const todayStr = toDateString(/* @__PURE__ */ new Date());
+  let correctCount = 0;
+  let earnedXp = 0;
+  const results = [];
+  for (const answer of answers) {
+    const qResult = await db.execute({
+      sql: "SELECT correct_answer, explanation FROM quiz_questions WHERE id = ?",
+      args: [answer.questionId]
+    });
+    if (qResult.rows.length === 0) continue;
+    const question = qResult.rows[0];
+    const isCorrect = Number(question.correct_answer) === answer.selectedOptionIndex;
+    if (isCorrect) {
+      correctCount++;
+      earnedXp += 5;
+    }
+    results.push({
+      questionId: answer.questionId,
+      isCorrect,
+      correctAnswer: Number(question.correct_answer),
+      explanation: question.explanation
+    });
+  }
+  const statsResult = await db.execute({
+    sql: "SELECT streak_days, last_quiz_date FROM user_quiz_stats WHERE user_id = ?",
+    args: [user.id]
+  });
+  let streak = 0;
+  let lastQuizDate = null;
+  let streakBonus = 0;
+  if (statsResult.rows.length > 0) {
+    streak = Number(statsResult.rows[0].streak_days);
+    lastQuizDate = statsResult.rows[0].last_quiz_date;
+  }
+  let isFirstTimeToday = true;
+  if (lastQuizDate === todayStr) {
+    isFirstTimeToday = false;
+    earnedXp = 0;
+  } else {
+    if (lastQuizDate) {
+      const lastDate = new Date(lastQuizDate);
+      const today = /* @__PURE__ */ new Date();
+      const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1e3 * 60 * 60 * 24)) - 1;
+      if (diffDays === 1) {
+        streak++;
+      } else {
+        streak = 1;
+      }
+    } else {
+      streak = 1;
+    }
+    if (streak > 0 && streak % 7 === 0) {
+      streakBonus = 50;
+      earnedXp += streakBonus;
+    }
+  }
+  if (isFirstTimeToday) {
+    await db.executeMultiple(`
+            INSERT INTO user_quiz_stats (user_id, streak_days, last_quiz_date, total_xp_earned, quizzes_completed, perfect_scores)
+            VALUES ('${user.id}', ${streak}, '${todayStr}', ${earnedXp}, 1, ${correctCount === 5 ? 1 : 0})
+            ON CONFLICT(user_id) DO UPDATE SET
+                streak_days = ${streak},
+                last_quiz_date = '${todayStr}',
+                total_xp_earned = total_xp_earned + ${earnedXp},
+                quizzes_completed = quizzes_completed + 1,
+                perfect_scores = perfect_scores + ${correctCount === 5 ? 1 : 0};
+            
+            UPDATE user_profiles SET xp = xp + ${earnedXp} WHERE id = '${user.id}';
+            
+            INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+            VALUES ('${user.id}', 'quiz', 'Completed Daily Quiz', ${earnedXp}, '${JSON.stringify({ correct: correctCount, bonus: streakBonus })}');
+        `);
+  }
+  const newBadges = await checkAndAwardBadges(db, user.id);
+  return c.json({
+    correctCount,
+    totalQuestions: answers.length,
+    earnedXp,
+    streak,
+    streakBonus,
+    results,
+    newBadges
+  });
+});
+app$6.get("/api/learning/stats", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: "SELECT * FROM user_quiz_stats WHERE user_id = ?",
+    args: [user.id]
+  });
+  return c.json(result.rows[0] || { streak_days: 0, total_xp_earned: 0, quizzes_completed: 0 });
+});
+app$6.get("/api/learning/facts", async (c) => {
+  const db = getTursoClient(c.env);
+  const { search, category } = c.req.query();
+  let sql = "SELECT * FROM facts";
+  const args = [];
+  const conditions = [];
+  if (search) {
+    conditions.push("(content LIKE ? OR tags LIKE ?)");
+    args.push(`%${search}%`, `%${search}%`);
+  }
+  if (category) {
+    conditions.push("category = ?");
+    args.push(category);
+  }
+  if (conditions.length > 0) {
+    sql += " WHERE " + conditions.join(" AND ");
+  }
+  sql += " ORDER BY RANDOM() LIMIT 20";
+  const result = await db.execute({ sql, args });
+  return c.json(result.rows);
+});
+app$6.get("/api/learning/lessons", authMiddleware, async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const lessonsResult = await db.execute({ sql: "SELECT id, title, slug, description, unlock_level, xp_reward, cover_image FROM lessons ORDER BY unlock_level ASC", args: [] });
+  const progressResult = await db.execute({
+    sql: "SELECT lesson_id FROM user_lessons WHERE user_id = ?",
+    args: [user.id]
+  });
+  const completedIds = new Set(progressResult.rows.map((r) => Number(r.lesson_id)));
+  const profileResult = await db.execute({
+    sql: "SELECT level FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const userLevel = Number(profileResult.rows[0]?.level || 1);
+  const lessons = lessonsResult.rows.map((l) => ({
+    ...l,
+    isCompleted: completedIds.has(Number(l.id)),
+    isLocked: userLevel < Number(l.unlock_level)
+  }));
+  return c.json({ lessons });
+});
+app$6.get("/api/learning/lessons/:slug", authMiddleware, async (c) => {
+  const split = c.req.path.split("/");
+  const slug = split[split.length - 1];
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: "SELECT * FROM lessons WHERE slug = ?",
+    args: [slug]
+  });
+  if (result.rows.length === 0) return c.json({ error: "Lesson not found" }, 404);
+  return c.json(result.rows[0]);
+});
+app$6.post("/api/learning/lessons/:id/complete", authMiddleware, async (c) => {
+  const user = c.get("user");
+  const split = c.req.path.split("/");
+  const id = split[split.length - 2];
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const lessonResult = await db.execute({ sql: "SELECT xp_reward FROM lessons WHERE id = ?", args: [id] });
+  if (lessonResult.rows.length === 0) return c.json({ error: "Lesson not found" }, 404);
+  const xpReward = Number(lessonResult.rows[0].xp_reward);
+  try {
+    await db.executeMultiple(`
+            INSERT INTO user_lessons (user_id, lesson_id, xp_awarded) VALUES ('${user.id}', ${id}, ${xpReward});
+            UPDATE user_profiles SET xp = xp + ${xpReward} WHERE id = '${user.id}';
+            INSERT INTO activity_log (user_id, type, description, xp_earned) 
+            VALUES ('${user.id}', 'lesson', 'Completed Lesson', ${xpReward});
+        `);
+    const newBadges = await checkAndAwardBadges(db, user.id);
+    return c.json({ success: true, xpEarned: xpReward, newBadges });
+  } catch (e) {
+    return c.json({ success: false, message: "Already completed" });
+  }
+});
+const app$5 = new Hono2();
+const adminMiddleware = async (c, next) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const profile = await db.execute({
+    sql: "SELECT role FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const role = String(profile.rows[0]?.role || "player");
+  if (role !== "admin") {
+    return c.json({ error: "Access denied: Admins only" }, 403);
+  }
+  await next();
+};
+app$5.use("/api/admin/*", authMiddleware, adminMiddleware);
+app$5.get("/api/admin/stats", async (c) => {
+  const db = getTursoClient(c.env);
+  const [users, sightings, missions, active] = await Promise.all([
+    db.execute({ sql: "SELECT COUNT(*) as count FROM user_profiles", args: [] }),
+    db.execute({ sql: "SELECT COUNT(*) as count FROM sightings", args: [] }),
+    db.execute({ sql: "SELECT COUNT(*) as count FROM missions", args: [] }),
+    db.execute({ sql: "SELECT COUNT(*) as count FROM user_profiles WHERE last_active > datetime('now', '-1 hour')", args: [] })
+  ]);
+  const roles = await db.execute({ sql: "SELECT role, COUNT(*) as count FROM user_profiles GROUP BY role", args: [] });
+  const rolesMap = {};
+  roles.rows.forEach((r) => {
+    rolesMap[String(r.role)] = Number(r.count);
+  });
+  const recent = await db.execute({ sql: "SELECT * FROM user_profiles ORDER BY created_at DESC LIMIT 5", args: [] });
+  return c.json({
+    total_users: Number(users.rows[0].count),
+    total_sightings: Number(sightings.rows[0].count),
+    total_missions: Number(missions.rows[0].count),
+    active_now: Number(active.rows[0].count),
+    users_by_role: rolesMap,
+    recent_signups: recent.rows
+  });
+});
+app$5.get("/api/admin/users", async (c) => {
+  const db = getTursoClient(c.env);
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = 20;
+  const offset = (page - 1) * limit;
+  const search = c.req.query("search");
+  let sql = "SELECT * FROM user_profiles WHERE 1=1";
+  const args = [];
+  if (search) {
+    sql += " AND (username LIKE ? OR email LIKE ?)";
+    args.push(`%${search}%`, `%${search}%`);
+  }
+  sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+  args.push(limit, offset);
+  const result = await db.execute({ sql, args });
+  return c.json(result.rows);
+});
+app$5.post("/api/admin/users/:id/role", async (c) => {
+  const id = c.req.param("id");
+  const { role } = await c.req.json();
+  const parsed = UserRoleSchema.safeParse(role);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid role" }, 400);
+  }
+  const db = getTursoClient(c.env);
+  await db.execute({
+    sql: "UPDATE user_profiles SET role = ? WHERE id = ?",
+    args: [role, id]
+  });
+  return c.json({ success: true, role });
+});
+app$5.get("/api/admin/config/badges", async (c) => {
+  const db = getTursoClient(c.env);
+  const result = await db.execute({ sql: "SELECT * FROM badges ORDER BY category, requirement_value", args: [] });
+  return c.json(result.rows);
+});
+app$5.post("/api/admin/config/badges", async (c) => {
+  const data = await c.req.json();
+  const db = getTursoClient(c.env);
+  if (data.id) {
+    await db.execute({
+      sql: `UPDATE badges SET name=?, description=?, category=?, rarity=?, icon=?, requirement_type=?, requirement_value=?, is_hidden=? WHERE id=?`,
+      args: [data.name, data.description, data.category, data.rarity, data.icon, data.requirement_type, data.requirement_value, data.is_hidden, data.id]
+    });
+  } else {
+    await db.execute({
+      sql: `INSERT INTO badges (name, description, category, rarity, icon, requirement_type, requirement_value, is_hidden) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [data.name, data.description, data.category, data.rarity, data.icon, data.requirement_type, data.requirement_value, data.is_hidden || 0]
+    });
+  }
+  return c.json({ success: true });
+});
+const app$4 = new Hono2();
+const ambassadorMiddleware = async (c, next) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const profile = await db.execute({
+    sql: "SELECT role, assigned_regions FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const role = String(profile.rows[0]?.role || "player");
+  if (role !== "ambassador" && role !== "admin") {
+    return c.json({ error: "Access denied: Ambassadors only" }, 403);
+  }
+  const region = String(profile.rows[0]?.assigned_regions || "");
+  c.set("ambassador_region", region);
+  await next();
+};
+app$4.use("/api/ambassador/*", authMiddleware, ambassadorMiddleware);
+app$4.get("/api/ambassador/stats", async (c) => {
+  const db = getTursoClient(c.env);
+  const region = c.get("ambassador_region");
+  if (!region) {
+    return c.json({ error: "No region assigned to this ambassador." }, 400);
+  }
+  const users = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM user_profiles WHERE country = ? OR region = ?",
+    args: [region, region]
+  });
+  const missions = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM missions WHERE location_name LIKE ? AND status = 'active'",
+    args: [`%${region}%`]
+  });
+  const sightings = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM sightings WHERE address LIKE ?",
+    args: [`%${region}%`]
+  });
+  const topUsers = await db.execute({
+    sql: `SELECT id, username, xp FROM user_profiles 
+              WHERE (country = ? OR region = ?) 
+              ORDER BY xp DESC LIMIT 5`,
+    args: [region, region]
+  });
+  return c.json({
+    region,
+    total_users: Number(users.rows[0].count),
+    total_impact: Number(sightings.rows[0].count),
+    // Using sighting count as proxy
+    active_missions: Number(missions.rows[0].count),
+    top_contributors: topUsers.rows
+  });
+});
+const app$3 = new Hono2();
+const scientistMiddleware = async (c, next) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const profile = await db.execute({
+    sql: "SELECT role FROM user_profiles WHERE id = ?",
+    args: [user.id]
+  });
+  const role = String(profile.rows[0]?.role || "player");
+  if (role !== "scientist" && role !== "admin") {
+    return c.json({ error: "Access denied: Scientists/Admins only" }, 403);
+  }
+  await next();
+};
+app$3.use("/api/scientist/*", authMiddleware, scientistMiddleware);
+app$3.get("/api/scientist/export", async (c) => {
+  const format = c.req.query("format") || "csv";
+  const type = c.req.query("type");
+  const days = parseInt(c.req.query("days") || "30");
+  const db = getTursoClient(c.env);
+  let sql = `SELECT s.*, up.username 
+               FROM sightings s
+               LEFT JOIN user_profiles up ON s.user_id = up.id
+               WHERE s.created_at > datetime('now', '-' || ? || ' days')`;
+  const args = [days];
+  if (type && type !== "all") {
+    sql += " AND s.type = ?";
+    args.push(type);
+  }
+  const result = await db.execute({ sql, args });
+  const rows = result.rows;
+  if (format === "geojson") {
+    const features2 = rows.map((row) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [row.longitude, row.latitude]
+      },
+      properties: {
+        id: row.id,
+        type: row.type,
+        subcategory: row.subcategory,
+        description: row.description,
+        severity: row.severity,
+        date: row.created_at,
+        user: row.username,
+        image_url: row.image_key ? `/api/sightings/${row.id}/photo` : null
+      }
+    }));
+    return c.json({
+      type: "FeatureCollection",
+      features: features2
+    });
+  }
+  const headers = ["id", "type", "subcategory", "latitude", "longitude", "severity", "date", "username", "description"];
+  const csvRows = rows.map((row) => [
+    row.id,
+    row.type,
+    row.subcategory,
+    row.latitude,
+    row.longitude,
+    row.severity,
+    row.created_at,
+    row.username,
+    `"${(row.description || "").replace(/"/g, '""')}"`
+    // Escape quotes
+  ]);
+  const csvContent = [
+    headers.join(","),
+    ...csvRows.map((r) => r.join(","))
+  ].join("\n");
+  return c.text(csvContent, 200, {
+    "Content-Type": "text/csv",
+    "Content-Disposition": `attachment; filename="ocean-data-export.csv"`
+  });
+});
+const app$2 = new Hono2();
+app$2.get("/api/dashboard/stats", async (c) => {
+  const db = getTursoClient(c.env);
+  const sightingsResult = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM sightings WHERE status != 'removed'",
+    args: []
+  });
+  const totalSightings = Number(sightingsResult.rows[0]?.count || 0);
+  const missionsResult = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM missions WHERE status IN ('upcoming', 'active')",
+    args: []
+  });
+  const activeMissions = Number(missionsResult.rows[0]?.count || 0);
+  const usersResult = await db.execute({
+    sql: "SELECT COUNT(*) as count FROM user_profiles",
+    args: []
+  });
+  const totalGuardians = Number(usersResult.rows[0]?.count || 0);
+  return c.json({
+    totalSightings,
+    activeMissions,
+    totalGuardians
+  });
+});
+const app$1 = new Hono2();
+const CreateCommentSchema = objectType({
+  content: stringType().min(1).max(1e3)
+});
+app$1.get("/api/sightings/:id/comments", async (c) => {
+  const sightingId = c.req.param("id");
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: `
+      SELECT c.*, up.username, up.avatar_url, up.level
+      FROM sighting_comments c
+      JOIN user_profiles up ON c.user_id = up.id
+      WHERE c.sighting_id = ?
+      ORDER BY c.created_at ASC
+    `,
+    args: [sightingId]
+  });
+  return c.json(result.rows);
+});
+app$1.post(
+  "/api/sightings/:id/comments",
+  authMiddleware,
+  zValidator("json", CreateCommentSchema),
+  async (c) => {
+    const sightingId = c.req.param("id");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    const { content } = c.req.valid("json");
+    const db = getTursoClient(c.env);
+    const sightingCheck = await db.execute({
+      sql: "SELECT user_id, description FROM sightings WHERE id = ?",
+      args: [sightingId]
+    });
+    if (sightingCheck.rows.length === 0) {
+      return c.json({ error: "Sighting not found" }, 404);
+    }
+    const sightingOwnerId = sightingCheck.rows[0].user_id;
+    const sightingDescription = sightingCheck.rows[0].description;
+    const result = await db.execute({
+      sql: "INSERT INTO sighting_comments (sighting_id, user_id, content) VALUES (?, ?, ?)",
+      args: [sightingId, user.id, content]
+    });
+    const commentId = Number(result.lastInsertRowid);
+    if (sightingOwnerId !== user.id) {
+      await db.execute({
+        sql: `INSERT INTO notifications (user_id, type, title, message, related_id)
+              VALUES (?, 'comment', ?, ?, ?)`,
+        args: [
+          sightingOwnerId,
+          "New Comment",
+          `Someone commented on your sighting: "${sightingDescription.substring(0, 30)}..."`,
+          sightingId
+        ]
+      });
+    }
+    const newComment = await db.execute({
+      sql: `
+        SELECT c.*, up.username, up.avatar_url, up.level
+        FROM sighting_comments c
+        JOIN user_profiles up ON c.user_id = up.id
+        WHERE c.id = ?
+      `,
+      args: [commentId]
+    });
+    return c.json(newComment.rows[0], 201);
+  }
+);
+app$1.post("/api/sightings/:id/validate", authMiddleware, async (c) => {
+  const sightingId = c.req.param("id");
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const db = getTursoClient(c.env);
+  const existing = await db.execute({
+    sql: "SELECT 1 FROM sighting_validations WHERE sighting_id = ? AND user_id = ?",
+    args: [sightingId, user.id]
+  });
+  let validCountChange = 0;
+  let action = "";
+  if (existing.rows.length > 0) {
+    await db.execute({
+      sql: "DELETE FROM sighting_validations WHERE sighting_id = ? AND user_id = ?",
+      args: [sightingId, user.id]
+    });
+    validCountChange = -1;
+    action = "removed";
+  } else {
+    await db.execute({
+      sql: "INSERT INTO sighting_validations (sighting_id, user_id) VALUES (?, ?)",
+      args: [sightingId, user.id]
+    });
+    validCountChange = 1;
+    action = "added";
+    const sighting = await db.execute({
+      sql: "SELECT user_id, description FROM sightings WHERE id = ?",
+      args: [sightingId]
+    });
+    if (sighting.rows.length > 0) {
+      const ownerId = sighting.rows[0].user_id;
+      if (ownerId !== user.id) {
+        await db.execute({
+          sql: `INSERT INTO notifications (user_id, type, title, message, related_id)
+                      VALUES (?, 'validation', 'Sighting Validated', 'Someone validated your sighting!', ?)`,
+          args: [ownerId, sightingId]
+        });
+      }
+    }
+  }
+  await db.execute({
+    sql: "UPDATE sightings SET validation_count = validation_count + ? WHERE id = ?",
+    args: [validCountChange, sightingId]
+  });
+  const updatedSighting = await db.execute({
+    sql: "SELECT validation_count FROM sightings WHERE id = ?",
+    args: [sightingId]
+  });
+  return c.json({
+    action,
+    validation_count: updatedSighting.rows[0].validation_count
+  });
+});
+app$1.get("/api/sightings/:id/validate", authMiddleware, async (c) => {
+  const sightingId = c.req.param("id");
+  const user = c.get("user");
+  if (!user) return c.json({ validated: false });
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: "SELECT 1 FROM sighting_validations WHERE sighting_id = ? AND user_id = ?",
+    args: [sightingId, user.id]
+  });
+  return c.json({ validated: result.rows.length > 0 });
+});
 const app = new Hono2();
+app.use("*", cors());
+app.use("*", async (c, next) => {
+  await next();
+  c.header("X-Frame-Options", "DENY");
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+  c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  c.header(
+    "Content-Security-Policy",
+    "default-src 'self'; connect-src 'self' *; img-src 'self' data: blob: *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+  );
+});
 app.route("/", auth);
+app.route("/", app$d);
+app.route("/", app$c);
+app.route("/", app$e);
+app.route("/", app$b);
+app.route("/", app$a);
+app.route("/", app$9);
+app.route("/", app$8);
+app.route("/", app$7);
+app.route("/", app$6);
+app.route("/", app$5);
+app.route("/", app$4);
 app.route("/", app$3);
 app.route("/", app$2);
-app.route("/", app$4);
 app.route("/", app$1);
 const workerEntry = app ?? {};
 export {

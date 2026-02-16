@@ -7,7 +7,7 @@ import {
     CreateImpactReportSchema,
     calculateLevel,
 } from "@/shared/types";
-import type { Mission, MissionParticipant, MissionChatMessage } from "@/shared/types";
+
 import { checkAndAwardBadges } from "./gamification";
 
 const app = new Hono<{ Bindings: Env }>();

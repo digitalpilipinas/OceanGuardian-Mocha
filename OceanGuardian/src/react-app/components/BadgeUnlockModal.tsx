@@ -5,7 +5,8 @@ import { Badge } from "@/react-app/components/ui/badge";
 import ImpactBadgeGenerator from "@/react-app/components/ImpactBadgeGenerator";
 import { useAuth } from "@getmocha/users-service/react";
 import type { UserProfile } from "@/shared/types";
-import { Share2 } from "lucide-react";
+import { Share2, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface BadgeUnlockModalProps {
     open: boolean;
@@ -20,39 +21,39 @@ interface BadgeUnlockModalProps {
 }
 
 const RARITY_THEMES: Record<string, {
-    gradient: string;
+    colors: string;
     glow: string;
     badgeClass: string;
     label: string;
 }> = {
     common: {
-        gradient: "from-gray-300/20 via-slate-200/10 to-gray-400/20",
-        glow: "bg-gray-400/20",
-        badgeClass: "bg-gray-500 text-white",
+        colors: "from-slate-300 to-slate-500",
+        glow: "bg-slate-400/30",
+        badgeClass: "bg-slate-500 text-white border-none",
         label: "Common",
     },
     uncommon: {
-        gradient: "from-green-400/20 via-emerald-300/10 to-green-500/20",
-        glow: "bg-green-400/20",
-        badgeClass: "bg-green-500 text-white",
+        colors: "from-emerald-400 to-teal-600",
+        glow: "bg-emerald-400/30",
+        badgeClass: "bg-emerald-500 text-white border-none",
         label: "Uncommon",
     },
     rare: {
-        gradient: "from-blue-400/20 via-cyan-300/10 to-blue-500/20",
-        glow: "bg-blue-400/20",
-        badgeClass: "bg-blue-500 text-white",
+        colors: "from-blue-400 to-indigo-600",
+        glow: "bg-blue-400/30",
+        badgeClass: "bg-blue-500 text-white border-none",
         label: "Rare",
     },
     epic: {
-        gradient: "from-purple-400/20 via-violet-300/10 to-purple-500/20",
-        glow: "bg-purple-400/20",
-        badgeClass: "bg-purple-500 text-white",
+        colors: "from-purple-400 to-fuchsia-600",
+        glow: "bg-purple-400/30",
+        badgeClass: "bg-purple-500 text-white border-none",
         label: "Epic",
     },
     legendary: {
-        gradient: "from-amber-400/20 via-yellow-300/10 to-amber-500/20",
-        glow: "bg-amber-400/20",
-        badgeClass: "bg-amber-500 text-white",
+        colors: "from-amber-400 to-orange-600",
+        glow: "bg-amber-400/30",
+        badgeClass: "bg-amber-500 text-white border-none",
         label: "Legendary",
     },
 };
@@ -65,8 +66,6 @@ export default function BadgeUnlockModal({ open, onClose, badge }: BadgeUnlockMo
 
     useEffect(() => {
         if (open && user) {
-            // Fetch minimal profile if needed, or just use auth user info
-            // Ideally we fetch full profile to get XP/Level etc for the generator
             fetch("/api/profiles/me")
                 .then(res => res.ok ? res.json() : null)
                 .then(data => setUserProfile(data))
@@ -86,61 +85,105 @@ export default function BadgeUnlockModal({ open, onClose, badge }: BadgeUnlockMo
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent showCloseButton={false} className="overflow-hidden sm:max-w-md">
-                {/* Rarity-themed animated background */}
-                <div className={`absolute inset-0 -z-10 bg-gradient-to-br ${theme.gradient} animate-pulse rounded-2xl`} />
-                <div className="absolute inset-0 -z-10 overflow-hidden rounded-2xl">
-                    <div className={`absolute -top-10 -left-10 h-40 w-40 rounded-full ${theme.glow} blur-3xl animate-[float_3s_ease-in-out_infinite]`} />
-                    <div className={`absolute -bottom-10 -right-10 h-40 w-40 rounded-full ${theme.glow} blur-3xl animate-[float_3s_ease-in-out_infinite_1.5s]`} />
-                </div>
+            <DialogContent showCloseButton={false} className="overflow-visible sm:max-w-md bg-transparent border-none shadow-none">
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0, rotate: -5 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    className="relative"
+                >
+                    {/* Background Radial Glow */}
+                    <div className={`absolute inset-[-100px] -z-20 ${theme.glow} blur-[120px] rounded-full animate-pulse`} />
 
-                <DialogHeader className="text-center items-center">
-                    <DialogTitle className="text-lg font-semibold text-muted-foreground">
-                        Badge Unlocked!
-                    </DialogTitle>
-                </DialogHeader>
+                    <div className="neo-flat rounded-[2.5rem] p-8 relative overflow-hidden bg-card/90 backdrop-blur-xl">
+                        {/* Decorative floating elements */}
+                        <motion.div
+                            animate={{ y: [0, -15, 0], x: [0, 10, 0] }}
+                            transition={{ duration: 5, repeat: Infinity }}
+                            className={`absolute top-10 right-10 w-2 h-2 rounded-full bg-gradient-to-r ${theme.colors}`}
+                        />
+                        <motion.div
+                            animate={{ y: [0, 15, 0], x: [0, -10, 0] }}
+                            transition={{ duration: 7, repeat: Infinity }}
+                            className={`absolute bottom-20 left-10 w-3 h-3 rounded-full bg-gradient-to-r ${theme.colors} opacity-50`}
+                        />
 
-                {/* Badge icon with bounce animation */}
-                <div className="flex flex-col items-center gap-4 py-4">
-                    <div className="relative">
-                        <div className="text-7xl animate-[bounceIn_0.6s_ease-out]">
-                            {badge.icon}
+                        <DialogHeader className="text-center items-center mb-6">
+                            <motion.div
+                                initial={{ y: -20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="flex items-center gap-2 px-4 py-1.5 neo-pressed rounded-full mb-4"
+                            >
+                                <Sparkles className="w-4 h-4 text-primary" />
+                                <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">New Achievement</span>
+                            </motion.div>
+                            <DialogTitle className="text-3xl font-extrabold text-foreground">
+                                Badge Unlocked!
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        <div className="flex flex-col items-center gap-6 py-4">
+                            <div className="relative">
+                                {/* Rays background */}
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                                    className={`absolute inset-[-40px] -z-10 opacity-20 bg-[conic-gradient(from_0deg,transparent,white,transparent)] rounded-full`}
+                                />
+
+                                <motion.div
+                                    initial={{ scale: 0, rotate: -180 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ type: "spring", damping: 12, stiffness: 100, delay: 0.3 }}
+                                    className="text-8xl relative z-10"
+                                >
+                                    {badge.icon}
+                                </motion.div>
+
+                                {/* Orbiting rings */}
+                                <div className={`absolute inset-[-10px] rounded-full border-2 border-primary/20 animate-spin-slow`} />
+                                <div className={`absolute inset-[-20px] rounded-full border border-primary/10 animate-reverse-spin-slow`} />
+                            </div>
+
+                            <div className="text-center space-y-4">
+                                <div>
+                                    <h3 className="text-2xl font-black bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                                        {badge.name}
+                                    </h3>
+                                    <div className="flex gap-2 justify-center mt-3">
+                                        <Badge className={`${theme.badgeClass} px-4 py-1 rounded-full font-bold shadow-lg`}>
+                                            {theme.label}
+                                        </Badge>
+                                        <Badge variant="neomorph" className="capitalize px-4 py-1 rounded-full font-bold">
+                                            {badge.category}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <DialogDescription className="text-lg text-muted-foreground font-medium leading-relaxed">
+                                    {badge.description}
+                                </DialogDescription>
+                            </div>
                         </div>
-                        {/* Shimmer ring */}
-                        <div className="absolute inset-0 rounded-full border-2 border-current opacity-20 animate-[ping_2s_ease-in-out_infinite]" />
-                    </div>
-                    <div className="text-center space-y-2">
-                        <h3 className="text-xl font-bold">{badge.name}</h3>
-                        <DialogDescription className="text-base">
-                            {badge.description}
-                        </DialogDescription>
-                        <div className="flex gap-2 justify-center">
-                            <Badge className={theme.badgeClass}>
-                                {theme.label}
-                            </Badge>
-                            <Badge variant="outline" className="capitalize">
-                                {badge.category}
-                            </Badge>
-                        </div>
-                    </div>
-                </div>
 
-                <DialogFooter className="flex-col gap-2 sm:gap-0">
-                    <div className="flex gap-2 w-full">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowGenerator(true)}
-                            className="flex-1 gap-2"
-                            disabled={!userProfile}
-                        >
-                            <Share2 className="w-4 h-4" />
-                            Share
-                        </Button>
-                        <Button onClick={onClose} className="flex-1 font-semibold">
-                            Awesome! 🎊
-                        </Button>
+                        <DialogFooter className="flex-col gap-4 mt-8">
+                            <div className="flex gap-4 w-full">
+                                <Button
+                                    variant="neomorph"
+                                    onClick={() => setShowGenerator(true)}
+                                    className="flex-1 h-14 gap-2 font-bold uppercase tracking-widest text-primary"
+                                    disabled={!userProfile}
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                    Share
+                                </Button>
+                                <Button onClick={onClose} variant="neomorph-primary" className="flex-1 h-14 font-black uppercase tracking-widest text-lg">
+                                    Awesome!
+                                </Button>
+                            </div>
+                        </DialogFooter>
                     </div>
-                </DialogFooter>
+                </motion.div>
             </DialogContent>
         </Dialog>
     );

@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/react-app/components/ui/dialog";
 import { Button } from "@/react-app/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp } from "lucide-react";
 
 interface LevelUpModalProps {
     open: boolean;
@@ -28,64 +30,110 @@ export default function LevelUpModal({ open, onClose, oldLevel, newLevel }: Leve
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent showCloseButton={false} className="overflow-hidden">
-                {/* Animated background shimmer */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-400/20 via-yellow-300/10 to-orange-400/20 animate-pulse rounded-4xl" />
-                <div className="absolute inset-0 -z-10 overflow-hidden rounded-4xl">
-                    <div className="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-yellow-400/20 blur-3xl animate-[float_4s_ease-in-out_infinite]" />
-                    <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-amber-400/20 blur-3xl animate-[float_4s_ease-in-out_infinite_1s]" />
-                </div>
+            <DialogContent showCloseButton={false} className="bg-transparent border-none shadow-none max-w-sm sm:max-w-md overflow-visible">
+                <motion.div
+                    initial={{ y: 50, opacity: 0, scale: 0.9 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 50, opacity: 0, scale: 0.9 }}
+                    className="relative"
+                >
+                    {/* Ambient Glow */}
+                    <div className="absolute inset-[-50px] -z-10 bg-amber-400/20 blur-[100px] rounded-full animate-pulse" />
 
-                <DialogHeader className="text-center items-center">
-                    {/* Celebration emoji */}
-                    <div className="text-6xl mb-2 animate-[bounce_0.6s_ease-in-out]">
-                        🎉
-                    </div>
-                    <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-                        Level Up!
-                    </DialogTitle>
-                    <DialogDescription className="text-base">
-                        You've reached a new level!
-                    </DialogDescription>
-                </DialogHeader>
+                    <div className="neo-flat rounded-[3rem] p-10 relative overflow-hidden bg-card/90 backdrop-blur-xl">
+                        {/* Shimmer overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none" />
 
-                {/* Level transition */}
-                <div className="flex items-center justify-center gap-4 py-4">
-                    <div className="text-center">
-                        <div className="text-3xl font-bold text-muted-foreground">{oldLevel}</div>
-                        <div className="text-xs text-muted-foreground">Before</div>
-                    </div>
-                    <div className="text-2xl text-amber-500 animate-[pulse_1.5s_ease-in-out_infinite]">→</div>
-                    <div className="text-center">
-                        <div className="relative">
-                            <div className="text-5xl font-extrabold text-amber-500 animate-[scaleIn_0.5s_ease-out]">{newLevel}</div>
-                            <div className="absolute inset-0 text-5xl font-extrabold text-amber-400/30 blur-sm animate-[pulse_2s_ease-in-out_infinite]">{newLevel}</div>
-                        </div>
-                        <div className="text-xs font-medium text-amber-600">New Level</div>
-                    </div>
-                </div>
+                        <DialogHeader className="text-center items-center mb-8">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: [0, 1.2, 1] }}
+                                transition={{ duration: 0.5 }}
+                                className="text-7xl mb-4"
+                            >
+                                🎉
+                            </motion.div>
+                            <DialogTitle className="text-4xl font-black bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
+                                Level Up!
+                            </DialogTitle>
+                            <DialogDescription className="text-lg font-bold text-muted-foreground/80 mt-2">
+                                Your journey expands!
+                            </DialogDescription>
+                        </DialogHeader>
 
-                {/* Unlocked perks */}
-                {unlockedPerks.length > 0 && (
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-center text-muted-foreground">🔓 New Perks Unlocked</h4>
-                        {unlockedPerks.map((perk) => (
-                            <div key={perk.title} className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                                <span className="text-2xl">{perk.icon}</span>
-                                <div>
-                                    <p className="font-semibold text-sm">{perk.title}</p>
-                                    <p className="text-xs text-muted-foreground">{perk.description}</p>
-                                </div>
+                        {/* Level transition visualization */}
+                        <div className="flex items-center justify-between gap-6 py-8 px-4 mb-8 neo-pressed rounded-[2rem]">
+                            <div className="text-center">
+                                <div className="text-4xl font-black text-muted-foreground/50">{oldLevel}</div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40 mt-1">Previous</div>
                             </div>
-                        ))}
-                    </div>
-                )}
 
-                <DialogFooter>
-                    <Button onClick={onClose} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold">
-                        Continue 🚀
-                    </Button>
-                </DialogFooter>
+                            <motion.div
+                                animate={{ x: [0, 5, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                                className="text-amber-500"
+                            >
+                                <TrendingUp className="w-8 h-8" />
+                            </motion.div>
+
+                            <div className="text-center">
+                                <div className="relative">
+                                    <motion.div
+                                        initial={{ scale: 0.5 }}
+                                        animate={{ scale: 1 }}
+                                        className="text-6xl font-black text-amber-500"
+                                    >
+                                        {newLevel}
+                                    </motion.div>
+                                    <div className="absolute inset-0 text-6xl font-black text-amber-400/40 blur-md animate-pulse">{newLevel}</div>
+                                </div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-amber-600/60 mt-1">Reached</div>
+                            </div>
+                        </div>
+
+                        {/* Unlocked perks section */}
+                        <AnimatePresence>
+                            {unlockedPerks.length > 0 && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    className="space-y-4 mb-10"
+                                >
+                                    <h4 className="text-xs font-black text-center text-muted-foreground uppercase tracking-widest mb-4">🔓 New Powers Unlocked</h4>
+                                    <div className="grid gap-3">
+                                        {unlockedPerks.map((perk, i) => (
+                                            <motion.div
+                                                key={perk.title}
+                                                initial={{ x: -20, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                transition={{ delay: 0.1 * i }}
+                                                className="flex items-center gap-4 p-4 rounded-2xl neo-flat group hover:bg-amber-500/5 transition-colors"
+                                            >
+                                                <div className="text-3xl neo-pressed p-2 rounded-xl group-hover:scale-110 transition-transform">
+                                                    {perk.icon}
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-sm text-foreground">{perk.title}</p>
+                                                    <p className="text-xs text-muted-foreground font-medium">{perk.description}</p>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <DialogFooter className="mt-4">
+                            <Button
+                                onClick={onClose}
+                                variant="neomorph-primary"
+                                className="w-full h-16 text-xl font-black uppercase tracking-[0.2em] shadow-amber-500/20"
+                            >
+                                Continue 🚀
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </motion.div>
             </DialogContent>
         </Dialog>
     );

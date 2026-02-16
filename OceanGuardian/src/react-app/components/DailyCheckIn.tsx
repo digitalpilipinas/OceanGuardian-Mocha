@@ -41,16 +41,17 @@ export default function DailyCheckIn({ checkedIn, onCheckIn, streakDays }: Daily
 
     if (checkedIn) {
         return (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center animate-in fade-in zoom-in duration-500">
-                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="w-8 h-8 text-emerald-400" />
+            <div className="neo-flat rounded-3xl p-8 text-center animate-in fade-in zoom-in duration-500 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full -ml-16 -mt-16" />
+                <div className="relative z-10 w-20 h-20 neo-pressed rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-10 h-10 text-emerald-500" />
                 </div>
-                <h3 className="text-xl font-bold text-emerald-100 mb-1">Pledge Complete!</h3>
-                <p className="text-emerald-200/60 text-sm mb-4">You're plastic-free today. Keep it up!</p>
+                <h3 className="text-2xl font-bold text-foreground mb-1 relative z-10">Pledge Complete!</h3>
+                <p className="text-muted-foreground text-sm mb-6 relative z-10 font-medium">You're plastic-free today. Keep it up!</p>
 
                 <Button
-                    variant="outline"
-                    className="w-full border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+                    variant="neomorph"
+                    className="w-full h-12 text-emerald-600 font-bold uppercase tracking-widest relative z-10"
                     onClick={handleShare}
                 >
                     <Share2 className="w-4 h-4 mr-2" />
@@ -61,16 +62,18 @@ export default function DailyCheckIn({ checkedIn, onCheckIn, streakDays }: Daily
     }
 
     return (
-        <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl p-6 text-center">
-            <div className="w-16 h-16 bg-indigo-500/30 rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-indigo-500/10">
-                <PartyPopper className="w-8 h-8 text-indigo-300" />
+        <div className="neo-flat rounded-3xl p-8 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
+            <div className="relative z-10 w-20 h-20 neo-pressed rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-primary/5">
+                <PartyPopper className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-1">Daily Pledge</h3>
-            <p className="text-slate-300 text-sm mb-6">"I pledge to avoid single-use plastics today."</p>
+            <h3 className="text-2xl font-extrabold text-foreground mb-2 relative z-10">Daily Pledge</h3>
+            <p className="text-muted-foreground text-sm mb-8 relative z-10 italic font-medium">"I pledge to avoid single-use plastics today."</p>
 
             <Button
+                variant="neomorph-primary"
                 size="lg"
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-6 text-lg shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full h-16 text-lg font-bold uppercase tracking-widest relative z-10"
                 onClick={handleCheckIn}
                 disabled={loading}
             >
