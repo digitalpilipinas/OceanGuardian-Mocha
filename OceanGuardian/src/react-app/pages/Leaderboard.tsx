@@ -39,8 +39,8 @@ const Podium = ({ top3 }: { top3: LeaderboardEntry[] }) => {
                     </div>
                 </div>
                 <div className="text-center mb-2">
-                    <p className="font-bold text-sm truncate max-w-[100px]">{user.username}</p>
-                    <p className="text-xs text-muted-foreground">{user.xp.toLocaleString()} XP</p>
+                    <p className="font-bold text-sm truncate max-w-[100px] text-white drop-shadow-md">{user.username}</p>
+                    <p className="text-xs text-blue-200/80 font-medium">{user.xp.toLocaleString()} XP</p>
                 </div>
                 <div className={`w-full ${height} ${color} border-t-4 rounded-t-lg flex items-end justify-center pb-2 shadow-sm`}>
                     <Trophy className={`w-6 h-6 ${iconColor} opacity-50`} />

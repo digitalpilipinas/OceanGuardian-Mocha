@@ -70,74 +70,76 @@ export default function Missions() {
       <div className="mb-10">
         <Tabs defaultValue="upcoming" onValueChange={setFilter} className="w-full">
           <TabsList className="bg-transparent p-1 neo-pressed rounded-2xl h-14">
-            <TabsTrigger value="upcoming" className="rounded-xl h-12 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8">Upcoming</TabsTrigger>
-            <TabsTrigger value="active" className="rounded-xl h-12 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8">Active Now</TabsTrigger>
-            <TabsTrigger value="completed" className="rounded-xl h-12 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8">Completed</TabsTrigger>
+            <TabsTrigger value="upcoming" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-white px-8 transition-colors">Upcoming</TabsTrigger>
+            <TabsTrigger value="active" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-white px-8 transition-colors">Active Now</TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-white px-8 transition-colors">Completed</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      ) : missions.length === 0 ? (
-        <div className="text-center py-20 neo-flat rounded-3xl bg-card/50">
-          <p className="text-2xl font-bold text-muted-foreground">No missions found</p>
-          <p className="text-muted-foreground mt-2">Be the first to organize one!</p>
-          {canCreate && (
-            <Button variant="neomorph" className="mt-8 px-10 h-14" onClick={() => navigate("/missions/create")}>
-              Create Mission
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {missions.map((mission) => (
-            <Card key={mission.id} variant="neomorph" className="flex flex-col h-full group/mission">
-              {mission.image_url && (
-                <div className="relative h-56 w-full overflow-hidden">
-                  <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/mission:scale-110" />
-                  <div className="absolute top-4 right-4">
-                    <Badge className="capitalize px-4 py-1.5 rounded-full glass-liquid border-none text-white font-bold shadow-xl">
-                      {mission.status}
-                    </Badge>
+      {
+        loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        ) : missions.length === 0 ? (
+          <div className="text-center py-20 neo-flat rounded-3xl bg-card/50">
+            <p className="text-2xl font-bold text-muted-foreground">No missions found</p>
+            <p className="text-muted-foreground mt-2">Be the first to organize one!</p>
+            {canCreate && (
+              <Button variant="neomorph" className="mt-8 px-10 h-14" onClick={() => navigate("/missions/create")}>
+                Create Mission
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {missions.map((mission) => (
+              <Card key={mission.id} variant="neomorph" className="flex flex-col h-full group/mission">
+                {mission.image_url && (
+                  <div className="relative h-56 w-full overflow-hidden">
+                    <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/mission:scale-110" />
+                    <div className="absolute top-4 right-4">
+                      <Badge className="capitalize px-4 py-1.5 rounded-full glass-liquid border-none text-white font-bold shadow-xl">
+                        {mission.status}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              )}
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-bold line-clamp-1">{mission.title}</CardTitle>
-                <CardDescription className="flex items-center gap-1.5 font-medium text-primary">
-                  <MapPin className="h-3.5 w-3.5" /> {mission.location_name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <p className="text-sm text-muted-foreground line-clamp-3 mb-6 bg-muted/20 p-3 rounded-xl border border-border/10">
-                  {mission.description}
-                </p>
+                )}
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl font-bold line-clamp-1">{mission.title}</CardTitle>
+                  <CardDescription className="flex items-center gap-1.5 font-medium text-primary">
+                    <MapPin className="h-3.5 w-3.5" /> {mission.location_name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-6 bg-muted/20 p-3 rounded-xl border border-border/10">
+                    {mission.description}
+                  </p>
 
-                <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 neo-pressed rounded-full">
-                    <Calendar className="h-3.5 w-3.5 text-primary" />
-                    {new Date(mission.start_time).toLocaleDateString()}
+                  <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 neo-pressed rounded-full">
+                      <Calendar className="h-3.5 w-3.5 text-primary" />
+                      {new Date(mission.start_time).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 neo-pressed rounded-full">
+                      <Users className="h-3.5 w-3.5 text-primary" />
+                      {mission.max_participants ? `Max ${mission.max_participants}` : "Open"}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 neo-pressed rounded-full">
-                    <Users className="h-3.5 w-3.5 text-primary" />
-                    {mission.max_participants ? `Max ${mission.max_participants}` : "Open"}
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-4">
-                <Button variant="neomorph" className="w-full h-12 text-sm font-bold uppercase tracking-widest group-hover/mission:bg-primary group-hover/mission:text-primary-foreground transition-all duration-300" asChild>
-                  <Link to={`/missions/${mission.id}`}>
-                    View Details <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardContent>
+                <CardFooter className="pt-4">
+                  <Button variant="neomorph" className="w-full h-12 text-sm font-bold uppercase tracking-widest group-hover/mission:bg-primary group-hover/mission:text-primary-foreground transition-all duration-300" asChild>
+                    <Link to={`/missions/${mission.id}`}>
+                      View Details <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )
+      }
     </div>
   );
 }
