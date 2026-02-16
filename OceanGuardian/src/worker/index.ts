@@ -14,6 +14,7 @@ import learning from "./routes/learning";
 import admin from "./routes/admin";
 import ambassador from "./routes/ambassador";
 import scientist from "./routes/scientist";
+import dashboard from "./routes/dashboard";
 
 
 const app = new Hono<{ Bindings: Env }>();
@@ -32,6 +33,7 @@ app.route("/", learning);
 app.route("/", admin);
 app.route("/", ambassador);
 app.route("/", scientist);
+app.route("/", dashboard);
 
 import comments from "./routes/comments";
 

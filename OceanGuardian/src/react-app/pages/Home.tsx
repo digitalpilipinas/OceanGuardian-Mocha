@@ -2,8 +2,59 @@ import { Waves, Map, Award, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import ActivityFeed from "@/react-app/components/ActivityFeed";
+import { useAuth } from "@getmocha/users-service/react";
+import WelcomeHeader from "@/react-app/components/dashboard/WelcomeHeader";
+import DashboardStats from "@/react-app/components/dashboard/DashboardStats";
+import MapPreview from "@/react-app/components/dashboard/MapPreview";
+import MissionsCarousel from "@/react-app/components/dashboard/MissionsCarousel";
+import DailyQuizCTA from "@/react-app/components/dashboard/DailyQuizCTA";
 
 export default function Home() {
+  const { user } = useAuth();
+
+  if (user) {
+    return (
+      <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
+        <WelcomeHeader />
+
+        <DashboardStats />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Live Map Preview */}
+            <div className="h-[400px]">
+              <MapPreview />
+            </div>
+
+            {/* Active Missions */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Award className="h-5 w-5 text-primary" />
+                  Active Missions
+                </h2>
+              </div>
+              <MissionsCarousel />
+            </div>
+
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <DailyQuizCTA />
+
+            <div className="h-[500px]">
+              <ActivityFeed />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Guest View (Landing Page)
   return (
     <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* Hero Section */}
