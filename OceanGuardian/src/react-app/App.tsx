@@ -23,6 +23,7 @@ const AmbassadorDashboard = lazy(() => import("@/react-app/pages/AmbassadorDashb
 
 const LearningHub = lazy(() => import("@/react-app/pages/LearningHub"));
 const LessonView = lazy(() => import("@/react-app/pages/LessonView"));
+const LandingPage = lazy(() => import("@/react-app/pages/LandingPage"));
 
 // Components loaded as pages or large heavy components
 const DailyQuiz = lazy(() => import("@/react-app/components/DailyQuiz"));
@@ -42,7 +43,8 @@ export default function App() {
             }
           >
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/dashboard" element={<HomePage />} />
               <Route path="/map" element={<MapViewPage />} />
               <Route path="/report" element={<ReportSighting />} />
               <Route path="/coral-scan" element={<CoralScan />} />
