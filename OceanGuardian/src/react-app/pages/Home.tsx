@@ -1,6 +1,7 @@
 import { Waves, Map, Award, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
+import ActivityFeed from "@/react-app/components/ActivityFeed";
 
 export default function Home() {
   return (
@@ -17,7 +18,7 @@ export default function Home() {
           The Pokémon GO of Ocean Conservation
         </p>
         <p className="text-lg text-muted-foreground mb-8 max-w-3xl mx-auto">
-          Transform beach walks into heroic conservation quests. Log debris, track coral health, 
+          Transform beach walks into heroic conservation quests. Log debris, track coral health,
           earn badges, and help protect our oceans—one sighting at a time.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -33,47 +34,57 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sightings</CardTitle>
-            <Map className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2,847</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 text-secondary mr-1" />
-              +12% from last week
-            </p>
-          </CardContent>
-        </Card>
+      {/* Quick Stats & Activity Feed */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Sightings</CardTitle>
+                <Map className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2,847</div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingUp className="inline h-3 w-3 text-secondary mr-1" />
+                  +12% from last week
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Missions</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              Join cleanup missions near you
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Missions</CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">12</div>
+                <p className="text-xs text-muted-foreground">
+                  Join cleanup missions near you
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ocean Guardians</CardTitle>
-            <Waves className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,243</div>
-            <p className="text-xs text-muted-foreground">
-              Community members making an impact
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Ocean Guardians</CardTitle>
+                <Waves className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,243</div>
+                <p className="text-xs text-muted-foreground">
+                  Community members making an impact
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Missions Preview or other content could go here */}
+        </div>
+
+        <div className="lg:col-span-1 h-[500px]">
+          <ActivityFeed />
+        </div>
       </section>
 
       {/* Features */}

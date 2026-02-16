@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/react-app/components/ui/dropdown-menu";
+import NotificationPopover from "@/react-app/components/NotificationPopover";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -72,42 +73,45 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* Auth Controls */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full ml-2">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.google_user_data.picture || undefined} alt={user.email} />
-                      <AvatarFallback>
-                        {user.google_user_data.given_name?.[0] || user.email[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user.google_user_data.name || user.email}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/profile">
-                      <User className="mr-2 h-4 w-4" />
-                      My Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1">
+                <NotificationPopover />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full ml-1">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.google_user_data.picture || undefined} alt={user.email} />
+                        <AvatarFallback>
+                          {user.google_user_data.given_name?.[0] || user.email[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium">{user.google_user_data.name || user.email}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link to="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link to="/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
               <Button onClick={() => redirectToLogin()} size="sm" className="ml-2">
                 Sign In

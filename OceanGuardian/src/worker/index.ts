@@ -24,5 +24,12 @@ app.route("/", social);
 app.route("/", leaderboard);
 app.route("/", coral);
 app.route("/", learning);
+import comments from "./routes/comments";
+
+app.route("/", comments);
+
+// Removed temporary migration route
+// import migrateCommunity from "./routes/migrate-community";
+// app.route("/", migrateCommunity);
 
 export default app;

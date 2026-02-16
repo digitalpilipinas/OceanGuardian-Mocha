@@ -30,6 +30,7 @@ export interface Sighting {
   water_temp?: number | null;
   bleach_percent?: number | null;
   depth?: number | null;
+  validation_count: number;
 }
 
 // SVG markers with distinct shapes per type

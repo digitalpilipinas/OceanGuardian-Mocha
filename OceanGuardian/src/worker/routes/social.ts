@@ -119,4 +119,81 @@ app.get("/api/users/:id/following", async (c) => {
     return c.json(following);
 });
 
+// Get activity feed
+app.get("/api/activity-feed", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const filter = c.req.query("filter"); // 'following' or undefined
+    const limit = parseInt(c.req.query("limit") || "50");
+    const db = getTursoClient(c.env);
+
+    let sql = `
+        SELECT a.*, up.username, up.avatar_url, up.level
+        FROM activity_log a
+        JOIN user_profiles up ON a.user_id = up.id
+        WHERE 1=1
+    `;
+    const args: (string | number)[] = [];
+
+    if (filter === "following" && user) {
+        // Get IDs of users being followed
+        sql += ` AND a.user_id IN (
+            SELECT following_id FROM user_follows WHERE follower_id = ?
+        )`;
+        args.push(user.id);
+    }
+
+    sql += " ORDER BY a.created_at DESC LIMIT ?";
+    args.push(limit);
+
+    const result = await db.execute({ sql, args });
+    return c.json(result.rows);
+});
+
+// Get notifications
+app.get("/api/notifications", authMiddleware, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const db = getTursoClient(c.env);
+    const limit = parseInt(c.req.query("limit") || "50");
+
+    const result = await db.execute({
+        sql: `SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+        args: [user.id, limit]
+    });
+
+    return c.json(result.rows);
+});
+
+// Mark notification as read
+app.post("/api/notifications/:id/read", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const id = c.req.param("id");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const db = getTursoClient(c.env);
+
+    await db.execute({
+        sql: "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+        args: [id, user.id]
+    });
+
+    return c.json({ success: true });
+});
+
+// Mark all notifications as read
+app.post("/api/notifications/read-all", authMiddleware, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const db = getTursoClient(c.env);
+
+    await db.execute({
+        sql: "UPDATE notifications SET is_read = 1 WHERE user_id = ?",
+        args: [user.id]
+    });
+
+    return c.json({ success: true });
+});
+
 export default app;
