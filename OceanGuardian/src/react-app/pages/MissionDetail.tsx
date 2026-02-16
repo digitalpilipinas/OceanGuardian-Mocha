@@ -18,7 +18,7 @@ import {
 import { Input } from "@/react-app/components/ui/input";
 import { Label } from "@/react-app/components/ui/label";
 import { Textarea } from "@/react-app/components/ui/textarea";
-import { Loader2, Calendar, MapPin, Users, ArrowLeft, CheckCircle, Clock, Trophy } from "lucide-react";
+import { Loader2, Calendar, MapPin, Users, ArrowLeft, CheckCircle, Clock, Trophy, Share2 } from "lucide-react";
 import { useToast } from "@/react-app/components/ui/use-toast";
 import type { Mission, MissionParticipant, MissionImpactReport } from "@/shared/types";
 import MissionChat from "@/react-app/components/MissionChat";
@@ -502,11 +502,30 @@ export default function MissionDetail() {
                         </CardContent>
                     </Card>
 
-                    {/* Tiny Participants List for quick view (optional, since we have a tab now) - keeping it simple by removing it or keeping only count */}
-                    {/* Actually, the instructions say "Implement Mission-specific Leaderboard in Mission Details". I put it in a tab. */}
-                    {/* I'll remove the old participants card to avoid duplication, or keep it as "Friends attending"? */}
-                    {/* Let's keep it but simplified or just remove it since we have the tab. Use the space for something else or just leave it. */}
-                    {/* I'll remove the duplicate list to clean up UI. */}
+                    {/* Invite Friends Share Card */}
+                    <Card>
+                        <CardContent className="p-4">
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={async () => {
+                                    console.log("[analytics] mission_share_clicked");
+                                    const text = `Join the "${mission.title}" cleanup mission on OceanGuardian! 🌊 ${participants.length} guardian${participants.length !== 1 ? "s" : ""} already signed up.`;
+                                    if (navigator.share) {
+                                        try {
+                                            await navigator.share({ title: mission.title, text, url: window.location.href });
+                                        } catch (err) { console.error("Share failed", err); }
+                                    } else {
+                                        await navigator.clipboard.writeText(`${text}\n${window.location.href}`);
+                                        toast({ title: "Copied!", description: "Mission link copied to clipboard." });
+                                    }
+                                }}
+                            >
+                                <Share2 className="mr-2 h-4 w-4" />
+                                Invite Friends
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>

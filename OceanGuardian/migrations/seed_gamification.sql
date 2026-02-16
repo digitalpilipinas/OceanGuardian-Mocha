@@ -12,7 +12,10 @@ INSERT OR IGNORE INTO activity_log (user_id, type, description, xp_earned, creat
 ('user_player1', 'sighting', 'Reported plastic bottles', 10, datetime('now', '-2 days')),
 ('user_player1', 'mission', 'Joined Santa Monica Cleanup', 50, datetime('now', '-2 days')),
 ('user_scientist', 'sighting', 'Reported healthy coral', 20, datetime('now', '-5 days')),
-('user_ambassador', 'streak', 'Reached 30 day streak!', 100, datetime('now', '-1 day'));
+('user_ambassador', 'streak', 'Reached 30 day streak!', 100, datetime('now', '-1 day')),
+('user_player4', 'sighting', 'Spotted dolphins!', 25, datetime('now', '-12 hours')),
+('user_player5', 'sighting', 'Reported chemical hazard', 40, datetime('now', '-3 hours')),
+('user_player9', 'mission', 'Joined Tokyo Eco-Patrol', 30, datetime('now', '-1 hour'));
 
 -- Seed Streak Log
 INSERT OR IGNORE INTO streak_log (user_id, activity_date, type) VALUES

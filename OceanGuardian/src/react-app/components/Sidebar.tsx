@@ -10,14 +10,19 @@ export default function Sidebar() {
     const navItems = [
         { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { path: "/map", icon: Map, label: "World Map" },
+        { path: "/report", icon: Waves, label: "Report Sighting" },
+        { path: "/coral-scan", icon: FlaskConical, label: "Coral Scan" },
         { path: "/missions", icon: Target, label: "Missions" },
         { path: "/leaderboard", icon: Globe, label: "Leaderboard" },
-        { path: "/learning", icon: Globe, label: "Learning Hub" }, // Updated icon to Lucide
+        { path: "/learning", icon: Globe, label: "Learning Hub" },
         { path: "/profile", icon: User, label: "My Profile" },
     ];
 
     if (profile?.role === "admin") {
         navItems.push({ path: "/admin", icon: Shield, label: "Admin Panel" });
+    }
+    if (profile?.role === "ambassador") {
+        navItems.push({ path: "/ambassador", icon: Shield, label: "Ambassador Panel" });
     }
     if (profile?.role === "scientist" || profile?.role === "admin") {
         navItems.push({ path: "/scientist/dashboard", icon: FlaskConical, label: "Research" });

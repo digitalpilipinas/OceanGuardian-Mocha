@@ -107,7 +107,7 @@ app.get("/api/leaderboard/streak", async (c) => {
 
     const result = await db.execute({
         sql: `
-            SELECT id, username, avatar_url, level, streak_days, country, is_anonymous
+            SELECT id, username, avatar_url, level, xp, streak_days, country, is_anonymous
             FROM user_profiles
             WHERE leaderboard_visible = 1 AND streak_days > 0
             ORDER BY streak_days DESC

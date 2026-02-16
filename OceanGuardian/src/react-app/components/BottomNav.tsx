@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { LayoutDashboard, Map, Plus, Target, User } from "lucide-react";
+import { LayoutDashboard, Map, Plus, Target, User, Globe, Trophy } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
 
 export default function BottomNav() {
@@ -17,8 +17,8 @@ export default function BottomNav() {
                         isActive("/dashboard") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
-                    <LayoutDashboard className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Base</span>
+                    <LayoutDashboard className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Base</span>
                 </Link>
 
                 <Link
@@ -28,21 +28,31 @@ export default function BottomNav() {
                         isActive("/map") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
-                    <Map className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Map</span>
+                    <Map className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Map</span>
+                </Link>
+
+                <Link
+                    to="/learning"
+                    className={cn(
+                        "flex flex-col items-center gap-1.5 transition-all",
+                        isActive("/learning") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
+                    )}
+                >
+                    <Globe className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Info</span>
                 </Link>
 
                 {/* Center FAB Space */}
-                <div className="w-20 h-20 -mt-14 transition-transform hover:scale-105 active:scale-95">
+                <div className="w-16 h-16 -mt-10 transition-transform hover:scale-105 active:scale-95">
                     <Link
                         to="/report"
-                        className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/40 border-4 border-background"
+                        className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/40 border-4 border-background"
                     >
-                        <Plus className="text-white w-10 h-10" />
+                        <Plus className="text-white w-8 h-8" />
                     </Link>
                 </div>
 
-                {/* Right Side Items */}
                 <Link
                     to="/missions"
                     className={cn(
@@ -50,8 +60,19 @@ export default function BottomNav() {
                         isActive("/missions") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
-                    <Target className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Quest</span>
+                    <Target className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Quest</span>
+                </Link>
+
+                <Link
+                    to="/leaderboard"
+                    className={cn(
+                        "flex flex-col items-center gap-1.5 transition-all",
+                        isActive("/leaderboard") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
+                    )}
+                >
+                    <Trophy className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Hero</span>
                 </Link>
 
                 <Link
@@ -61,8 +82,8 @@ export default function BottomNav() {
                         isActive("/profile") ? "text-primary scale-110" : "text-white/70 hover:text-white/90"
                     )}
                 >
-                    <User className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Me</span>
+                    <User className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Me</span>
                 </Link>
             </div>
         </nav>

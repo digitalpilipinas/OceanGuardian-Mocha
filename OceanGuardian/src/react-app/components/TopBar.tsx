@@ -27,8 +27,8 @@ export default function TopBar() {
         if (path === "/leaderboard") return "Global Leaderboard";
         if (path === "/learning") return "Ocean Learning Hub";
         if (path === "/settings") return "Account Settings";
-        if (path.includes("/missions/")) return "Mission Details";
-        if (path === "/admin") return "Admin Control Center";
+        if (path === "/coral-scan") return "AI Coral Scanner";
+        if (path === "/ambassador") return "Ambassador Panel";
         if (path === "/scientist/dashboard") return "Scientist Dashboard";
         return "OceanGuardian";
     };

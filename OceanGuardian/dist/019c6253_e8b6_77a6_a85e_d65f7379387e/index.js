@@ -2623,7 +2623,233 @@ async function authMiddleware(c, next) {
   }
   await next();
 }
+async function sendEmail(apiKey, params) {
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: params.from,
+        to: Array.isArray(params.to) ? params.to : [params.to],
+        subject: params.subject,
+        html: params.html
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("Resend API error:", data);
+      return {
+        success: false,
+        error: data.message || `Resend API error (${response.status})`
+      };
+    }
+    return { success: true, id: data.id };
+  } catch (error) {
+    console.error("Failed to send email via Resend:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+async function sendOtpEmail(apiKey, to, code) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#0f172a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="480" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(6,182,212,0.2);border-radius:16px;overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 32px 16px;text-align:center;">
+              <div style="display:inline-block;background:linear-gradient(135deg,#06b6d4,#2563eb);padding:12px;border-radius:12px;margin-bottom:16px;">
+                <span style="font-size:28px;">🌊</span>
+              </div>
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#ffffff;">OceanGuardian</h1>
+              <p style="margin:8px 0 0;font-size:14px;color:#94a3b8;">Protecting our oceans, one guardian at a time</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:24px 32px;">
+              <p style="margin:0 0 8px;font-size:16px;color:#e2e8f0;">Your verification code is:</p>
+              <div style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:12px;padding:20px;text-align:center;margin:16px 0;">
+                <span style="font-size:36px;font-weight:700;letter-spacing:0.3em;color:#06b6d4;font-family:'Courier New',monospace;">${code}</span>
+              </div>
+              <p style="margin:16px 0 0;font-size:14px;color:#94a3b8;">This code will expire in <strong style="color:#e2e8f0;">10 minutes</strong>.</p>
+              <p style="margin:8px 0 0;font-size:14px;color:#94a3b8;">If you didn't request this code, you can safely ignore this email.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:16px 32px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+              <p style="margin:0;font-size:12px;color:#64748b;">🐠 OceanGuardian — Marine Conservation Platform</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+  return sendEmail(apiKey, {
+    from: "OceanGuardian <onboarding@resend.dev>",
+    to,
+    subject: `${code} — Your OceanGuardian Login Code`,
+    html
+  });
+}
+const ITERATIONS = 1e5;
+const SALT_LENGTH = 16;
+const KEY_LENGTH = 32;
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: ITERATIONS,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    KEY_LENGTH * 8
+  );
+  const saltHex = bufferToHex(salt);
+  const hashHex = bufferToHex(new Uint8Array(derivedBits));
+  return `${saltHex}:${hashHex}`;
+}
+async function verifyPassword(password, storedHash) {
+  const [saltHex, expectedHashHex] = storedHash.split(":");
+  if (!saltHex || !expectedHashHex) return false;
+  const salt = hexToBuffer(saltHex);
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: ITERATIONS,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    KEY_LENGTH * 8
+  );
+  const computedHex = bufferToHex(new Uint8Array(derivedBits));
+  return timingSafeEqual(computedHex, expectedHashHex);
+}
+function bufferToHex(buffer) {
+  return Array.from(buffer).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function hexToBuffer(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+  }
+  return bytes;
+}
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
 const auth = new Hono2();
+auth.post("/api/auth/signup", async (c) => {
+  const { email, password, username } = await c.req.json();
+  if (!email || !password) return c.json({ error: "Email and password required" }, 400);
+  if (password.length < 6) return c.json({ error: "Password must be at least 6 characters" }, 400);
+  const db = getTursoClient(c.env);
+  try {
+    await db.execute({ sql: "ALTER TABLE user_profiles ADD COLUMN password_hash TEXT", args: [] });
+  } catch (_) {
+  }
+  const existing = await db.execute({
+    sql: "SELECT id FROM user_profiles WHERE email = ?",
+    args: [email]
+  });
+  if (existing.rows.length > 0) {
+    return c.json({ error: "An account with this email already exists. Please sign in." }, 409);
+  }
+  const passwordHash = await hashPassword(password);
+  const userId = crypto.randomUUID();
+  const displayName = username || email.split("@")[0];
+  await db.execute({
+    sql: "INSERT INTO user_profiles (id, username, email, role, password_hash) VALUES (?, ?, ?, 'player', ?)",
+    args: [userId, displayName, email, passwordHash]
+  });
+  const sessionToken = crypto.randomUUID();
+  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3).toISOString();
+  await db.execute({
+    sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
+    args: [sessionToken, userId, sessionExpires]
+  });
+  setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
+    httpOnly: true,
+    path: "/",
+    secure: true,
+    sameSite: "Lax",
+    maxAge: 30 * 24 * 60 * 60
+  });
+  return c.json({ success: true });
+});
+auth.post("/api/auth/login", async (c) => {
+  const { email, password } = await c.req.json();
+  if (!email || !password) return c.json({ error: "Email and password required" }, 400);
+  const db = getTursoClient(c.env);
+  const userResult = await db.execute({
+    sql: "SELECT id, password_hash FROM user_profiles WHERE email = ?",
+    args: [email]
+  });
+  if (userResult.rows.length === 0) {
+    return c.json({ error: "No account found with this email" }, 401);
+  }
+  const user = userResult.rows[0];
+  const storedHash = user.password_hash;
+  if (!storedHash) {
+    return c.json({ error: "This account was created without a password. Please sign up again or use OTP login." }, 401);
+  }
+  const valid = await verifyPassword(password, storedHash);
+  if (!valid) {
+    return c.json({ error: "Incorrect password" }, 401);
+  }
+  const sessionToken = crypto.randomUUID();
+  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3).toISOString();
+  await db.execute({
+    sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
+    args: [sessionToken, user.id, sessionExpires]
+  });
+  setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
+    httpOnly: true,
+    path: "/",
+    secure: true,
+    sameSite: "Lax",
+    maxAge: 30 * 24 * 60 * 60
+  });
+  return c.json({ success: true });
+});
 auth.post("/api/auth/otp/send", async (c) => {
   const { email } = await c.req.json();
   if (!email) return c.json({ error: "Email required" }, 400);
@@ -2635,26 +2861,24 @@ auth.post("/api/auth/otp/send", async (c) => {
     args: [email, code, expiresAt]
   });
   console.log(`OTP for ${email}: ${code}`);
-  if (c.env.EMAILS) {
-    try {
-      await c.env.EMAILS.send({
-        to: email,
-        from: "auth@oceanguardian.app",
-        subject: "Your OceanGuardian Login Code",
-        content: [{ type: "text/plain", value: `Your login code is: ${code}` }]
-      });
-    } catch (e) {
-      console.error("Failed to send email", e);
-    }
+  const resendApiKey = c.env.RESEND_API_KEY || "re_MoS5G6c9_4KJgiEtQ3VWBtSoGbNfUa3fG";
+  const emailResult = await sendOtpEmail(resendApiKey, email, code);
+  if (!emailResult.success) {
+    console.error("Failed to send OTP email:", emailResult.error);
+  } else {
+    console.log(`OTP email sent successfully to ${email}`);
   }
   return c.json({ success: true, message: "OTP sent" });
 });
 auth.post("/api/auth/otp/verify", async (c) => {
-  const { email, code } = await c.req.json();
+  const body = await c.req.json();
+  const email = body.email;
+  const code = body.code || body.otp;
   const db = getTursoClient(c.env);
+  const now = (/* @__PURE__ */ new Date()).toISOString();
   const result = await db.execute({
-    sql: "SELECT * FROM auth_otps WHERE email = ? AND code = ? AND expires_at > datetime('now')",
-    args: [email, code]
+    sql: "SELECT * FROM auth_otps WHERE email = ? AND code = ? AND expires_at > ?",
+    args: [email, code, now]
   });
   if (result.rows.length === 0) {
     return c.json({ error: "Invalid or expired code" }, 400);
@@ -7010,7 +7234,23 @@ app$d.get("/api/sightings/:id/photo", async (c) => {
   if (result.rows.length === 0 || !result.rows[0].image_key) {
     return c.json({ error: "Photo not found" }, 404);
   }
-  const object = await c.env.R2_BUCKET.get(result.rows[0].image_key);
+  const seedMap = {
+    "sightings/bottle.jpg": "https://images.unsplash.com/photo-1621451537084-482c73073a0f?q=80&w=800&auto=format&fit=crop",
+    // Plastic bottle on beach
+    "sightings/coral_healthy.jpg": "https://images.unsplash.com/photo-1546026423-cc4642628d2b?q=80&w=800&auto=format&fit=crop",
+    // Healthy coral
+    "sightings/turtle.jpg": "https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?q=80&w=800&auto=format&fit=crop",
+    // Turtle
+    "sightings/net.jpg": "https://images.unsplash.com/photo-1618477388954-7852f32655ec?q=80&w=800&auto=format&fit=crop",
+    // Fishing net/ghost gear
+    "sightings/bleached.jpg": "https://images.unsplash.com/photo-1583212235753-bce29b451c8a?q=80&w=800&auto=format&fit=crop"
+    // Bleached coral
+  };
+  const imageKey = result.rows[0].image_key;
+  if (seedMap[imageKey]) {
+    return c.redirect(seedMap[imageKey]);
+  }
+  const object = await c.env.R2_BUCKET.get(imageKey);
   if (!object) {
     return c.json({ error: "Photo not found in storage" }, 404);
   }
@@ -7738,7 +7978,7 @@ app$8.get("/api/leaderboard/streak", async (c) => {
   const limit = 50;
   const result = await db.execute({
     sql: `
-            SELECT id, username, avatar_url, level, streak_days, country, is_anonymous
+            SELECT id, username, avatar_url, level, xp, streak_days, country, is_anonymous
             FROM user_profiles
             WHERE leaderboard_visible = 1 AND streak_days > 0
             ORDER BY streak_days DESC
@@ -7807,9 +8047,10 @@ app$7.post("/api/coral/analyze", authMiddleware, async (c) => {
 app$7.get("/api/coral/heatmap", async (c) => {
   const db = getTursoClient(c.env);
   const result = await db.execute({
-    sql: `SELECT latitude, longitude, bleach_percent, severity 
-          FROM sightings 
-          WHERE type = 'coral' AND status != 'removed'`,
+    sql: `SELECT s.id, s.latitude, s.longitude, s.bleach_percent, s.severity, s.image_key, s.subcategory, s.created_at, up.username as user_name
+          FROM sightings s
+          LEFT JOIN user_profiles up ON s.user_id = up.id
+          WHERE s.type = 'coral' AND s.status != 'removed'`,
     args: []
   });
   return c.json(result.rows);

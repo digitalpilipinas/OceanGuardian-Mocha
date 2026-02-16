@@ -15,7 +15,10 @@ import {
   SelectValue,
 } from "@/react-app/components/ui/select";
 import { Badge } from "@/react-app/components/ui/badge";
-import { Trash2, Fish, Anchor, Waves, Upload, MapPin, Camera, Loader2, CheckCircle, AlertTriangle, Thermometer, Droplets, ArrowDown } from "lucide-react";
+import { Trash2, Fish, Anchor, Waves, Upload, MapPin, Camera, Loader2, CheckCircle, AlertTriangle, Thermometer, Droplets, ArrowDown, Map as MapIcon, Share2 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { DivIcon, LatLng } from "leaflet";
+import "leaflet/dist/leaflet.css";
 import type { SightingType } from "@/react-app/pages/MapView";
 
 const sightingTypes = [
@@ -88,6 +91,45 @@ async function compressImage(file: File, maxSizeKB = 1024): Promise<File> {
     };
     img.src = URL.createObjectURL(file);
   });
+}
+
+/** Custom marker for map selection */
+const MapSelectorIcon = new DivIcon({
+  html: `<div class="w-8 h-8 -ml-4 -mt-8 flex items-center justify-center">
+    <div class="relative">
+      <div class="absolute inset-0 bg-primary/40 rounded-full animate-ping scale-150" />
+      <div class="relative bg-primary border-4 border-white rounded-full w-8 h-8 shadow-2xl flex items-center justify-center">
+        <div class="w-2 h-2 bg-white rounded-full" />
+      </div>
+    </div>
+  </div>`,
+  className: "custom-div-icon",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
+/** Component to handle map clicks and synchronization */
+function MapClickHandler({ onLocationSelect, selectedLocation }: {
+  onLocationSelect: (lat: number, lng: number) => void;
+  selectedLocation: LatLng | null;
+}) {
+  const map = useMap();
+
+  useMapEvents({
+    click(e) {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+
+  useEffect(() => {
+    if (selectedLocation) {
+      map.flyTo(selectedLocation, map.getZoom());
+    }
+  }, [selectedLocation, map]);
+
+  return selectedLocation ? (
+    <Marker position={selectedLocation} icon={MapSelectorIcon} />
+  ) : null;
 }
 
 export default function ReportSighting() {
@@ -288,7 +330,7 @@ export default function ReportSighting() {
         }
       }
 
-      setTimeout(() => navigate("/map"), 3000);
+      // No auto-redirect — let user share or manually navigate
     } catch (err) {
       console.error("Submit error:", err);
       alert(err instanceof Error ? err.message : "Failed to submit sighting");
@@ -298,6 +340,20 @@ export default function ReportSighting() {
 
   // Success state
   if (submitResult) {
+    const handleShareSighting = async () => {
+      console.log("[analytics] sighting_share_clicked");
+      const typeLabel = formData.type ? sightingTypes.find(t => t.value === formData.type)?.label || formData.type : "marine";
+      const text = `I just reported a ${typeLabel} sighting on OceanGuardian and earned +${submitResult.xp} XP! 🌊 Join the mission to protect our oceans.`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "OceanGuardian Sighting", text, url: window.location.origin });
+        } catch (err) { console.error("Share failed", err); }
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert("Copied to clipboard!");
+      }
+    };
+
     return (
       <div className="container mx-auto px-4 py-20 flex justify-center items-center min-h-[calc(100vh-10rem)]">
         <Card variant="glass" className="max-w-md w-full border-white/10 !bg-black/60 backdrop-blur-2xl">
@@ -319,9 +375,22 @@ export default function ReportSighting() {
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mt-2">Guardian Contribution Reward</p>
             </div>
 
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-5 w-5 animate-spin text-primary/40" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Syncing with global map...</p>
+            <div className="flex flex-col gap-4 pt-2">
+              <Button
+                onClick={handleShareSighting}
+                className="w-full h-14 rounded-[1.5rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-indigo-600/30 border-none transition-all hover:scale-[1.02] active:scale-95"
+              >
+                <Share2 className="h-5 w-5 mr-3" />
+                Share Your Discovery
+              </Button>
+              <Button
+                onClick={() => navigate("/map")}
+                variant="outline"
+                className="w-full h-14 rounded-[1.5rem] border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+              >
+                <MapIcon className="h-5 w-5 mr-3 text-primary" />
+                View on Map
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -591,35 +660,75 @@ export default function ReportSighting() {
 
             {/* Location */}
             {formData.type && !coralLocked && (
-              <div className="space-y-4">
-                <Label htmlFor="location" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 ml-2">Coordinates</Label>
-                <div className="flex gap-4">
-                  <Input
-                    id="location"
-                    placeholder="Capture coordinates..."
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="flex-1 h-14 bg-white/5 border-white/10 rounded-2xl px-8 text-white font-bold text-sm tracking-widest placeholder:text-white/10 focus:bg-white/10 transition-all"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCaptureLocation}
-                    disabled={isCapturingLocation}
-                    className="h-14 px-8 rounded-2xl border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
-                  >
-                    {isCapturingLocation ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                    ) : (
-                      <>
-                        <MapPin className="h-5 w-5 mr-3 text-primary" />
-                        Sync GPS
-                      </>
-                    )}
-                  </Button>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Label htmlFor="location" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 ml-2">Coordinates</Label>
+                  <div className="flex gap-4">
+                    <Input
+                      id="location"
+                      placeholder="Capture coordinates..."
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      className="flex-1 h-14 bg-white/5 border-white/10 rounded-2xl px-8 text-white font-bold text-sm tracking-widest placeholder:text-white/10 focus:bg-white/10 transition-all"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCaptureLocation}
+                      disabled={isCapturingLocation}
+                      className="h-14 px-8 rounded-2xl border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+                    >
+                      {isCapturingLocation ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      ) : (
+                        <>
+                          <MapPin className="h-5 w-5 mr-3 text-primary" />
+                          Sync GPS
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
+
+                {/* Interactive Map Selector */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-2">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 flex items-center gap-2">
+                      <MapIcon className="h-3 w-3" /> Map Selection
+                    </Label>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-primary brightness-125">
+                      Tap map to drop pin
+                    </span>
+                  </div>
+                  <div className="h-64 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl relative group">
+                    <MapContainer
+                      center={[14.5547, 121.024]}
+                      zoom={12}
+                      className="h-full w-full"
+                      style={{ background: "#0a192f" }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <MapClickHandler
+                        onLocationSelect={(lat, lng) => {
+                          setFormData(prev => ({ ...prev, location: `${lat.toFixed(6)}, ${lng.toFixed(6)}` }));
+                        }}
+                        selectedLocation={(() => {
+                          const [lat, lng] = formData.location.split(",").map(s => parseFloat(s.trim()));
+                          if (!isNaN(lat) && !isNaN(lng)) return new LatLng(lat, lng);
+                          return null;
+                        })()}
+                      />
+                    </MapContainer>
+                    {/* Map Vignette Overlay */}
+                    <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_60px_rgba(0,0,0,0.5)] rounded-[2rem]" />
+                  </div>
+                </div>
+
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/20 ml-2 italic">
-                  Automatic satellite triangulation recommended for maximum precision.
+                  Drop a pin precisely on the map or use satellite sync for maximum precision.
                 </p>
               </div>
             )}

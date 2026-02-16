@@ -3,16 +3,24 @@ INSERT OR IGNORE INTO missions (id, title, description, location_name, latitude,
 (1, 'Santa Monica Beach Cleanup', 'Join us for a massive cleanup event at Santa Monica Pier.', 'Santa Monica Pier', 34.0094, -118.4973, datetime('now', '+2 days'), datetime('now', '+2 days', '+4 hours'), 'user_ambassador', 2, 'upcoming', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
 (2, 'Great Barrier Reef Survey', 'Help scientists survey coral health in the outer reef.', 'Great Barrier Reef', -18.2871, 147.6992, datetime('now', '+5 days'), datetime('now', '+10 days'), 'user_scientist', 4, 'upcoming', 'https://images.unsplash.com/photo-1546026423-cc4642628d2b'),
 (3, 'Bali Plastic Free Initiative', 'Community effort to clean up Kuta Beach.', 'Kuta Beach', -8.7185, 115.1686, datetime('now', '-10 days'), datetime('now', '-10 days', '+3 hours'), 'user_player3', 3, 'completed', 'https://images.unsplash.com/photo-1528123966838-51f681a8c08b'),
-(4, 'Miami Coastal Patrol', 'Monitoring wildlife and removing debris along the coast.', 'Miami Beach', 25.7617, -80.1918, datetime('now', '-2 days'), datetime('now', '-2 days', '+5 hours'), 'user_player1', 2, 'completed', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
+(4, 'Miami Coastal Patrol', 'Monitoring wildlife and removing debris along the coast.', 'Miami Beach', 25.7617, -80.1918, datetime('now', '-2 days'), datetime('now', '-2 days', '+5 hours'), 'user_player1', 2, 'completed', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e'),
+(7, 'Great North Coral Survey', 'Mapping cold-water reefs in the North Sea.', 'Bergen Coast', 60.3913, 5.3221, datetime('now', '+15 days'), datetime('now', '+20 days'), 'user_scientist2', 5, 'upcoming', 'https://images.unsplash.com/photo-1544333323-5373c28ee83a'),
+(8, 'Tokyo Bay Eco-Patrol', 'Monthly cleanup and water quality testing.', 'Tokyo Bay', 35.6895, 139.6917, datetime('now', '+1 days'), datetime('now', '+1 days', '+6 hours'), 'user_ambassador2', 3, 'upcoming', 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26');
 
 -- Seed Mission Participants
 INSERT OR IGNORE INTO mission_participants (mission_id, user_id, status, checked_in_at, xp_awarded) VALUES
 (1, 'user_player1', 'rsvp', NULL, 0),
 (1, 'user_player2', 'rsvp', NULL, 0),
+(1, 'user_player4', 'rsvp', NULL, 0),
+(1, 'user_player7', 'rsvp', NULL, 0),
 (3, 'user_player2', 'checked_in', datetime('now', '-10 days'), 150),
 (3, 'user_ambassador', 'checked_in', datetime('now', '-10 days'), 150),
 (3, 'user_admin', 'checked_in', datetime('now', '-10 days'), 150),
-(4, 'user_player1', 'checked_in', datetime('now', '-2 days'), 100);
+(3, 'user_player8', 'checked_in', datetime('now', '-10 days'), 150),
+(4, 'user_player1', 'checked_in', datetime('now', '-2 days'), 100),
+(4, 'user_player5', 'checked_in', datetime('now', '-2 days'), 100),
+(8, 'user_player9', 'rsvp', NULL, 0),
+(8, 'user_player10', 'rsvp', NULL, 0);
 
 -- Seed Mission Impact Reports
 INSERT OR IGNORE INTO mission_impact_reports (mission_id, total_trash_weight, trash_bags_count, participants_count, duration_minutes, notes) VALUES

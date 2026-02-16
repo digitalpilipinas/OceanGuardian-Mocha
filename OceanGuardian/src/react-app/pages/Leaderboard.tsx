@@ -3,16 +3,18 @@ import { CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { Badge } from "@/react-app/components/ui/badge";
+import { Button } from "@/react-app/components/ui/button";
 import { ScrollArea } from "@/react-app/components/ui/scroll-area";
+import { useToast } from "@/react-app/components/ui/use-toast";
 import { UserProfile } from "@/shared/types";
-import { Trophy, MapPin, Users, Flame, Crown, Globe } from "lucide-react";
+import { Trophy, MapPin, Users, Flame, Crown, Globe, Share2 } from "lucide-react";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
 interface LeaderboardEntry extends UserProfile {
     rank: number;
 }
 
-const Podium = ({ top3 }: { top3: LeaderboardEntry[] }) => {
+const Podium = ({ top3, activeTab }: { top3: LeaderboardEntry[], activeTab: string }) => {
     const first = top3.find(u => u.rank === 1);
     const second = top3.find(u => u.rank === 2);
     const third = top3.find(u => u.rank === 3);
@@ -44,7 +46,11 @@ const Podium = ({ top3 }: { top3: LeaderboardEntry[] }) => {
                 </div>
                 <div className="text-center mb-4">
                     <p className="font-black text-sm truncate max-w-[120px] text-white tracking-tight">{user.username}</p>
-                    <p className="text-[10px] text-primary brightness-125 font-black uppercase tracking-widest">{user.xp.toLocaleString()} XP</p>
+                    <p className="text-[10px] text-primary brightness-125 font-black uppercase tracking-widest">
+                        {activeTab === 'streak'
+                            ? `${(user.streak_days || 0).toLocaleString()} Days`
+                            : `${(user.xp || 0).toLocaleString()} XP`}
+                    </p>
                 </div>
                 <div className={`w-full ${height} ${colorClass} border-t-4 rounded-t-3xl flex items-center justify-center shadow-2xl transition-all group-hover/podium:brightness-125`}>
                     <Trophy className={`w-8 h-8 ${iconColor} opacity-50`} />
@@ -62,7 +68,7 @@ const Podium = ({ top3 }: { top3: LeaderboardEntry[] }) => {
     );
 };
 
-const LeaderboardRow = ({ entry, currentUserId }: { entry: LeaderboardEntry, currentUserId?: string }) => {
+const LeaderboardRow = ({ entry, currentUserId, activeTab }: { entry: LeaderboardEntry, currentUserId?: string, activeTab: string }) => {
     return (
         <div className={`flex items-center gap-5 p-4 rounded-[1.5rem] transition-all duration-300 hover:bg-white/10 group ${entry.id === currentUserId ? "bg-primary/20 border border-primary/30 shadow-lg shadow-primary/10" : "border border-transparent"}`}>
             <div className="w-10 text-center font-black text-white/30 group-hover:text-white/60 transition-colors">
@@ -101,8 +107,14 @@ const LeaderboardRow = ({ entry, currentUserId }: { entry: LeaderboardEntry, cur
             </div>
 
             <div className="text-right">
-                <p className="font-black text-white tracking-tighter text-lg">{entry.xp.toLocaleString()}</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 group-hover:text-primary transition-colors">XP</p>
+                <p className="font-black text-white tracking-tighter text-lg">
+                    {activeTab === 'streak'
+                        ? (entry.streak_days || 0).toLocaleString()
+                        : (entry.xp || 0).toLocaleString()}
+                </p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 group-hover:text-primary transition-colors">
+                    {activeTab === 'streak' ? 'Days' : 'XP'}
+                </p>
             </div>
         </div>
     );
@@ -110,9 +122,27 @@ const LeaderboardRow = ({ entry, currentUserId }: { entry: LeaderboardEntry, cur
 
 export default function Leaderboard() {
     const { profile: user } = useUserProfile();
+    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState("global");
     const [data, setData] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);
+
+    const userRankEntry = user ? data.find(e => e.id === user.id) : null;
+
+    const handleShareRank = async () => {
+        if (!userRankEntry) return;
+        console.log("[analytics] leaderboard_share_clicked");
+        const metric = activeTab === "streak" ? `${userRankEntry.streak_days || 0}-day streak` : `${(userRankEntry.xp || 0).toLocaleString()} XP`;
+        const text = `I'm ranked #${userRankEntry.rank} on the OceanGuardian ${activeTab} leaderboard with ${metric}! 🏆🌊 Can you beat me?`;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: "OceanGuardian Leaderboard", text, url: window.location.href });
+            } catch (err) { console.error("Share failed", err); }
+        } else {
+            await navigator.clipboard.writeText(text);
+            toast({ title: "Copied!", description: "Rank shared to clipboard." });
+        }
+    };
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
@@ -165,6 +195,15 @@ export default function Leaderboard() {
                 <p className="text-white/60 text-lg font-bold max-w-2xl italic tracking-wide">
                     See who's making the biggest impact in ocean conservation. Compete with friends and the global community!
                 </p>
+                {userRankEntry && (
+                    <Button
+                        onClick={handleShareRank}
+                        className="mt-6 rounded-full px-8 h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-indigo-600/20 border-none transition-all hover:scale-105 active:scale-95"
+                    >
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share My Rank
+                    </Button>
+                )}
             </div>
 
             <Tabs defaultValue="global" className="w-full max-w-4xl mx-auto" onValueChange={setActiveTab}>
@@ -196,7 +235,7 @@ export default function Leaderboard() {
                         <>
                             {data.length > 0 ? (
                                 <>
-                                    <Podium top3={top3} />
+                                    <Podium top3={top3} activeTab={activeTab} />
 
                                     <div className="bg-secondary border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] rounded-[2.5rem] overflow-hidden">
                                         <CardHeader className="border-b border-white/5 pb-6">
@@ -214,7 +253,7 @@ export default function Leaderboard() {
                                             <ScrollArea className="h-[600px] w-full px-4">
                                                 <div className="space-y-2 py-6">
                                                     {rest.map((entry) => (
-                                                        <LeaderboardRow key={entry.id} entry={entry} currentUserId={user?.id} />
+                                                        <LeaderboardRow key={entry.id} entry={entry} currentUserId={user?.id} activeTab={activeTab} />
                                                     ))}
                                                     {rest.length === 0 && top3.length === 0 && (
                                                         <p className="text-center text-white/20 font-black uppercase tracking-widest py-20">No data available yet.</p>
