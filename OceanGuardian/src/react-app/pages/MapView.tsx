@@ -1,58 +1,97 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { Icon, LatLngExpression } from "leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import { Icon, DivIcon, LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
+import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
-import { Waves, Trash2, Fish, Anchor, MapPin, Calendar, User, Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import MapFilters from "@/react-app/components/MapFilters";
+import SightingDetail from "@/react-app/components/SightingDetail";
 
 // Sighting types
 export type SightingType = "garbage" | "floating" | "wildlife" | "coral";
 
 export interface Sighting {
-  id: string;
+  id: number;
   type: SightingType;
   subcategory: string;
-  location: {
-    lat: number;
-    lng: number;
-    address: string;
-  };
+  latitude: number;
+  longitude: number;
+  address: string | null;
   description: string;
-  imageUrl?: string;
+  image_key: string | null;
   severity: number;
-  timestamp: string;
-  userName: string;
-  userLevel: number;
+  created_at: string;
+  user_name: string | null;
+  user_level: number | null;
+  status: string;
+  water_temp?: number | null;
+  bleach_percent?: number | null;
+  depth?: number | null;
 }
 
-// Fix for default marker icons in Leaflet with webpack/vite
-const iconUrls = {
-  garbage: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23e74c3c'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E",
-  floating: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23e67e22'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E",
-  wildlife: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%232ecc71'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E",
-  coral: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23ff6b35'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E",
+// SVG markers with distinct shapes per type
+const markerSvgs: Record<SightingType, string> = {
+  garbage: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
+    <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%23ef4444'/>
+    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
+    <text x='16' y='19' text-anchor='middle' font-size='12'>🗑️</text>
+  </svg>`,
+  floating: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
+    <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%23f97316'/>
+    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
+    <text x='16' y='19' text-anchor='middle' font-size='12'>🚢</text>
+  </svg>`,
+  wildlife: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
+    <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%2322c55e'/>
+    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
+    <text x='16' y='19' text-anchor='middle' font-size='12'>🐢</text>
+  </svg>`,
+  coral: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
+    <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%23ec4899'/>
+    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
+    <text x='16' y='19' text-anchor='middle' font-size='12'>🪸</text>
+  </svg>`,
 };
 
 function createCustomIcon(type: SightingType) {
-  return new Icon({
-    iconUrl: iconUrls[type],
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12],
+  return new DivIcon({
+    html: markerSvgs[type],
+    className: "custom-marker-icon",
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40],
   });
 }
 
-// Component to handle map bounds when filters change
+// Cluster icon creator
+function createClusterIcon(cluster: any) {
+  const count = cluster.getChildCount();
+  let size = "small";
+  let bgColor = "bg-primary";
+  if (count >= 100) { size = "large"; bgColor = "bg-red-500"; }
+  else if (count >= 10) { size = "medium"; bgColor = "bg-orange-500"; }
+
+  return new DivIcon({
+    html: `<div class="cluster-marker ${bgColor} ${size}">
+      <span>${count}</span>
+    </div>`,
+    className: "custom-cluster-icon",
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+}
+
+// Component to handle map bounds when sightings change
 function MapBoundsHandler({ sightings }: { sightings: Sighting[] }) {
   const map = useMap();
 
   useEffect(() => {
     if (sightings.length > 0) {
-      const bounds = sightings.map((s) => [s.location.lat, s.location.lng] as [number, number]);
+      const bounds = sightings.map((s) => [s.latitude, s.longitude] as [number, number]);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
     }
   }, [sightings, map]);
@@ -60,122 +99,113 @@ function MapBoundsHandler({ sightings }: { sightings: Sighting[] }) {
   return null;
 }
 
-const typeConfig = {
-  garbage: { icon: Trash2, label: "Garbage/Debris", color: "bg-red-500" },
-  floating: { icon: Anchor, label: "Floating Trash", color: "bg-orange-500" },
-  wildlife: { icon: Fish, label: "Wildlife", color: "bg-green-500" },
-  coral: { icon: Waves, label: "Coral Bleaching", color: "bg-coral-500" },
-};
+// Date filter helper
+function isWithinDateRange(dateStr: string, range: string): boolean {
+  if (range === "all") return true;
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  switch (range) {
+    case "today": return diffDays < 1;
+    case "week": return diffDays < 7;
+    case "month": return diffDays < 30;
+    default: return true;
+  }
+}
 
 export default function MapView() {
-  // Mock data - will be replaced with real data later
-  const allSightings: Sighting[] = [
-    {
-      id: "1",
-      type: "garbage",
-      subcategory: "Plastic bottle",
-      location: { lat: 14.5547, lng: 121.024, address: "Manila Bay, Manila" },
-      description: "Multiple plastic bottles on the beach",
-      severity: 3,
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      userName: "MarineHero",
-      userLevel: 12,
-    },
-    {
-      id: "2",
-      type: "coral",
-      subcategory: "Bleached coral",
-      location: { lat: 14.556, lng: 121.026, address: "Manila Bay, Philippines" },
-      description: "Severe coral bleaching observed",
-      severity: 5,
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      userName: "ReefGuardian",
-      userLevel: 24,
-    },
-    {
-      id: "3",
-      type: "wildlife",
-      subcategory: "Sea turtle",
-      location: { lat: 14.5535, lng: 121.022, address: "Manila, Philippines" },
-      description: "Spotted a green sea turtle near shore",
-      severity: 1,
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      userName: "OceanWatcher",
-      userLevel: 8,
-    },
-    {
-      id: "4",
-      type: "floating",
-      subcategory: "Ghost net",
-      location: { lat: 14.552, lng: 121.028, address: "Manila Bay" },
-      description: "Large fishing net floating near the surface",
-      severity: 4,
-      timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-      userName: "CoastalCleanup",
-      userLevel: 15,
-    },
-    {
-      id: "5",
-      type: "garbage",
-      subcategory: "Plastic bags",
-      location: { lat: 14.558, lng: 121.025, address: "Roxas Boulevard, Manila" },
-      description: "Cluster of plastic bags on shoreline",
-      severity: 3,
-      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      userName: "BeachPatrol",
-      userLevel: 19,
-    },
-    {
-      id: "6",
-      type: "wildlife",
-      subcategory: "Dolphin pod",
-      location: { lat: 14.5495, lng: 121.021, address: "Manila Bay" },
-      description: "Pod of 5-6 dolphins spotted",
-      severity: 1,
-      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-      userName: "MarineExplorer",
-      userLevel: 21,
-    },
-  ];
+  const [allSightings, setAllSightings] = useState<Sighting[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<SightingType[]>(["garbage", "floating", "wildlife", "coral"]);
+  const [dateRange, setDateRange] = useState("all");
+  const [minSeverity, setMinSeverity] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [selectedSighting, setSelectedSighting] = useState<Sighting | null>(null);
 
-  const [filteredSightings, setFilteredSightings] = useState<Sighting[]>(allSightings);
-  const [selectedTypes, setSelectedTypes] = useState<SightingType[]>([
-    "garbage",
-    "floating",
-    "wildlife",
-    "coral",
-  ]);
+  // Fetch sightings from API
+  useEffect(() => {
+    const fetchSightings = async () => {
+      try {
+        const res = await fetch("/api/sightings");
+        if (res.ok) {
+          const data = await res.json();
+          setAllSightings(data);
+        }
+      } catch (err) {
+        console.error("Failed to load sightings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleFilterChange = (types: SightingType[]) => {
-    setSelectedTypes(types);
-    setFilteredSightings(allSightings.filter((s) => types.includes(s.type)));
-  };
+    fetchSightings();
+    const interval = setInterval(fetchSightings, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Apply all filters
+  const filteredSightings = useMemo(() => {
+    return allSightings.filter((s) =>
+      selectedTypes.includes(s.type) &&
+      s.severity >= minSeverity &&
+      isWithinDateRange(s.created_at, dateRange)
+    );
+  }, [allSightings, selectedTypes, minSeverity, dateRange]);
 
   // Default center on Manila Bay
   const defaultCenter: LatLngExpression = [14.5547, 121.024];
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-
-    if (diffHours < 1) return "Just now";
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays === 1) return "Yesterday";
-    return `${diffDays}d ago`;
-  };
-
   return (
     <div className="relative h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]">
+      {/* Custom CSS for cluster markers */}
+      <style>{`
+        .custom-marker-icon { background: none; border: none; }
+        .custom-cluster-icon { background: none; border: none; }
+        .cluster-marker {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          color: white;
+          font-weight: bold;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          border: 3px solid rgba(255,255,255,0.8);
+        }
+        .cluster-marker.medium { width: 48px; height: 48px; font-size: 15px; }
+        .cluster-marker.large { width: 56px; height: 56px; font-size: 16px; }
+        .bg-primary { background: hsl(var(--primary)); }
+        .bg-orange-500 { background: #f97316; }
+        .bg-red-500 { background: #ef4444; }
+      `}</style>
+
       {/* Filters Panel */}
-      <div className="absolute top-4 left-4 right-4 md:left-4 md:right-auto z-[1000]">
+      <div className="absolute top-4 left-4 right-4 md:left-4 md:right-auto md:w-80 z-[1000]">
         <MapFilters
           selectedTypes={selectedTypes}
-          onFilterChange={handleFilterChange}
+          onFilterChange={setSelectedTypes}
           totalSightings={filteredSightings.length}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          minSeverity={minSeverity}
+          onMinSeverityChange={setMinSeverity}
         />
       </div>
+
+      {/* Loading indicator */}
+      {loading && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000]">
+          <Card className="shadow-lg">
+            <CardContent className="p-4 flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm">Loading sightings...</span>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Map Container */}
       <MapContainer
@@ -189,70 +219,31 @@ export default function MapView() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {filteredSightings.map((sighting) => {
-          const config = typeConfig[sighting.type];
-          const Icon = config.icon;
-
-          return (
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={60}
+          iconCreateFunction={createClusterIcon}
+          spiderfyOnMaxZoom
+          showCoverageOnHover={false}
+        >
+          {filteredSightings.map((sighting) => (
             <Marker
               key={sighting.id}
-              position={[sighting.location.lat, sighting.location.lng]}
+              position={[sighting.latitude, sighting.longitude]}
               icon={createCustomIcon(sighting.type)}
-            >
-              <Popup maxWidth={300} className="custom-popup">
-                <Card className="border-0 shadow-none">
-                  <CardHeader className="p-3 pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-1.5 rounded-lg ${config.color} bg-opacity-10`}>
-                          <Icon className={`h-4 w-4 text-${config.color.replace("bg-", "")}`} />
-                        </div>
-                        <CardTitle className="text-sm font-semibold">{sighting.subcategory}</CardTitle>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {"⭐".repeat(Math.min(sighting.severity, 5))}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0 space-y-2">
-                    <p className="text-sm text-muted-foreground">{sighting.description}</p>
+              eventHandlers={{
+                click: () => setSelectedSighting(sighting),
+              }}
+            />
+          ))}
+        </MarkerClusterGroup>
 
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{sighting.location.address}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        <span>
-                          {sighting.userName} (Lvl {sighting.userLevel})
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{formatTimestamp(sighting.timestamp)}</span>
-                      </div>
-                    </div>
-
-                    <Button size="sm" className="w-full mt-2">
-                      View Details
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Popup>
-            </Marker>
-          );
-        })}
-
-        <MapBoundsHandler sightings={filteredSightings} />
+        {filteredSightings.length > 0 && <MapBoundsHandler sightings={filteredSightings} />}
       </MapContainer>
 
       {/* Stats Badge */}
       <div className="absolute bottom-20 md:bottom-4 right-4 z-[1000]">
-        <Card className="shadow-lg">
+        <Card className="shadow-lg backdrop-blur-sm bg-card/90">
           <CardContent className="p-3">
             <div className="text-sm font-medium">
               {filteredSightings.length} sighting{filteredSightings.length !== 1 ? "s" : ""}
@@ -262,13 +253,21 @@ export default function MapView() {
       </div>
 
       {/* Floating Action Button */}
-      <div className="absolute bottom-24 md:bottom-20 right-4 z-[1000]">
+      <div className="absolute bottom-24 md:bottom-16 right-4 z-[1000]">
         <Button asChild size="lg" className="h-14 w-14 rounded-full shadow-lg">
           <Link to="/report">
             <Plus className="h-6 w-6" />
           </Link>
         </Button>
       </div>
+
+      {/* Sighting Detail Panel */}
+      {selectedSighting && (
+        <SightingDetail
+          sighting={selectedSighting}
+          onClose={() => setSelectedSighting(null)}
+        />
+      )}
     </div>
   );
 }
