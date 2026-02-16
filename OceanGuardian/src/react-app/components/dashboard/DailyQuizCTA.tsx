@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Card, CardContent } from "@/react-app/components/ui/card";
-import { Button } from "@/react-app/components/ui/button";
 import { Brain, CheckCircle2, ArrowRight } from "lucide-react";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
@@ -31,36 +29,68 @@ export default function DailyQuizCTA() {
     if (loading) return null; // Or skeleton
 
     return (
-        <Card className={`border-none shadow-md overflow-hidden ${completed ? 'bg-green-50 dark:bg-green-950/20' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            {completed ? (
-                                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                            ) : (
-                                <div className="p-2 bg-white/20 rounded-lg">
-                                    <Brain className="h-6 w-6 text-white" />
-                                </div>
-                            )}
-                            <h3 className={`text-lg font-bold ${completed ? 'text-green-800 dark:text-green-300' : 'text-white'}`}>
-                                {completed ? "Daily Quiz Completed!" : "Daily Ocean Quiz"}
-                            </h3>
-                        </div>
-                        <p className={`text-sm ${completed ? 'text-green-700 dark:text-green-400' : 'text-indigo-100'}`}>
-                            {completed ? "Great job! Come back tomorrow for more XP." : "Test your knowledge and earn 50 XP bonus!"}
-                        </p>
-                    </div>
+        <div className={cn(
+            "p-8 rounded-[2.5rem] border shadow-2xl relative overflow-hidden group transition-all duration-500",
+            completed
+                ? "bg-secondary/60 border-white/5"
+                : "bg-gradient-to-br from-primary via-primary to-accent border-white/10"
+        )}>
+            {/* Background decorative elements */}
+            {!completed && (
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-50 pointer-events-none" />
+            )}
 
+            <div className="relative z-10 flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                    <div className={cn(
+                        "p-3 rounded-2xl",
+                        completed ? "bg-primary/20" : "bg-white/20"
+                    )}>
+                        {completed ? (
+                            <CheckCircle2 className="h-6 w-6 text-primary" />
+                        ) : (
+                            <Brain className="h-6 w-6 text-white animate-pulse" />
+                        )}
+                    </div>
                     {!completed && (
-                        <Button size="sm" variant="secondary" className="whitespace-nowrap" asChild>
-                            <Link to="/learning/quiz">
-                                Start Quiz <ArrowRight className="ml-1 h-3 w-3" />
-                            </Link>
-                        </Button>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/60 bg-white/10 px-3 py-1 rounded-full border border-white/10">
+                            +50 XP Protocol
+                        </span>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+
+                <div className="space-y-2">
+                    <h3 className={cn(
+                        "text-2xl font-black tracking-tighter uppercase italic",
+                        completed ? "text-white" : "text-white"
+                    )}>
+                        {completed ? "Intel Secured" : "Daily Intelligence"}
+                    </h3>
+                    <p className={cn(
+                        "text-[10px] font-black uppercase tracking-widest leading-relaxed",
+                        completed ? "text-white/20" : "text-white/60"
+                    )}>
+                        {completed
+                            ? "Data transmission complete for this sector. Return in 24h."
+                            : "Test your marine knowledge and earn critical XP bonus!"
+                        }
+                    </p>
+                </div>
+
+                {!completed && (
+                    <Link
+                        to="/learning/quiz"
+                        className="inline-flex items-center justify-center w-full px-8 py-4 bg-white text-primary rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-xl group/btn"
+                    >
+                        Initiate Quiz
+                        <ArrowRight className="ml-3 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Link>
+                )}
+            </div>
+        </div>
     );
+}
+
+function cn(...classes: any[]) {
+    return classes.filter(Boolean).join(' ');
 }

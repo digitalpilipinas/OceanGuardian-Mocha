@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Award } from "lucide-react";
 
@@ -57,58 +57,65 @@ export default function LessonView() {
         }
     };
 
-    if (loading) return <div className="p-12 text-center">Loading lesson...</div>;
+    if (loading) return <div className="p-20 text-center text-white/20 font-black uppercase tracking-widest animate-pulse italic">Decrypting educational data...</div>;
     if (!lesson) return null;
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8">
-            <Link to="/learning/lessons" className="inline-flex items-center text-gray-500 hover:text-blue-600 mb-6 transition-colors">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Lessons
+        <div className="max-w-4xl mx-auto px-4 py-12">
+            <Link to="/learning/lessons" className="inline-flex items-center text-white/40 hover:text-primary mb-10 transition-all font-black uppercase tracking-widest text-[10px] group">
+                <ArrowLeft className="h-4 w-4 mr-3 transition-transform group-hover:-translate-x-1" />
+                Return to Directory
             </Link>
 
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-secondary/40 border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-teal-500 to-emerald-600 p-8 text-white">
-                    <h1 className="text-3xl font-bold mb-2">{lesson.title}</h1>
-                    <div className="flex items-center space-x-4 mt-4">
-                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
-                            {lesson.xp_reward} XP Reward
-                        </span>
+                <div className="bg-primary/20 p-12 border-b border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <Award className="h-32 w-32 text-primary" />
+                    </div>
+                    <div className="relative z-10">
+                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-4">{lesson.title}</h1>
+                        <div className="flex items-center gap-4">
+                            <span className="bg-primary text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                                {lesson.xp_reward.toLocaleString()} XP Bounty
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-8 prose prose-lg max-w-none prose-headings:text-gray-900 prose-a:text-blue-600">
+                <div className="p-12 prose prose-invert prose-lg max-w-none prose-headings:text-white prose-headings:font-black prose-headings:tracking-tight prose-p:text-white/70 prose-p:font-medium prose-p:leading-relaxed prose-strong:text-primary prose-a:text-primary prose-code:text-primary prose-pre:bg-black/60 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl">
                     <ReactMarkdown>{lesson.content}</ReactMarkdown>
                 </div>
 
                 {/* Footer / Action */}
-                <div className="p-8 bg-gray-50 border-t flex flex-col items-center">
+                <div className="p-12 bg-white/5 border-t border-white/10">
                     {completeSuccess ? (
-                        <div className="text-center animate-fade-in-up">
-                            <div className="bg-green-100 p-4 rounded-full inline-flex items-center justify-center mb-4">
-                                <Award className="h-10 w-10 text-green-600" />
+                        <div className="text-center animate-in zoom-in duration-500">
+                            <div className="bg-primary/20 p-6 rounded-full inline-flex items-center justify-center mb-6 border border-primary/30 shadow-2xl shadow-primary/20">
+                                <Award className="h-12 w-12 text-primary brightness-125" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Lesson Completed!</h3>
-                            <p className="text-gray-600 mb-6">
+                            <h3 className="text-3xl font-black text-white tracking-tight mb-3">Protocol Synchronized</h3>
+                            <p className="text-white/40 font-bold italic mb-10">
                                 {xpEarned > 0
-                                    ? `You earned ${xpEarned} XP for mastering this topic.`
-                                    : "You have already completed this lesson."}
+                                    ? `Transmission verified. ${xpEarned} XP has been added to your profile.`
+                                    : "This data has already been synchronized with your profile."}
                             </p>
-                            <Link to="/learning/lessons" className="px-6 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-gray-800 transition-colors">
-                                Continue Learning
+                            <Link to="/learning" className="px-10 py-5 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all inline-block">
+                                Continue Research
                             </Link>
                         </div>
                     ) : (
-                        <button
-                            onClick={handleComplete}
-                            disabled={completing}
-                            className={`px-8 py-4 bg-teal-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-teal-700 hover:shadow-xl transition-all transform hover:-translate-y-1 ${completing ? "opacity-75 cursor-wait" : ""
-                                }`}
-                        >
-                            {completing ? "Completing..." : "Complete Lesson & Earn XP"}
-                        </button>
+                        <div className="flex justify-center">
+                            <button
+                                onClick={handleComplete}
+                                disabled={completing}
+                                className={`px-12 py-6 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-2xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all ${completing ? "opacity-75 cursor-wait" : ""
+                                    }`}
+                            >
+                                {completing ? "Verifying..." : "Synchronize Data & Claim XP"}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

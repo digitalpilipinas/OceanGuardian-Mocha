@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { Link } from "react-router";
-import { Button } from "@/react-app/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { MapPin, ArrowRight } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import { DivIcon } from "leaflet";
 
 // Reuse icon logic simplified
 const createIcon = (type: string) => new DivIcon({
-    html: `<div style="width: 20px; height: 20px; border-radius: 50%; background: ${type === 'coral' ? '#ec4899' :
-            type === 'wildlife' ? '#22c55e' :
-                type === 'floating' ? '#f97316' :
-                    '#ef4444'
-        }; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+    html: `<div style="width: 14px; height: 14px; border-radius: 50%; background: ${type === 'coral' ? '#FF643C' :
+        type === 'wildlife' ? '#3b82f6' :
+            type === 'floating' ? '#FF643C' :
+                '#FF643C'
+        }; border: 2px solid white; box-shadow: 0 0 15px ${type === 'coral' || type === 'floating' ? 'rgba(255,100,60,0.5)' : 'rgba(59,130,246,0.5)'};"></div>`,
     className: "bg-transparent border-none",
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
 });
 
 interface Sighting {
@@ -37,25 +35,31 @@ export default function MapPreview() {
     }, []);
 
     return (
-        <Card className="h-full flex flex-col overflow-hidden">
-            <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    Live Map
-                </CardTitle>
-                <CardDescription>Recent activity nearby</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 relative min-h-[300px]">
-                {/* Helper text overlay */}
-                <div className="absolute bottom-4 left-4 right-4 z-[400] bg-white/90 dark:bg-black/80 backdrop-blur p-3 rounded-lg border shadow-sm flex justify-between items-center">
-                    <div className="text-xs font-medium">
-                        {sightings.length} recent sightings
+        <div className="h-full flex flex-col bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden relative group">
+            <div className="p-8 pb-4">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/20 rounded-xl">
+                            <MapPin className="h-5 w-5 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-black text-white tracking-tighter uppercase italic">Live Net</h3>
                     </div>
-                    <Button size="sm" variant="ghost" className="h-8 gap-1" asChild>
-                        <Link to="/map">
-                            Full Map <ArrowRight className="h-3 w-3" />
-                        </Link>
-                    </Button>
+                </div>
+                <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Recent anomalies detected</p>
+            </div>
+
+            <div className="flex-1 relative min-h-[300px] m-4 rounded-[2rem] overflow-hidden border border-white/5">
+                {/* Helper text overlay */}
+                <div className="absolute bottom-6 left-6 right-6 z-[400] bg-secondary/80 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl flex justify-between items-center group-hover:bg-secondary/90 transition-colors">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-white/40 italic">
+                        {sightings.length} Nodes Online
+                    </div>
+                    <Link
+                        to="/map"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors group/link"
+                    >
+                        Engage <ArrowRight className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" />
+                    </Link>
                 </div>
 
                 <MapContainer
@@ -65,10 +69,11 @@ export default function MapPreview() {
                     scrollWheelZoom={false}
                     dragging={true}
                     className="w-full h-full"
-                    style={{ background: "#e0f2fe" }}
+                    style={{ background: "#020817" }}
                 >
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        className="invert-[0.9] hue-rotate-[180deg] brightness-[0.6] contrast-[1.2]"
                     />
                     {sightings.map(s => (
                         <Marker
@@ -78,7 +83,7 @@ export default function MapPreview() {
                         />
                     ))}
                 </MapContainer>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

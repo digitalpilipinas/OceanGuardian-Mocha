@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/react-app/components/ui/card";
+import { CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Trash2, Fish, Anchor, Waves, Filter, X, Clock, AlertTriangle } from "lucide-react";
@@ -67,7 +67,7 @@ export default function MapFilters({
   const hasActiveFilters = !allSelected || dateRange !== "all" || minSeverity > 1;
 
   return (
-    <Card variant="glass" className="border-white/5 shadow-2xl !bg-black/60 backdrop-blur-xl">
+    <div className="bg-secondary/90 border border-white/10 shadow-2xl rounded-2xl overflow-hidden">
       <CardContent className="p-4">
         {/* Collapsed View */}
         {!isExpanded && (
@@ -203,6 +203,6 @@ export default function MapFilters({
           </div>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 }

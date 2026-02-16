@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/react-app/components/ui/card";
-import { Button } from "@/react-app/components/ui/button";
-import { Badge } from "@/react-app/components/ui/badge";
 import { ArrowRight, MapPin, Calendar } from "lucide-react";
 
 interface Mission {
@@ -39,73 +36,74 @@ export default function MissionsCarousel() {
 
     if (missions.length === 0) {
         return (
-            <Card className="bg-muted/50 border-dashed">
-                <CardContent className="flex flex-col items-center justify-center h-48 text-center p-6">
-                    <p className="text-muted-foreground mb-4">No active missions right now.</p>
-                    <Button variant="outline" asChild>
-                        <Link to="/missions/create">Create a Mission</Link>
-                    </Button>
-                </CardContent>
-            </Card>
+            <div className="bg-secondary/40 border border-dashed border-white/10 rounded-[2.5rem] p-12 text-center">
+                <p className="text-white/20 font-black uppercase tracking-[0.3em] mb-6 italic">No active missions right now.</p>
+                <Link
+                    to="/missions/create"
+                    className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all shadow-xl shadow-primary/20"
+                >
+                    Create a Mission
+                </Link>
+            </div>
         );
     }
 
     return (
         <div className="relative">
-            <div className="flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory scrollbar-hide">
+            <div className="flex overflow-x-auto pb-8 gap-6 snap-x snap-mandatory hide-scrollbar">
                 {missions.map((mission) => (
-                    <Card key={mission.id} className="min-w-[300px] max-w-[300px] flex-shrink-0 snap-center flex flex-col h-full hover:shadow-lg hover:shadow-blue-500/10 transition-all bg-slate-900/40 border-white/10 backdrop-blur-sm group">
+                    <div key={mission.id} className="min-w-[320px] max-w-[320px] flex-shrink-0 snap-center flex flex-col h-full bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
                         {mission.image_url ? (
-                            <div className="h-40 w-full overflow-hidden rounded-t-xl relative">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                                <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <Badge variant={mission.status === 'active' ? 'default' : 'secondary'} className="absolute top-3 right-3 z-20 shadow-sm border-none">
+                            <div className="h-48 w-full overflow-hidden relative">
+                                <div className="absolute inset-0 bg-gradient-to-t from-secondary to-transparent z-10" />
+                                <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <span className="absolute top-6 right-6 z-20 px-3 py-1 bg-accent text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
                                     {mission.status}
-                                </Badge>
+                                </span>
                             </div>
                         ) : (
-                            <div className="h-40 w-full bg-slate-800/50 flex items-center justify-center rounded-t-xl relative">
-                                <MapPin className="h-10 w-10 text-slate-600" />
-                                <Badge variant={mission.status === 'active' ? 'default' : 'secondary'} className="absolute top-3 right-3 z-10 border-none">
+                            <div className="h-48 w-full bg-primary/10 flex items-center justify-center relative">
+                                <MapPin className="h-12 w-12 text-primary/40" />
+                                <span className="absolute top-6 right-6 z-10 px-3 py-1 bg-accent text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
                                     {mission.status}
-                                </Badge>
+                                </span>
                             </div>
                         )}
-                        <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-base line-clamp-1 text-blue-50">{mission.title}</CardTitle>
-                            <CardDescription className="flex items-center gap-1 text-xs text-blue-200/60">
-                                <MapPin className="h-3 w-3" /> {mission.location_name}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0 flex-1">
-                            <p className="text-sm text-slate-400 line-clamp-2 mb-3">
-                                {mission.description}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-950/30 p-2 rounded-lg w-fit">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(mission.start_time).toLocaleDateString()}
+                        <div className="p-8 flex-1 flex flex-col">
+                            <h3 className="text-xl font-black text-white tracking-tight line-clamp-1 mb-2 uppercase group-hover:text-primary transition-colors">{mission.title}</h3>
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/60 mb-6">
+                                <MapPin className="h-3.5 w-3.5" />
+                                <span className="truncate">{mission.location_name}</span>
                             </div>
-                        </CardContent>
-                        <CardFooter className="p-4 pt-0">
-                            <Button size="sm" className="w-full bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-500/30" asChild>
-                                <Link to={`/missions/${mission.id}`}>
-                                    View Details
+
+                            <p className="text-white/40 text-[13px] font-medium leading-relaxed italic line-clamp-2 mb-8">
+                                "{mission.description}"
+                            </p>
+
+                            <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    {new Date(mission.start_time).toLocaleDateString()}
+                                </div>
+                                <Link
+                                    to={`/missions/${mission.id}`}
+                                    className="px-6 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20 transition-all"
+                                >
+                                    Details
                                 </Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                            </div>
+                        </div>
+                    </div>
                 ))}
 
                 {/* View All Card */}
-                <Link to="/missions" className="min-w-[150px] flex-shrink-0 snap-center">
-                    <Card className="h-full flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground p-6">
-                            <div className="h-12 w-12 rounded-full bg-background flex items-center justify-center shadow-sm">
-                                <ArrowRight className="h-6 w-6" />
-                            </div>
-                            <span className="font-medium text-sm">View All</span>
+                <Link to="/missions" className="min-w-[180px] flex-shrink-0 snap-center group">
+                    <div className="h-full flex flex-col items-center justify-center bg-white/5 border border-white/5 rounded-[3rem] hover:bg-white/10 transition-all cursor-pointer p-8 text-center group-hover:border-primary/20">
+                        <div className="h-16 w-16 rounded-3xl bg-primary/20 flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform">
+                            <ArrowRight className="h-8 w-8 text-primary" />
                         </div>
-                    </Card>
+                        <span className="font-black text-[10px] uppercase tracking-[0.3em] text-white/40 group-hover:text-white transition-colors">Observe All</span>
+                    </div>
                 </Link>
             </div>
         </div>

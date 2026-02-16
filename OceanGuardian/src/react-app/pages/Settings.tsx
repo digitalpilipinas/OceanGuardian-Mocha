@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
+import { CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Label } from "@/react-app/components/ui/label";
 import { Input } from "@/react-app/components/ui/input";
 import { Switch } from "@/react-app/components/ui/switch";
@@ -104,10 +104,10 @@ export default function Settings() {
 
             <div className="space-y-10">
                 {/* Location Settings */}
-                <Card variant="glass" className="border-white/10 !bg-black/60 shadow-2xl backdrop-blur-2xl rounded-[2.5rem] overflow-hidden">
+                <div className="bg-secondary/40 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
                     <CardHeader className="p-10 pb-6">
                         <CardTitle className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                            <MapPin className="h-6 w-6 text-primary/60" /> Location Protocols
+                            <MapPin className="h-6 w-6 text-primary" /> Location Protocols
                         </CardTitle>
                         <CardDescription className="text-white/40 font-bold italic mt-2">
                             Set your deployment zone to join regional leaderboards.
@@ -122,7 +122,7 @@ export default function Settings() {
                                     value={formData.country}
                                     onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                                     placeholder="e.g. Philippines"
-                                    className="h-14 bg-white/5 border-white/10 rounded-2xl px-6 text-white font-bold placeholder:text-white/10 focus:bg-white/10 transition-all"
+                                    className="h-14 bg-white/5 border-white/10 rounded-2xl px-6 text-white font-bold placeholder:text-white/10 focus:bg-white/10 transition-all shadow-inner"
                                 />
                             </div>
                             <div className="space-y-3">
@@ -132,18 +132,18 @@ export default function Settings() {
                                     value={formData.region}
                                     onChange={(e) => setFormData({ ...formData, region: e.target.value })}
                                     placeholder="e.g. Manila"
-                                    className="h-14 bg-white/5 border-white/10 rounded-2xl px-6 text-white font-bold placeholder:text-white/10 focus:bg-white/10 transition-all"
+                                    className="h-14 bg-white/5 border-white/10 rounded-2xl px-6 text-white font-bold placeholder:text-white/10 focus:bg-white/10 transition-all shadow-inner"
                                 />
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </div>
 
                 {/* Privacy Settings */}
-                <Card variant="glass" className="border-white/10 !bg-black/60 shadow-2xl backdrop-blur-2xl rounded-[2.5rem] overflow-hidden">
+                <div className="bg-secondary/40 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
                     <CardHeader className="p-10 pb-6">
                         <CardTitle className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                            <User className="h-6 w-6 text-primary/60" /> Stealth & Visibility
+                            <User className="h-6 w-6 text-primary" /> Stealth & Visibility
                         </CardTitle>
                         <CardDescription className="text-white/40 font-bold italic mt-2">
                             Manage your digital footprint within the collective.
@@ -177,13 +177,13 @@ export default function Settings() {
                             />
                         </div>
                     </CardContent>
-                </Card>
+                </div>
 
                 {/* Notifications Settings */}
-                <Card variant="glass" className="border-white/10 !bg-black/60 shadow-2xl backdrop-blur-2xl rounded-[2.5rem] overflow-hidden">
+                <div className="bg-secondary/40 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
                     <CardHeader className="p-10 pb-6">
                         <CardTitle className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                            <MessageSquare className="h-6 w-6 text-primary/60" /> Data Alerts
+                            <MessageSquare className="h-6 w-6 text-primary" /> Data Alerts
                         </CardTitle>
                         <CardDescription className="text-white/40 font-bold italic mt-2">
                             Manage your real-time signal preferences.
@@ -204,7 +204,7 @@ export default function Settings() {
                             />
                         </div>
                     </CardContent>
-                </Card>
+                </div>
 
                 <div className="flex justify-end pt-10">
                     <Button onClick={handleSave} disabled={saving} className="w-full h-16 rounded-[2rem] bg-primary text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-primary/40 border-none transition-all hover:scale-[1.02] active:scale-95">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { BookOpen, ArrowRight, Lock, CheckCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { BookOpen, ArrowRight, Lock, CheckCircle, Trophy } from "lucide-react";
+import { Link } from "react-router";
 
 // Since I don't have a full LessonView yet, I'll inline a simple view or just list component here first.
 // Let's create the LIST component here, and a separate View if needed, or combine.
@@ -30,71 +30,85 @@ export default function DeepDiveLessons() {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className="p-12 text-center">Loading lessons...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+    );
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="mb-10">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">Deep Dive Lessons</h1>
-                <p className="text-gray-600">
-                    Master the ocean's mysteries. Complete lessons to earn XP and badges.
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="mb-16 text-center relative">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-primary/10 rounded-full blur-3xl -z-10" />
+                <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 uppercase">
+                    Ocean <span className="text-accent brightness-125 italic">Learning Modules</span>
+                </h1>
+                <p className="text-white/40 text-sm font-black max-w-2xl mx-auto uppercase tracking-[0.3em] italic">
+                    Master the ocean's mysteries. Complete advanced protocols to earn XP.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {lessons.map((lesson) => (
                     <div
                         key={lesson.id}
-                        className={`relative bg-white rounded-2xl shadow-md overflow-hidden transition-all hover:shadow-lg flex flex-col ${lesson.isLocked ? "opacity-75 grayscale" : ""
-                            }`}
+                        className={cn(
+                            "group relative bg-secondary/60 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02] flex flex-col",
+                            lesson.isLocked ? "opacity-60 grayscale blur-[1px]" : ""
+                        )}
                     >
-                        {/* Cover Image Placeholder */}
-                        <div className="h-48 bg-gray-200 relative">
+                        {/* Cover Image */}
+                        <div className="h-56 bg-slate-900 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent z-10" />
                             {lesson.cover_image ? (
-                                <img src={lesson.cover_image} alt={lesson.title} className="w-full h-full object-cover" />
+                                <img
+                                    src={lesson.cover_image}
+                                    alt={lesson.title}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60"
+                                />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-teal-100 text-teal-600">
-                                    <BookOpen className="h-12 w-12" />
+                                <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+                                    <BookOpen className="h-16 w-16 opacity-40 transition-transform group-hover:scale-110" />
                                 </div>
                             )}
+
                             {lesson.isLocked && (
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                    <div className="bg-white/90 px-4 py-2 rounded-full flex items-center shadow-lg">
-                                        <Lock className="h-4 w-4 mr-2" />
-                                        <span className="font-semibold text-sm">Unlocks at Level {lesson.unlock_level}</span>
-                                    </div>
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20">
+                                    <Lock className="h-10 w-10 text-white/50" />
                                 </div>
                             )}
+
                             {lesson.isCompleted && (
-                                <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-md">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    COMPLETED
+                                <div className="absolute top-6 right-6 bg-accent text-white px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest flex items-center shadow-xl z-20 shadow-accent/20">
+                                    <CheckCircle className="h-3.5 w-3.5 mr-2" />
+                                    SYNCED
                                 </div>
                             )}
                         </div>
 
-                        <div className="p-6 flex-1 flex flex-col">
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{lesson.title}</h3>
-                            <p className="text-gray-500 text-sm mb-4 flex-1 line-clamp-3">
-                                {lesson.description}
-                            </p>
-
-                            <div className="flex items-center justify-between mt-4">
-                                <span className="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
+                        <div className="p-8 flex flex-col flex-1">
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center bg-primary/10 px-3 py-1 rounded-full ring-1 ring-primary/20">
+                                    <Trophy className="h-3 w-3 mr-1.5" />
                                     {lesson.xp_reward} XP
                                 </span>
+                            </div>
 
+                            <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight group-hover:text-primary transition-colors">{lesson.title}</h3>
+                            <p className="text-white/40 text-[13px] mb-8 font-medium line-clamp-2 leading-relaxed italic">{lesson.description}</p>
+
+                            <div className="mt-auto">
                                 {lesson.isLocked ? (
-                                    <button disabled className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed">
-                                        Locked
-                                    </button>
+                                    <div className="w-full py-4 bg-white/5 rounded-2xl text-center text-white/30 font-black text-[10px] uppercase tracking-[0.2em] border border-white/5">
+                                        Protocol Locked
+                                    </div>
                                 ) : (
                                     <Link
                                         to={`/learning/lessons/${lesson.slug}`}
-                                        className="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
+                                        className="inline-flex items-center justify-center w-full py-4 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primary/80 transition-all shadow-xl shadow-primary/20 active:scale-95 group/btn"
                                     >
-                                        Start Lesson
-                                        <ArrowRight className="ml-1 h-4 w-4" />
+                                        Initiate Module
+                                        <ArrowRight className="h-3.5 w-3.5 ml-2 transition-transform group-hover/btn:translate-x-1" />
                                     </Link>
                                 )}
                             </div>
@@ -104,4 +118,9 @@ export default function DeepDiveLessons() {
             </div>
         </div>
     );
+}
+
+// Simple CN helper since I might not have it loaded in this specific file if I moved things
+function cn(...classes: string[]) {
+    return classes.filter(Boolean).join(" ");
 }

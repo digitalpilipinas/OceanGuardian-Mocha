@@ -1,7 +1,4 @@
-
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
-import { Progress } from "@/react-app/components/ui/progress";
-import { Card, CardContent } from "@/react-app/components/ui/card";
 import { xpProgressInLevel } from "@/shared/types";
 import { Award, Star } from "lucide-react";
 
@@ -18,40 +15,43 @@ export default function WelcomeHeader() {
         <div className="mb-10">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-                        Welcome back, <span className="text-primary brightness-150 drop-shadow-sm">{profile.username || "Guardian"}</span>!
+                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-tight uppercase">
+                        Welcome back, <span className="text-accent italic">{profile.username || "Guardian"}</span>
                     </h1>
-                    <p className="text-white/60 mt-2 text-lg font-bold tracking-wide">
+                    <p className="text-white/40 mt-2 text-sm font-black uppercase tracking-[0.3em] italic">
                         Your ocean conservation journey continues today.
                     </p>
                 </div>
-                <div className="flex items-center gap-3 px-6 py-4 rounded-3xl glass-liquid border-white/5 bg-white/5">
-                    <Award className="h-7 w-7 text-primary" />
-                    <span className="font-black text-2xl text-white tracking-tighter">Level {profile.level || 1}</span>
+                <div className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] bg-secondary/80 border border-white/5 shadow-2xl group">
+                    <Award className="h-8 w-8 text-accent group-hover:scale-110 transition-transform" />
+                    <span className="font-black text-3xl text-white tracking-tighter italic">Lvl {profile.level || 1}</span>
                 </div>
             </div>
 
-            <Card variant="glass" className="relative overflow-hidden group">
-                {/* Background decorative elements - Tuned down blurs */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/5 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+            <div className="bg-secondary/40 border border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+                {/* Background decorative elements */}
+                <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-primary/20 transition-colors" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-                <CardContent className="p-10 relative z-10">
-                    <div className="flex justify-between items-end text-sm font-black mb-5 uppercase tracking-[0.2em]">
-                        <span className="flex items-center gap-3 text-white">
-                            <Star className="h-6 w-6 fill-primary text-primary" />
-                            <span className="text-3xl tracking-tighter">{current.toLocaleString()}</span>
-                            <span className="text-white/40 text-xs mt-1">XP EARNED</span>
+                <div className="relative z-10">
+                    <div className="flex justify-between items-end text-sm font-black mb-6 uppercase tracking-[0.3em]">
+                        <span className="flex items-center gap-4 text-white">
+                            <Star className="h-7 w-7 fill-accent text-accent animate-pulse" />
+                            <span className="text-4xl tracking-tighter italic">{current.toLocaleString()}</span>
+                            <span className="text-white/20 text-[10px] mt-1">XP Points</span>
                         </span>
-                        <span className="text-white/50 text-xs font-bold bg-white/5 px-4 py-2 rounded-full border border-white/5">
+                        <span className="text-white/40 text-[10px] font-black bg-white/5 px-4 py-2 rounded-full border border-white/5 uppercase tracking-widest">
                             {(required - current).toLocaleString()} XP TO LEVEL {(profile.level || 1) + 1}
                         </span>
                     </div>
-                    <div className="bg-black/20 rounded-full p-1 border border-white/5 overflow-hidden">
-                        <Progress value={progressPercent} className="h-3 rounded-full bg-transparent overflow-hidden" />
+                    <div className="bg-black/40 rounded-full h-4 border border-white/5 overflow-hidden shadow-inner p-1">
+                        <div
+                            className="h-full bg-gradient-to-r from-primary via-accent to-primary rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(255,100,50,0.3)]"
+                            style={{ width: `${progressPercent}%` }}
+                        />
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

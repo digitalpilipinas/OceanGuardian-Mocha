@@ -278,9 +278,7 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* Profile Header */}
-      <Card variant="glass" className="border-white/5 overflow-hidden relative group">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none transition-all duration-1000" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none transition-all duration-1000" />
+      <div className="bg-secondary/40 border border-white/10 rounded-[3rem] overflow-hidden relative group shadow-2xl">
         <CardContent className="p-12 relative z-10">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="relative">
@@ -297,13 +295,12 @@ export default function Profile() {
 
             <div className="text-center md:text-left flex-1 py-4">
               <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
-                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter drop-shadow-sm">{displayName}</h1>
+                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter">{displayName}</h1>
                 <div className="flex items-center justify-center md:justify-start gap-4">
                   {!isOwnProfile && user && (
                     <Button
                       size="lg"
-                      variant={isFollowing ? "neomorph" : "neomorph-primary"}
-                      className="px-8 h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20"
+                      className="px-8 h-12 text-sm font-black uppercase tracking-widest bg-primary text-white"
                       onClick={handleFollowToggle}
                     >
                       {isFollowing ? <UserMinus className="w-5 h-5 mr-3" /> : <UserPlus className="w-5 h-5 mr-3" />}
@@ -311,9 +308,9 @@ export default function Profile() {
                     </Button>
                   )}
                   {isOwnProfile && (
-                    <Button size="icon" variant="neomorph" className="h-12 w-12 rounded-2xl" asChild>
+                    <Button size="icon" variant="ghost" className="h-12 w-12 rounded-2xl bg-white/5 hover:bg-white/10" asChild>
                       <Link to="/settings">
-                        <Settings className="w-6 h-6 text-primary group-hover:rotate-90 transition-transform duration-500" />
+                        <Settings className="w-6 h-6 text-primary" />
                       </Link>
                     </Button>
                   )}
@@ -352,7 +349,7 @@ export default function Profile() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </div>
 
       {/* Only show detailed tabs if own profile for now, or if we implemented public endpoints */}
       {isOwnProfile ? (

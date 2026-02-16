@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { Card, CardContent } from "@/react-app/components/ui/card";
+import { CardContent } from "@/react-app/components/ui/card";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
@@ -162,11 +162,11 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
         <div className="fixed inset-x-0 bottom-0 z-[1100] animate-in slide-in-from-bottom duration-300">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm -z-10"
+                className="fixed inset-0 bg-black/40 -z-10"
                 onClick={onClose}
             />
 
-            <Card variant="glass" className="rounded-t-[3rem] rounded-b-none shadow-[0_-20px_50px_rgba(0,0,0,0.5)] max-h-[85vh] overflow-y-auto mx-auto max-w-lg border-white/10 !bg-black/80 backdrop-blur-2xl">
+            <div className="rounded-t-[3rem] rounded-b-none shadow-[0_-20px_50px_rgba(0,0,0,0.5)] max-h-[85vh] overflow-y-auto mx-auto max-w-lg border border-white/10 bg-secondary/95">
                 {/* Drag handle */}
                 <div className="flex justify-center pt-4">
                     <div className="w-16 h-1.5 rounded-full bg-white/10" />
@@ -344,7 +344,7 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                         )}
                     </div>
                 </CardContent>
-            </Card>
+            </div>
         </div >
     );
 }

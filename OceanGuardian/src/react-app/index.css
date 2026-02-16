@@ -12,11 +12,12 @@
     --popover-foreground: 222 47% 11%;
     --primary: 200 100% 37%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 145 63% 49%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 200 100% 98%;
+    --secondary-foreground: 222 47% 11%;
     --muted: 210 20% 94%;
     --muted-foreground: 215 16% 47%;
-    --accent: 145 63% 49%;
+    --accent: 15 100% 60%;
+    /* Coral Accent */
     --accent-foreground: 0 0% 100%;
     --destructive: 12 86% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -25,8 +26,8 @@
     --ring: 200 100% 37%;
     --radius: 1rem;
     --chart-1: 200 100% 37%;
-    --chart-2: 145 63% 49%;
-    --chart-3: 12 86% 60%;
+    --chart-2: 15 100% 60%;
+    --chart-3: 340 75% 55%;
     --chart-4: 40 45% 82%;
     --chart-5: 200 80% 50%;
     --sidebar: 210 20% 99%;
@@ -58,13 +59,15 @@
     --popover: 222 47% 8%;
     --popover-foreground: 210 20% 98%;
     --primary: 199 89% 48%;
+    /* Deep Ocean Primary */
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
+    --secondary: 222 47% 6%;
+    /* Even deeper for solid feel */
     --secondary-foreground: 210 20% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 25% 65%;
-    /* Improved contrast from 215 20% 75%? wait, higher L is better on dark. Let's go 215 20% 85% */
-    --accent: 199 89% 48%;
+    --accent: 12 100% 63%;
+    /* Vibrant Coral Accent */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 20% 98%;
@@ -72,8 +75,8 @@
     --input: 217 33% 20%;
     --ring: 199 89% 48%;
     --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
+    --chart-2: 12 100% 63%;
+    --chart-3: 340 75% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     --sidebar: 222 47% 6%;

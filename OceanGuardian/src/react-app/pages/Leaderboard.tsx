@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
+import { CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -46,7 +46,7 @@ const Podium = ({ top3 }: { top3: LeaderboardEntry[] }) => {
                     <p className="font-black text-sm truncate max-w-[120px] text-white tracking-tight">{user.username}</p>
                     <p className="text-[10px] text-primary brightness-125 font-black uppercase tracking-widest">{user.xp.toLocaleString()} XP</p>
                 </div>
-                <div className={`w-full ${height} ${colorClass} glass-liquid border-t-4 rounded-t-3xl flex items-center justify-center shadow-2xl transition-all group-hover/podium:brightness-125`}>
+                <div className={`w-full ${height} ${colorClass} border-t-4 rounded-t-3xl flex items-center justify-center shadow-2xl transition-all group-hover/podium:brightness-125`}>
                     <Trophy className={`w-8 h-8 ${iconColor} opacity-50`} />
                 </div>
             </div>
@@ -198,7 +198,7 @@ export default function Leaderboard() {
                                 <>
                                     <Podium top3={top3} />
 
-                                    <Card variant="glass" className="border-white/5">
+                                    <div className="bg-secondary/40 border border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
                                         <CardHeader className="border-b border-white/5 pb-6">
                                             <div className="flex items-center justify-between">
                                                 <div>
@@ -222,7 +222,7 @@ export default function Leaderboard() {
                                                 </div>
                                             </ScrollArea>
                                         </CardContent>
-                                    </Card>
+                                    </div>
 
                                     {/* Sticky user rank if not in view (optional enhancement) */}
                                 </>

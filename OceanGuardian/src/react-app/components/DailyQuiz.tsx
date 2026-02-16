@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, X, Trophy, ArrowRight, Home, Flame } from "lucide-react";
+import { Check, X, Trophy, ArrowRight, Flame, Brain, Award } from "lucide-react";
 import { Link } from "react-router";
 
 interface Question {
@@ -94,24 +94,25 @@ export default function DailyQuiz() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading quiz...</div>;
+    if (loading) return <div className="p-8 text-center text-white/40 font-black uppercase tracking-widest animate-pulse">Syncing satellite data...</div>;
 
     if (alreadyCompleted) {
         return (
-            <div className="max-w-md mx-auto mt-16 p-8 bg-white rounded-2xl shadow-lg text-center">
-                <div className="bg-green-100 p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-6">
-                    <Check className="h-10 w-10 text-green-600" />
+            <div className="max-w-md mx-auto mt-16 p-12 bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+                <div className="bg-primary/20 p-6 rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-10 border border-primary/20 ring-4 ring-primary/10">
+                    <Check className="h-12 w-12 text-primary brightness-125 animate-bounce" />
                 </div>
-                <h2 className="text-2xl font-bold mb-4">Quiz Completed!</h2>
-                <p className="text-gray-600 mb-8">
-                    You've already taken today's quiz. Come back tomorrow for new questions and to keep your streak alive!
+                <h2 className="text-4xl font-black text-white tracking-tighter mb-4 uppercase">Frequency Secure</h2>
+                <p className="text-white/40 font-black italic uppercase tracking-widest text-[10px] mb-12 leading-relaxed">
+                    You've already transmitted today's data. Return in 24h for the next mission protocol.
                 </p>
                 <Link
                     to="/learning"
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center justify-center w-full px-10 py-5 bg-primary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary/80 transition-all shadow-xl shadow-primary/20 active:scale-95 group"
                 >
-                    <Home className="mr-2 h-5 w-5" />
-                    Back to Learning Hub
+                    <Award className="h-4 w-4 mr-3 transition-transform group-hover:rotate-12" />
+                    Back to Hub
                 </Link>
             </div>
         );
@@ -120,58 +121,69 @@ export default function DailyQuiz() {
     if (results) {
         const correctCount = results.filter(r => r.isCorrect).length;
         return (
-            <div className="max-w-2xl mx-auto mt-8 p-6">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                    <div className="bg-blue-600 p-8 text-center text-white">
-                        <Trophy className="h-16 w-16 mx-auto mb-4 text-yellow-300" />
-                        <h2 className="text-3xl font-bold mb-2">Quiz Complete!</h2>
-                        <p className="text-blue-100 text-lg">
-                            You scored {correctCount}/{questions.length}
+            <div className="max-w-2xl mx-auto mt-8 px-4">
+                <div className="bg-secondary/60 border border-white/5 rounded-[3.5rem] overflow-hidden shadow-2xl relative">
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+                    <div className="bg-primary/10 p-12 text-center border-b border-white/5 relative z-10">
+                        <Trophy className="h-24 w-24 mx-auto mb-8 text-accent animate-pulse drop-shadow-[0_0_25px_rgba(255,100,50,0.4)]" />
+                        <h2 className="text-5xl font-black text-white tracking-tighter mb-2 uppercase">Sync complete</h2>
+                        <p className="text-primary brightness-125 text-xl font-black uppercase tracking-[0.3em] italic">
+                            Sync Rate: {correctCount}<span className="text-white/20">/</span>{questions.length}
                         </p>
                     </div>
 
-                    <div className="p-8">
-                        <div className="flex justify-center space-x-8 mb-8">
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 font-medium">XP Earned</p>
-                                <p className="text-3xl font-bold text-blue-600">+{xpEarned}</p>
+                    <div className="p-12 relative z-10">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-12">
+                            <div className="text-center group p-6 bg-white/5 rounded-[2rem] border border-white/5 hover:border-primary/20 transition-all">
+                                <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mb-2">XP Gain</p>
+                                <p className="text-4xl font-black text-primary tracking-tighter italic">+{xpEarned}</p>
                             </div>
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 font-medium">Streak</p>
-                                <div className="flex items-center justify-center space-x-1">
-                                    <p className="text-3xl font-bold text-orange-500">{streak}</p>
-                                    <Flame className="h-5 w-5 text-orange-500" />
+                            <div className="text-center group p-6 bg-white/5 rounded-[2rem] border border-white/5 hover:border-orange-500/20 transition-all">
+                                <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mb-2">Active Streak</p>
+                                <div className="flex items-center justify-center gap-2">
+                                    <p className="text-4xl font-black text-orange-500 tracking-tighter italic">{streak}</p>
+                                    <Flame className="h-6 w-6 text-orange-500 fill-current" />
                                 </div>
                             </div>
                             {streakBonus > 0 && (
-                                <div className="text-center">
-                                    <p className="text-sm text-gray-500 font-medium">Streak Bonus</p>
-                                    <p className="text-3xl font-bold text-purple-600">+{streakBonus}</p>
+                                <div className="text-center group p-6 bg-accent/10 rounded-[2rem] border border-accent/20 transition-all col-span-2 md:col-span-1">
+                                    <p className="text-[10px] text-accent/50 font-black uppercase tracking-widest mb-2">Bonus Protocol</p>
+                                    <p className="text-4xl font-black text-accent tracking-tighter italic">+{streakBonus}</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="space-y-4">
-                            <h3 className="font-semibold text-gray-900 border-b pb-2">Result Breakdown</h3>
+                        <div className="space-y-6">
+                            <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] border-b border-white/5 pb-6">Protocol Breakdown</h3>
                             {results.map((result, idx) => (
-                                <div key={idx} className={`p-4 rounded-lg flex items-start space-x-3 ${result.isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
-                                    <div className={`mt-0.5 p-1 rounded-full ${result.isCorrect ? 'bg-green-200' : 'bg-red-200'}`}>
-                                        {result.isCorrect ? <Check className="h-4 w-4 text-green-700" /> : <X className="h-4 w-4 text-red-700" />}
+                                <div key={idx} className={cn(
+                                    "p-8 rounded-[2rem] flex items-start gap-6 transition-all duration-500 group",
+                                    result.isCorrect ? 'bg-primary/5 border border-primary/10 hover:border-primary/20' : 'bg-red-500/5 border border-red-500/10 hover:border-red-500/20'
+                                )}>
+                                    <div className={cn(
+                                        "mt-1 p-2 rounded-xl transition-all",
+                                        result.isCorrect ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'bg-red-500/20 text-red-500 shadow-lg shadow-red-500/10'
+                                    )}>
+                                        {result.isCorrect ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
                                     </div>
-                                    <div>
-                                        <p className="font-medium text-gray-900 mb-1">{questions.find(q => q.id === result.questionId)?.question}</p>
-                                        <p className="text-sm text-gray-600">{result.explanation}</p>
+                                    <div className="flex-1">
+                                        <p className="font-black text-white text-lg mb-2 uppercase tracking-tight group-hover:text-primary transition-colors">
+                                            {questions.find(q => q.id === result.questionId)?.question}
+                                        </p>
+                                        <p className="text-[13px] text-white/40 italic font-medium leading-relaxed">
+                                            {result.explanation}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="mt-8 flex justify-center">
+                        <div className="mt-16 flex justify-center">
                             <Link
                                 to="/learning"
-                                className="px-8 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-gray-800 transition-colors"
+                                className="px-16 py-6 bg-white text-primary rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/20 active:scale-95"
                             >
-                                Back to Dashboard
+                                Re-engage Hub
                             </Link>
                         </div>
                     </div>
@@ -183,60 +195,78 @@ export default function DailyQuiz() {
     const currentQuestion = questions[currentQuestionIndex];
 
     return (
-        <div className="max-w-2xl mx-auto mt-8 px-4">
+        <div className="max-w-3xl mx-auto mt-12 px-4">
             {/* Progress Bar */}
-            <div className="mb-6">
-                <div className="flex justify-between text-sm font-medium text-gray-500 mb-2">
-                    <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                    <span>{questions[currentQuestionIndex].category}</span>
+            <div className="mb-12">
+                <div className="flex justify-between items-end mb-6 px-4">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-2">Intelligence Sector</p>
+                        <span className="text-3xl font-black text-white tracking-tighter uppercase italic">
+                            Signal {currentQuestionIndex + 1}<span className="text-white/20 ml-2">of {questions.length}</span>
+                        </span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent italic bg-accent/10 px-4 py-2 rounded-full ring-1 ring-accent/20">
+                        {questions[currentQuestionIndex].category}
+                    </span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner p-1">
                     <div
-                        className="h-full bg-blue-600 transition-all duration-300 ease-out"
+                        className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_25px_rgba(3,169,244,0.6)]"
                         style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                     />
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    {currentQuestion.question}
+            <div className="bg-secondary/60 border border-white/5 rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                    <Brain className="h-40 w-40 text-primary" />
+                </div>
+                <h2 className="text-2xl md:text-4xl font-black text-white tracking-tighter leading-tight mb-12 relative z-10 italic">
+                    "{currentQuestion.question}"
                 </h2>
 
-                <div className="space-y-3">
+                <div className="space-y-4 relative z-10">
                     {currentQuestion.options.map((option, idx) => (
                         <button
                             key={idx}
                             onClick={() => handleOptionSelect(idx)}
-                            className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${selectedOption === idx
-                                ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
-                                : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                                }`}
+                            className={cn(
+                                "w-full text-left p-8 rounded-3xl border transition-all duration-500 group/opt relative overflow-hidden",
+                                selectedOption === idx
+                                    ? "border-primary bg-primary shadow-2xl shadow-primary/20 translate-x-3 text-white"
+                                    : "border-white/5 bg-white/5 hover:bg-white/10 text-white/40"
+                            )}
                         >
                             <div className="flex items-center">
-                                <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${selectedOption === idx ? "border-blue-500 bg-blue-500" : "border-gray-300"
-                                    }`}>
-                                    {selectedOption === idx && <div className="w-2 h-2 rounded-full bg-white" />}
+                                <div className={cn(
+                                    "w-10 h-10 rounded-xl border-2 mr-6 flex items-center justify-center transition-all font-black text-[10px]",
+                                    selectedOption === idx
+                                        ? "border-white bg-white text-primary"
+                                        : "border-white/10 text-white/20 group-hover/opt:border-white/30 group-hover/opt:text-white/60"
+                                )}>
+                                    {String.fromCharCode(65 + idx)}
                                 </div>
-                                {option}
+                                <span className="text-base md:text-lg font-black tracking-tight uppercase leading-snug">{option}</span>
                             </div>
                         </button>
                     ))}
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-16 flex justify-end">
                     <button
                         onClick={handleNext}
                         disabled={selectedOption === null || submitting}
-                        className={`inline-flex items-center px-6 py-3 rounded-full font-semibold transition-all ${selectedOption === null
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
-                            }`}
+                        className={cn(
+                            "inline-flex items-center px-12 py-6 rounded-[2rem] font-black uppercase tracking-[0.4em] text-[10px] transition-all shadow-2xl",
+                            selectedOption === null
+                                ? "bg-white/5 text-white/20 border border-white/5 cursor-not-allowed"
+                                : "bg-white text-primary hover:bg-primary hover:text-white shadow-primary/20 active:scale-95 group-hover:translate-x-1"
+                        )}
                     >
-                        {submitting ? "Submitting..." : (
+                        {submitting ? "Transmitting..." : (
                             <>
-                                {currentQuestionIndex === questions.length - 1 ? "Finish Quiz" : "Next Question"}
-                                <ArrowRight className="ml-2 h-5 w-5" />
+                                {currentQuestionIndex === questions.length - 1 ? "End Protocol" : "Secure Signal"}
+                                <ArrowRight className="ml-4 h-5 w-5 animate-pulse" />
                             </>
                         )}
                     </button>
@@ -244,4 +274,8 @@ export default function DailyQuiz() {
             </div>
         </div>
     );
+}
+
+function cn(...classes: any[]) {
+    return classes.filter(Boolean).join(' ');
 }

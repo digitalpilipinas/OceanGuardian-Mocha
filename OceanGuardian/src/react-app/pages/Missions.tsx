@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/react-app/components/ui/card";
+import { CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
@@ -95,12 +95,12 @@ export default function Missions() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {missions.map((mission) => (
-              <Card key={mission.id} variant="glass" className="flex flex-col h-full group/mission border-white/5 hover:border-white/10 transition-colors">
+              <div key={mission.id} className="flex flex-col h-full group/mission border border-white/10 bg-secondary/40 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02]">
                 {mission.image_url && (
                   <div className="relative h-60 w-full overflow-hidden">
                     <img src={mission.image_url} alt={mission.title} className="w-full h-full object-cover transition-transform duration-700 group-hover/mission:scale-110" />
                     <div className="absolute top-5 right-5">
-                      <Badge className="capitalize px-5 py-2 rounded-full glass-liquid border-none text-white font-black tracking-widest text-[10px] shadow-2xl">
+                      <Badge className="capitalize px-5 py-2 rounded-full border border-white/10 bg-black/60 text-white font-black tracking-widest text-[10px] shadow-2xl">
                         {mission.status}
                       </Badge>
                     </div>
@@ -108,7 +108,7 @@ export default function Missions() {
                 )}
                 <CardHeader className="pb-4 pt-8">
                   <CardTitle className="text-2xl font-black text-white tracking-tight line-clamp-1 group-hover/mission:text-primary transition-colors">{mission.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-primary/80">
+                  <CardDescription className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-primary">
                     <MapPin className="h-3.5 w-3.5" /> {mission.location_name}
                   </CardDescription>
                 </CardHeader>
@@ -129,13 +129,13 @@ export default function Missions() {
                   </div>
                 </CardContent>
                 <CardFooter className="pt-6 pb-10 px-8">
-                  <Button variant="neomorph" className="w-full h-14 text-xs font-black uppercase tracking-[0.3em] group-hover/mission:bg-primary group-hover/mission:text-white group-hover/mission:shadow-xl group-hover/mission:shadow-primary/30 transition-all duration-500 rounded-3xl" asChild>
+                  <Button className="w-full h-14 text-xs font-black uppercase tracking-[0.3em] bg-white/5 text-white/60 hover:bg-primary hover:text-white hover:shadow-xl hover:shadow-primary/30 transition-all duration-500 rounded-3xl border border-white/10" asChild>
                     <Link to={`/missions/${mission.id}`}>
                       Deploy <Plus className="ml-3 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardFooter>
-              </Card>
+              </div>
             ))}
           </div>
         )

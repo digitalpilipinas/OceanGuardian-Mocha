@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Map, Award, Users, TrendingUp } from "lucide-react";
 
 interface Stats {
@@ -32,45 +31,48 @@ export default function DashboardStats() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            <Card variant="glass" className="border-white/5 group pt-8">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-primary transition-colors">Total Sightings</CardTitle>
-                    <Map className="h-5 w-5 text-primary opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-4xl font-black text-white tracking-tighter">{stats?.totalSightings.toLocaleString() || 0}</div>
-                    <p className="text-[10px] text-white/30 mt-3 font-bold uppercase tracking-widest flex items-center gap-2">
-                        <TrendingUp className="h-3 w-3 text-secondary" />
-                        Verified Reports
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="p-10 bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex justify-between items-start mb-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-primary transition-colors">Total Sightings</p>
+                    <div className="p-3 bg-primary/10 rounded-2xl">
+                        <Map className="h-5 w-5 text-primary" />
+                    </div>
+                </div>
+                <div className="text-4xl font-black text-white tracking-tighter italic">{stats?.totalSightings.toLocaleString() || 0}</div>
+                <p className="text-[10px] text-white/20 mt-4 font-black uppercase tracking-widest flex items-center gap-2">
+                    <TrendingUp className="h-3 w-3 text-primary/40" />
+                    Verified Reports
+                </p>
+            </div>
 
-            <Card variant="glass" className="border-white/5 group pt-8">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-primary transition-colors">Active Missions</CardTitle>
-                    <Award className="h-5 w-5 text-primary opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-4xl font-black text-white tracking-tighter">{stats?.activeMissions.toLocaleString() || 0}</div>
-                    <p className="text-[10px] text-primary/60 mt-3 font-black uppercase tracking-widest italic group-hover:text-primary transition-colors">
-                        Join cleanup efforts
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="p-10 bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex justify-between items-start mb-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-accent transition-colors">Active Missions</p>
+                    <div className="p-3 bg-accent/10 rounded-2xl">
+                        <Award className="h-5 w-5 text-accent" />
+                    </div>
+                </div>
+                <div className="text-4xl font-black text-white tracking-tighter italic">{stats?.activeMissions.toLocaleString() || 0}</div>
+                <p className="text-[10px] text-accent/40 mt-4 font-black uppercase tracking-widest italic animate-pulse">
+                    Join Cleanup Ops
+                </p>
+            </div>
 
-            <Card variant="glass" className="border-white/5 group pt-8">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-primary transition-colors">Ocean Guardians</CardTitle>
-                    <Users className="h-5 w-5 text-primary opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-4xl font-black text-white tracking-tighter">{stats?.totalGuardians.toLocaleString() || 0}</div>
-                    <p className="text-[10px] text-white/30 mt-3 font-bold uppercase tracking-widest">
-                        Community Pulse
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="p-10 bg-secondary/60 border border-white/5 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex justify-between items-start mb-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-primary transition-colors">Ocean Guardians</p>
+                    <div className="p-3 bg-primary/10 rounded-2xl">
+                        <Users className="h-5 w-5 text-primary" />
+                    </div>
+                </div>
+                <div className="text-4xl font-black text-white tracking-tighter italic">{stats?.totalGuardians.toLocaleString() || 0}</div>
+                <p className="text-[10px] text-white/20 mt-4 font-black uppercase tracking-widest">
+                    Community Frequency
+                </p>
+            </div>
         </div>
     );
 }
