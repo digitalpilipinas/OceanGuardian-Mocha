@@ -52,7 +52,6 @@ function formatRelativeTime(timestamp: string) {
 
 export default function SightingDetail({ sighting, onClose }: SightingDetailProps) {
     const config = typeConfig[sighting.type] || typeConfig.garbage;
-    const TypeIcon = config.icon;
 
     return (
         <div className="fixed inset-x-0 bottom-0 z-[1100] animate-in slide-in-from-bottom duration-300">

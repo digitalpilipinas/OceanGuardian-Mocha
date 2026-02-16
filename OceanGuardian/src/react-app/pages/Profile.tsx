@@ -4,17 +4,28 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { Progress } from "@/react-app/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components/ui/tabs";
 import { Button } from "@/react-app/components/ui/button";
-import { Award, TrendingUp, Target, Flame, MapPin, Camera, Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/react-app/components/ui/tooltip";
+import { Award, TrendingUp, Target, Flame, MapPin, Camera, Loader2, Lock, Star, Shield, Sparkles } from "lucide-react";
 import { useAuth } from "@getmocha/users-service/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { xpProgressInLevel } from "@/shared/types";
-import type { UserProfile, UserBadge, ActivityLog } from "@/shared/types";
+import type { UserProfile, UserBadge, ActivityLog, Badge as BadgeType } from "@/shared/types";
+
+interface LevelPerk {
+  level: number;
+  title: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+}
 
 export default function Profile() {
   const { user, redirectToLogin } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [badges, setBadges] = useState<UserBadge[]>([]);
+  const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
   const [activity, setActivity] = useState<ActivityLog[]>([]);
+  const [levelPerks, setLevelPerks] = useState<LevelPerk[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,20 +33,21 @@ export default function Profile() {
 
     const fetchProfile = async () => {
       try {
-        const [profileRes, badgesRes, activityRes] = await Promise.all([
+        const [profileRes, badgesRes, activityRes, allBadgesRes, perksRes] = await Promise.all([
           fetch("/api/profiles/me"),
           fetch("/api/profiles/me/badges"),
           fetch("/api/profiles/me/activity"),
+          fetch("/api/badges"),
+          fetch("/api/profiles/me/level-perks"),
         ]);
 
-        if (profileRes.ok) {
-          setProfile(await profileRes.json());
-        }
-        if (badgesRes.ok) {
-          setBadges(await badgesRes.json());
-        }
-        if (activityRes.ok) {
-          setActivity(await activityRes.json());
+        if (profileRes.ok) setProfile(await profileRes.json());
+        if (badgesRes.ok) setBadges(await badgesRes.json());
+        if (activityRes.ok) setActivity(await activityRes.json());
+        if (allBadgesRes.ok) setAllBadges(await allBadgesRes.json());
+        if (perksRes.ok) {
+          const perksData = await perksRes.json();
+          setLevelPerks(perksData.perks || []);
         }
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -47,7 +59,6 @@ export default function Profile() {
     fetchProfile();
   }, [user]);
 
-  // If not logged in, show login prompt
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -83,6 +94,8 @@ export default function Profile() {
   const { current: xpInLevel, required: xpRequired } = xpProgressInLevel(xp, level);
   const xpProgress = (xpInLevel / xpRequired) * 100;
 
+  const earnedBadgeIds = new Set(badges.map((b) => b.badge_id));
+
   const rarityColors: Record<string, string> = {
     common: "bg-gray-500",
     uncommon: "bg-green-500",
@@ -90,6 +103,38 @@ export default function Profile() {
     epic: "bg-purple-500",
     legendary: "bg-amber-500",
   };
+
+  const rarityBorders: Record<string, string> = {
+    common: "border-gray-300 dark:border-gray-600",
+    uncommon: "border-green-300 dark:border-green-600",
+    rare: "border-blue-300 dark:border-blue-600",
+    epic: "border-purple-300 dark:border-purple-600",
+    legendary: "border-amber-300 dark:border-amber-600",
+  };
+
+  const rarityGlows: Record<string, string> = {
+    common: "",
+    uncommon: "shadow-green-200/50 dark:shadow-green-800/30",
+    rare: "shadow-blue-200/50 dark:shadow-blue-800/30",
+    epic: "shadow-purple-200/50 dark:shadow-purple-800/30",
+    legendary: "shadow-amber-200/50 dark:shadow-amber-800/30",
+  };
+
+  // Group badges by rarity for achievement tiers
+  const tierOrder = ["common", "uncommon", "rare", "epic", "legendary"];
+  const tierLabels: Record<string, string> = {
+    common: "🥉 Common",
+    uncommon: "🥈 Uncommon",
+    rare: "💎 Rare",
+    epic: "👑 Epic",
+    legendary: "⭐ Legendary",
+  };
+
+  const badgesByTier = tierOrder.map((rarity) => {
+    const tierBadges = allBadges.filter((b) => b.rarity === rarity);
+    const earned = tierBadges.filter((b) => earnedBadgeIds.has(b.id));
+    return { rarity, label: tierLabels[rarity], total: tierBadges.length, earned: earned.length };
+  }).filter((t) => t.total > 0);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);
@@ -104,13 +149,24 @@ export default function Profile() {
     return date.toLocaleDateString();
   };
 
+  const activityIcons: Record<string, string> = {
+    sighting: "📍",
+    badge: "🏅",
+    level_up: "⬆️",
+    mission: "🎯",
+    streak: "🔥",
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* Profile Header */}
-      <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0">
-        <CardContent className="p-8">
+      <Card className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0 overflow-hidden relative">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-12 translate-x-12" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-8 -translate-x-8" />
+        <CardContent className="p-8 relative">
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <Avatar className="w-24 h-24 border-4 border-white/20">
+            <Avatar className="w-24 h-24 border-4 border-white/20 shadow-lg">
               <AvatarImage src={avatarUrl || undefined} alt={displayName} />
               <AvatarFallback className="text-4xl font-bold bg-white/20 text-white">
                 {displayName[0]?.toUpperCase()}
@@ -151,9 +207,10 @@ export default function Profile() {
 
       {/* Stats and Content Tabs */}
       <Tabs defaultValue="stats" className="mt-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="badges">Badges</TabsTrigger>
+          <TabsTrigger value="perks">Perks</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -199,46 +256,154 @@ export default function Profile() {
                 <Award className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{badges.length}</div>
+                <div className="text-2xl font-bold">{badges.length} / {allBadges.length}</div>
                 <p className="text-xs text-muted-foreground">Achievements earned</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Achievement Tiers */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                Achievement Tiers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {badgesByTier.map((tier) => (
+                  <div key={tier.rarity} className="flex items-center gap-3">
+                    <span className="text-sm font-medium w-28">{tier.label}</span>
+                    <div className="flex-1">
+                      <Progress
+                        value={tier.total > 0 ? (tier.earned / tier.total) * 100 : 0}
+                        className="h-2"
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground w-12 text-right">
+                      {tier.earned}/{tier.total}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Badges Tab */}
+        {/* Badges Tab — All Badges Grid */}
         <TabsContent value="badges">
           <Card>
             <CardHeader>
-              <CardTitle>Badges Earned</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>All Badges</span>
+                <Badge variant="secondary">{badges.length} / {allBadges.length} Earned</Badge>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {badges.length === 0 ? (
+              {allBadges.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No badges earned yet. Start reporting sightings to unlock your first badge! 🌊
+                  No badges available yet. 🌊
                 </p>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {badges.map((badge) => (
-                    <div
-                      key={badge.id}
-                      className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
-                    >
-                      <div className="text-4xl">{badge.icon}</div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{badge.name}</h3>
-                        <p className="text-xs text-muted-foreground">{badge.description}</p>
-                        <Badge
-                          variant="secondary"
-                          className={`mt-1 ${rarityColors[badge.rarity || "common"]} text-white`}
-                        >
-                          {badge.rarity}
+                <TooltipProvider>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {allBadges.map((badge) => {
+                      const isEarned = earnedBadgeIds.has(badge.id);
+                      const earnedBadge = badges.find((b) => b.badge_id === badge.id);
+                      const rarity = badge.rarity as string;
+
+                      return (
+                        <Tooltip key={badge.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`
+                                relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 cursor-default
+                                ${isEarned
+                                  ? `${rarityBorders[rarity]} bg-card shadow-md ${rarityGlows[rarity]}`
+                                  : "border-dashed border-muted-foreground/20 bg-muted/30 opacity-50"
+                                }
+                              `}
+                            >
+                              <div className={`text-3xl ${isEarned ? "" : "grayscale"}`}>
+                                {badge.is_hidden && !isEarned ? "❓" : badge.icon}
+                              </div>
+                              <p className="text-xs font-medium text-center leading-tight">
+                                {badge.is_hidden && !isEarned ? "Hidden" : badge.name}
+                              </p>
+                              <Badge
+                                className={`text-[10px] px-1.5 py-0 ${isEarned ? rarityColors[rarity] + " text-white" : "bg-muted text-muted-foreground"}`}
+                              >
+                                {rarity}
+                              </Badge>
+                              {!isEarned && (
+                                <div className="absolute top-1.5 right-1.5">
+                                  <Lock className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[200px]">
+                            <p className="font-semibold">{badge.is_hidden && !isEarned ? "Hidden Badge" : badge.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {badge.is_hidden && !isEarned ? "Complete the secret requirement to unlock!" : badge.description}
+                            </p>
+                            {isEarned && earnedBadge && (
+                              <p className="text-xs text-green-500 mt-1">
+                                ✅ Earned {formatTimestamp(earnedBadge.earned_at)}
+                              </p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Perks Tab */}
+        <TabsContent value="perks">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-amber-500" />
+                Level Perks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {levelPerks.map((perk) => (
+                  <div
+                    key={perk.level}
+                    className={`
+                      flex items-center gap-4 p-4 rounded-xl border transition-all duration-200
+                      ${perk.unlocked
+                        ? "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border-amber-200 dark:border-amber-500/20"
+                        : "bg-muted/30 border-muted opacity-60"
+                      }
+                    `}
+                  >
+                    <span className="text-2xl">{perk.icon}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">{perk.title}</p>
+                        <Badge variant="outline" className="text-[10px]">
+                          Level {perk.level}
                         </Badge>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{perk.description}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    {perk.unlocked ? (
+                      <Shield className="h-5 w-5 text-amber-500" />
+                    ) : (
+                      <Lock className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -255,25 +420,28 @@ export default function Profile() {
                   No activity yet. Submit your first sighting to get started! 🚀
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {activity.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="capitalize">
-                            {item.type}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {formatTimestamp(item.created_at)}
-                          </span>
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-xl">{activityIcons[item.type] || "📌"}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="capitalize text-[10px]">
+                              {item.type.replace("_", " ")}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatTimestamp(item.created_at)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm">{item.description}</p>
                         </div>
-                        <p className="mt-1 text-sm">{item.description}</p>
                       </div>
                       {item.xp_earned > 0 && (
-                        <Badge variant="secondary" className="ml-4">
+                        <Badge variant="secondary" className="ml-4 shrink-0">
                           +{item.xp_earned} XP
                         </Badge>
                       )}

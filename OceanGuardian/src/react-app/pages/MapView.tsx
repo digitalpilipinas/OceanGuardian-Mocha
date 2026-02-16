@@ -1,12 +1,11 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
-import { Icon, DivIcon, LatLngExpression } from "leaflet";
+import { DivIcon, LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
-import { Badge } from "@/react-app/components/ui/badge";
 import { Plus, Loader2 } from "lucide-react";
 import MapFilters from "@/react-app/components/MapFilters";
 import SightingDetail from "@/react-app/components/SightingDetail";

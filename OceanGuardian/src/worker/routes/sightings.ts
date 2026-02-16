@@ -4,6 +4,7 @@ import { authMiddleware } from "@getmocha/users-service/backend";
 import { getTursoClient } from "../db";
 import { CreateSightingSchema, calculateLevel } from "@/shared/types";
 import type { Sighting } from "@/shared/types";
+import { checkAndAwardBadges } from "./gamification";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -136,17 +137,24 @@ app.post(
       args: [user.id],
     });
 
+    let leveledUp = false;
+    let oldLevel = 1;
+    let newLevel = 1;
+    let newBadges: unknown[] = [];
+
     if (profileResult.rows.length > 0) {
       const currentXp = Number(profileResult.rows[0].xp);
-      const newXp = currentXp + xpEarned;
-      const newLevel = calculateLevel(newXp);
+      oldLevel = calculateLevel(currentXp);
+      const updatedXp = currentXp + xpEarned;
+      newLevel = calculateLevel(updatedXp);
+      leveledUp = newLevel > oldLevel;
       const newSightings = Number(profileResult.rows[0].total_sightings) + 1;
 
       await db.execute({
         sql: `UPDATE user_profiles
               SET xp = ?, level = ?, total_sightings = ?, last_active = datetime('now')
               WHERE id = ?`,
-        args: [newXp, newLevel, newSightings, user.id],
+        args: [updatedXp, newLevel, newSightings, user.id],
       });
 
       // Log activity
@@ -160,6 +168,22 @@ app.post(
           JSON.stringify({ sighting_id: sightingId, type: data.type }),
         ],
       });
+
+      // Log level-up activity if applicable
+      if (leveledUp) {
+        await db.execute({
+          sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+                VALUES (?, 'level_up', ?, 0, ?)`,
+          args: [
+            user.id,
+            `Leveled up from ${oldLevel} to ${newLevel}!`,
+            JSON.stringify({ old_level: oldLevel, new_level: newLevel }),
+          ],
+        });
+      }
+
+      // Check and award badges
+      newBadges = await checkAndAwardBadges(db, user.id);
     }
 
     // Return the created sighting
@@ -175,6 +199,10 @@ app.post(
       {
         sighting: sighting.rows[0],
         xp_earned: xpEarned,
+        leveled_up: leveledUp,
+        old_level: oldLevel,
+        new_level: newLevel,
+        new_badges: newBadges,
       },
       201
     );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@getmocha/users-service/react";
+import { useGamification } from "@/react-app/components/GamificationProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
@@ -91,6 +92,7 @@ async function compressImage(file: File, maxSizeKB = 1024): Promise<File> {
 export default function ReportSighting() {
   const navigate = useNavigate();
   const { user, redirectToLogin } = useAuth();
+  const { triggerLevelUp, triggerBadgeUnlock } = useGamification();
 
   const [formData, setFormData] = useState({
     type: "" as SightingType | "",
@@ -263,7 +265,24 @@ export default function ReportSighting() {
       }
 
       setSubmitResult({ xp: totalXp });
-      setTimeout(() => navigate("/map"), 2500);
+
+      // Trigger gamification modals
+      if (result.leveled_up) {
+        triggerLevelUp(result.old_level, result.new_level);
+      }
+      if (result.new_badges && Array.isArray(result.new_badges)) {
+        for (const badge of result.new_badges) {
+          triggerBadgeUnlock({
+            name: badge.name as string,
+            description: badge.description as string,
+            icon: badge.icon as string,
+            rarity: badge.rarity as string,
+            category: badge.category as string,
+          });
+        }
+      }
+
+      setTimeout(() => navigate("/map"), 3000);
     } catch (err) {
       console.error("Submit error:", err);
       alert(err instanceof Error ? err.message : "Failed to submit sighting");
