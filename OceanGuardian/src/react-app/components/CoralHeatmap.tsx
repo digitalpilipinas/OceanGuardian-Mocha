@@ -4,10 +4,15 @@ import "leaflet/dist/leaflet.css";
 import { Loader2 } from "lucide-react";
 
 interface HeatmapPoint {
+    id: number;
     latitude: number;
     longitude: number;
     bleach_percent: number;
     severity: string;
+    image_key?: string;
+    subcategory: string;
+    user_name: string;
+    created_at: string;
 }
 
 export default function CoralHeatmap() {
@@ -72,11 +77,44 @@ export default function CoralHeatmap() {
                         }}
                         radius={10 + (p.bleach_percent / 10)} // Size based on severity
                     >
-                        <Popup>
-                            <div className="text-sm">
-                                <strong>{p.severity} Bleaching</strong><br />
-                                Severity: {p.bleach_percent}%<br />
-                                Lat: {p.latitude.toFixed(4)}, Lng: {p.longitude.toFixed(4)}
+                        <Popup className="custom-popup">
+                            <div className="w-64 p-0 overflow-hidden">
+                                <div className="aspect-video bg-muted relative">
+                                    {p.image_key ? (
+                                        <img
+                                            src={`/api/sightings/${p.id}/photo`}
+                                            alt="Coral"
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
+                                            No Image
+                                        </div>
+                                    )}
+                                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 text-white backdrop-blur-sm">
+                                        {p.severity}
+                                    </div>
+                                </div>
+                                <div className="p-3">
+                                    <h3 className="font-bold text-sm mb-1">{p.subcategory}</h3>
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
+                                        <span>by {p.user_name || 'Anonymous'}</span>
+                                        <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <div
+                                            className="w-2 h-2 rounded-full"
+                                            style={{ backgroundColor: getColor(p.bleach_percent) }}
+                                        />
+                                        <span className="font-medium">
+                                            {p.bleach_percent}% Bleaching
+                                        </span>
+                                    </div>
+                                    <div className="mt-1 text-[10px] text-muted-foreground">
+                                        Lat: {p.latitude.toFixed(4)}, Lng: {p.longitude.toFixed(4)}
+                                    </div>
+                                </div>
                             </div>
                         </Popup>
                     </CircleMarker>

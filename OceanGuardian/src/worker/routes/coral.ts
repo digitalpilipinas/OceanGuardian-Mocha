@@ -82,9 +82,10 @@ app.get("/api/coral/heatmap", async (c) => {
 
     // Get all coral sightings
     const result = await db.execute({
-        sql: `SELECT latitude, longitude, bleach_percent, severity 
-          FROM sightings 
-          WHERE type = 'coral' AND status != 'removed'`,
+        sql: `SELECT s.id, s.latitude, s.longitude, s.bleach_percent, s.severity, s.image_key, s.subcategory, s.created_at, up.username as user_name
+          FROM sightings s
+          LEFT JOIN user_profiles up ON s.user_id = up.id
+          WHERE s.type = 'coral' AND s.status != 'removed'`,
         args: [],
     });
 

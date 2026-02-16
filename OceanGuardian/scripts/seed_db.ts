@@ -39,7 +39,9 @@ async function main() {
         "seed_community.sql",
         "seed_gamification.sql",
         "seed_learning.sql",         // ensuring content exists
-        "seed_learning_extended.sql" // user progress
+        "seed_learning_extended.sql", // user progress
+        "update_seed_avatars.sql",    // add avatars to users
+        "update_seed_lessons.sql"    // add cover images to lessons
     ];
 
     try {

@@ -291,7 +291,22 @@ app.get("/api/sightings/:id/photo", async (c) => {
     return c.json({ error: "Photo not found" }, 404);
   }
 
-  const object = await c.env.R2_BUCKET.get(result.rows[0].image_key as string);
+  // Check if it's a seeded image key and redirect to Unsplash
+  const seedMap: Record<string, string> = {
+    "sightings/bottle.jpg": "https://images.unsplash.com/photo-1621451537084-482c73073a0f?q=80&w=800&auto=format&fit=crop", // Plastic bottle on beach
+    "sightings/coral_healthy.jpg": "https://images.unsplash.com/photo-1546026423-cc4642628d2b?q=80&w=800&auto=format&fit=crop", // Healthy coral
+    "sightings/turtle.jpg": "https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?q=80&w=800&auto=format&fit=crop", // Turtle
+    "sightings/net.jpg": "https://images.unsplash.com/photo-1618477388954-7852f32655ec?q=80&w=800&auto=format&fit=crop", // Fishing net/ghost gear
+    "sightings/bleached.jpg": "https://images.unsplash.com/photo-1583212235753-bce29b451c8a?q=80&w=800&auto=format&fit=crop", // Bleached coral
+  };
+
+  const imageKey = result.rows[0].image_key as string;
+
+  if (seedMap[imageKey]) {
+    return c.redirect(seedMap[imageKey]);
+  }
+
+  const object = await c.env.R2_BUCKET.get(imageKey);
 
   if (!object) {
     return c.json({ error: "Photo not found in storage" }, 404);
