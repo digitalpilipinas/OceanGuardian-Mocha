@@ -1,6 +1,11 @@
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/react-app/components/ui/dialog";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
+import ImpactBadgeGenerator from "@/react-app/components/ImpactBadgeGenerator";
+import { useAuth } from "@getmocha/users-service/react";
+import type { UserProfile } from "@/shared/types";
+import { Share2 } from "lucide-react";
 
 interface BadgeUnlockModalProps {
     open: boolean;
@@ -54,13 +59,37 @@ const RARITY_THEMES: Record<string, {
 
 export default function BadgeUnlockModal({ open, onClose, badge }: BadgeUnlockModalProps) {
     const theme = RARITY_THEMES[badge.rarity] || RARITY_THEMES.common;
+    const [showGenerator, setShowGenerator] = useState(false);
+    const { user } = useAuth();
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+    useEffect(() => {
+        if (open && user) {
+            // Fetch minimal profile if needed, or just use auth user info
+            // Ideally we fetch full profile to get XP/Level etc for the generator
+            fetch("/api/profiles/me")
+                .then(res => res.ok ? res.json() : null)
+                .then(data => setUserProfile(data))
+                .catch(err => console.error("Failed to fetch profile for badge modal", err));
+        }
+    }, [open, user]);
+
+    if (showGenerator && userProfile) {
+        return (
+            <ImpactBadgeGenerator
+                badge={badge}
+                userProfile={userProfile}
+                onClose={() => setShowGenerator(false)}
+            />
+        );
+    }
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent showCloseButton={false} className="overflow-hidden">
+            <DialogContent showCloseButton={false} className="overflow-hidden sm:max-w-md">
                 {/* Rarity-themed animated background */}
-                <div className={`absolute inset-0 -z-10 bg-gradient-to-br ${theme.gradient} animate-pulse rounded-4xl`} />
-                <div className="absolute inset-0 -z-10 overflow-hidden rounded-4xl">
+                <div className={`absolute inset-0 -z-10 bg-gradient-to-br ${theme.gradient} animate-pulse rounded-2xl`} />
+                <div className="absolute inset-0 -z-10 overflow-hidden rounded-2xl">
                     <div className={`absolute -top-10 -left-10 h-40 w-40 rounded-full ${theme.glow} blur-3xl animate-[float_3s_ease-in-out_infinite]`} />
                     <div className={`absolute -bottom-10 -right-10 h-40 w-40 rounded-full ${theme.glow} blur-3xl animate-[float_3s_ease-in-out_infinite_1.5s]`} />
                 </div>
@@ -96,10 +125,21 @@ export default function BadgeUnlockModal({ open, onClose, badge }: BadgeUnlockMo
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button onClick={onClose} className="w-full font-semibold">
-                        Awesome! 🎊
-                    </Button>
+                <DialogFooter className="flex-col gap-2 sm:gap-0">
+                    <div className="flex gap-2 w-full">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowGenerator(true)}
+                            className="flex-1 gap-2"
+                            disabled={!userProfile}
+                        >
+                            <Share2 className="w-4 h-4" />
+                            Share
+                        </Button>
+                        <Button onClick={onClose} className="flex-1 font-semibold">
+                            Awesome! 🎊
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
