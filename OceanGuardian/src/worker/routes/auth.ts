@@ -210,8 +210,8 @@ auth.post("/api/auth/guest", async (c) => {
   const guestId = `guest_${crypto.randomUUID().substring(0, 8)}`;
 
   await db.execute({
-    sql: "INSERT INTO user_profiles (id, username, role) VALUES (?, ?, 'guest')",
-    args: [guestId, "Guest Guardian"],
+    sql: "INSERT INTO user_profiles (id, username, role, avatar_url) VALUES (?, ?, 'guest', ?)",
+    args: [guestId, "Guest Guardian", "/src/react-app/assets/logo.png"],
   });
 
   const sessionToken = crypto.randomUUID();
