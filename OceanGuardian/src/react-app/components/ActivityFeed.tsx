@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/a
 import { Badge } from "@/react-app/components/ui/badge";
 import { Link } from "react-router";
 import { Waves, Award, Target, Flame, Users } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
 interface ActivityLog {
     id: number;
@@ -36,7 +36,7 @@ const activityColors: Record<string, string> = {
 };
 
 export default function ActivityFeed() {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const [activities, setActivities] = useState<ActivityLog[]>([]);
     const [filter, setFilter] = useState("global"); // global | following
     const [loading, setLoading] = useState(true);

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/react-app/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/react-app/components/ui/popover";
 import { Bell, MessageSquare, ThumbsUp, UserPlus, Info } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
 interface Notification {
     id: number;
@@ -23,7 +23,7 @@ const notificationIcons: Record<string, any> = {
 };
 
 export default function NotificationPopover() {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
@@ -12,7 +12,7 @@ interface MissionChatProps {
 }
 
 export default function MissionChat({ missionId }: MissionChatProps) {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const [messages, setMessages] = useState<MissionChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [sending, setSending] = useState(false);
@@ -90,8 +90,8 @@ export default function MissionChat({ missionId }: MissionChatProps) {
                                     </Avatar>
                                     <div
                                         className={`max-w-[80%] rounded-lg p-3 text-sm ${isMe
-                                                ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                : "bg-muted rounded-tl-none"
+                                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                                            : "bg-muted rounded-tl-none"
                                             }`}
                                     >
                                         {!isMe && <p className="text-xs font-semibold mb-1 opacity-70">{msg.username}</p>}

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/react-app/components
 import { Button } from "@/react-app/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/react-app/components/ui/tooltip";
 import { Award, TrendingUp, Target, Flame, MapPin, Camera, Loader2, Lock, Star, Shield, Sparkles, UserPlus, UserMinus, Settings } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { xpProgressInLevel } from "@/shared/types";
 import type { UserProfile, UserBadge, ActivityLog, Badge as BadgeType } from "@/shared/types";
@@ -26,7 +26,8 @@ interface LevelPerk {
 }
 
 export default function Profile() {
-  const { user, redirectToLogin } = useAuth();
+  const { profile: user } = useUserProfile();
+  const redirectToLogin = () => window.location.href = "/login";
   const { id } = useParams();
   const { toast } = useToast();
   const { triggerBadgeUnlock, triggerLevelUp } = useGamification();
@@ -227,7 +228,7 @@ export default function Profile() {
               Track your sightings, earn badges, and contribute to ocean conservation
             </p>
             <Button onClick={() => redirectToLogin()} className="w-full" size="lg">
-              Sign in with Google
+              Get Started
             </Button>
           </CardContent>
         </Card>

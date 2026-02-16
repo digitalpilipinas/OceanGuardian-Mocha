@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { authMiddleware } from "@getmocha/users-service/backend";
+import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
-import { CreateSightingSchema, calculateLevel } from "@/shared/types";
+import { CreateSightingSchema, calculateLevel, type UserProfile } from "@/shared/types";
 import type { Sighting } from "@/shared/types";
 import { checkAndAwardBadges } from "./gamification";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 
 // Get all sightings
 app.get("/api/sightings", async (c) => {

@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { Suspense, lazy } from "react";
-import { AuthProvider } from "@getmocha/users-service/react";
 import Layout from "@/react-app/components/Layout";
 import { GamificationProvider } from "@/react-app/components/GamificationProvider";
 import { Toaster } from "@/react-app/components/ui/toaster";
@@ -14,7 +13,7 @@ const CreateMission = lazy(() => import("@/react-app/pages/CreateMission"));
 const MissionDetail = lazy(() => import("@/react-app/pages/MissionDetail"));
 const ProfilePage = lazy(() => import("@/react-app/pages/Profile"));
 const LeaderboardPage = lazy(() => import("@/react-app/pages/Leaderboard"));
-const AuthCallback = lazy(() => import("@/react-app/pages/AuthCallback"));
+const SignIn = lazy(() => import("@/react-app/pages/SignIn"));
 const SettingsPage = lazy(() => import("@/react-app/pages/Settings"));
 
 const CoralScan = lazy(() => import("@/react-app/pages/CoralScan"));
@@ -32,45 +31,43 @@ const DeepDiveLessons = lazy(() => import("@/react-app/components/DeepDiveLesson
 
 export default function App() {
   return (
-    <AuthProvider>
-      <GamificationProvider>
-        <Router>
-          <Layout>
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center min-h-[50vh]">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
-                </div>
-              }
-            >
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/map" element={<MapViewPage />} />
-                <Route path="/report" element={<ReportSighting />} />
-                <Route path="/coral-scan" element={<CoralScan />} />
-                <Route path="/scientist/dashboard" element={<ScientistDashboard />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/ambassador" element={<AmbassadorDashboard />} />
-                <Route path="/missions" element={<MissionsPage />} />
-                <Route path="/missions/create" element={<CreateMission />} />
-                <Route path="/missions/:id" element={<MissionDetail />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/profile/:id" element={<ProfilePage />} />
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/learning" element={<LearningHub />} />
-                <Route path="/learning/quiz" element={<DailyQuiz />} />
-                <Route path="/learning/facts" element={<FactLibrary />} />
-                <Route path="/learning/lessons" element={<DeepDiveLessons />} />
-                <Route path="/learning/lessons/:slug" element={<LessonView />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-              </Routes>
-            </Suspense>
-            <Toaster />
-          </Layout>
-        </Router>
-      </GamificationProvider>
-    </AuthProvider>
+    <GamificationProvider>
+      <Router>
+        <Layout>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/map" element={<MapViewPage />} />
+              <Route path="/report" element={<ReportSighting />} />
+              <Route path="/coral-scan" element={<CoralScan />} />
+              <Route path="/scientist/dashboard" element={<ScientistDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/ambassador" element={<AmbassadorDashboard />} />
+              <Route path="/missions" element={<MissionsPage />} />
+              <Route path="/missions/create" element={<CreateMission />} />
+              <Route path="/missions/:id" element={<MissionDetail />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/:id" element={<ProfilePage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/learning" element={<LearningHub />} />
+              <Route path="/learning/quiz" element={<DailyQuiz />} />
+              <Route path="/learning/facts" element={<FactLibrary />} />
+              <Route path="/learning/lessons" element={<DeepDiveLessons />} />
+              <Route path="/learning/lessons/:slug" element={<LessonView />} />
+              <Route path="/login" element={<SignIn />} />
+            </Routes>
+          </Suspense>
+          <Toaster />
+        </Layout>
+      </Router>
+    </GamificationProvider>
   );
 }
 

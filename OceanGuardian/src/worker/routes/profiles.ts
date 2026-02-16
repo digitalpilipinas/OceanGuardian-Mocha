@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { authMiddleware } from "@getmocha/users-service/backend";
+import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
 import type { UserProfile } from "@/shared/types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 
 // Get or create current user's profile
 app.get("/api/profiles/me", authMiddleware, async (c) => {
@@ -30,8 +30,8 @@ app.get("/api/profiles/me", authMiddleware, async (c) => {
     }
 
     // Auto-create profile on first login
-    const username = user.google_user_data?.name || user.email?.split("@")[0] || "Guardian";
-    const avatarUrl = user.google_user_data?.picture || null;
+    const username = user.email?.split("@")[0] || "Guardian";
+    const avatarUrl = null;
 
     await db.execute({
         sql: `INSERT INTO user_profiles (id, username, avatar_url, email, role, level, xp)

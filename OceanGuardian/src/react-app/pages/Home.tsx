@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import ActivityFeed from "@/react-app/components/ActivityFeed";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import WelcomeHeader from "@/react-app/components/dashboard/WelcomeHeader";
 import DashboardStats from "@/react-app/components/dashboard/DashboardStats";
 import MapPreview from "@/react-app/components/dashboard/MapPreview";
@@ -11,7 +11,7 @@ import MissionsCarousel from "@/react-app/components/dashboard/MissionsCarousel"
 import DailyQuizCTA from "@/react-app/components/dashboard/DailyQuizCTA";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { profile: user } = useUserProfile();
 
   if (user) {
     return (
@@ -227,8 +227,8 @@ export default function Home() {
         <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto relative z-10">
           Join thousands of ocean guardians protecting marine life and cleaning our beaches
         </p>
-        <Button size="lg" variant="neomorph-primary" className="text-xl px-12 h-16 relative z-10">
-          Sign Up with Google
+        <Button size="lg" variant="neomorph-primary" className="text-xl px-12 h-16 relative z-10" asChild>
+          <a href="/login">Get Started</a>
         </Button>
       </section>
     </div>

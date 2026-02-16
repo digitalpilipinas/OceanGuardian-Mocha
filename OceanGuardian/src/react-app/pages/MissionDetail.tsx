@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -31,7 +31,7 @@ interface MissionDetailData {
 
 export default function MissionDetail() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const navigate = useNavigate();
     const { toast } = useToast();
 

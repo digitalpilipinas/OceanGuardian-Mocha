@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
@@ -9,7 +9,7 @@ import { Loader2, Plus, Calendar, MapPin, Users, ArrowRight } from "lucide-react
 import type { Mission, UserProfile } from "@/shared/types";
 
 export default function Missions() {
-  const { user } = useAuth();
+  const { profile: user } = useUserProfile();
   const navigate = useNavigate();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);

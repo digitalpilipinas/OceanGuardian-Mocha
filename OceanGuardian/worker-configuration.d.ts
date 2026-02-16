@@ -60,4 +60,12 @@ interface Env {
     MOCHA_USERS_SERVICE_API_KEY: string;
     MOCHA_APP_ID: string;
     R2_BUCKET: R2Bucket;
+    EMAILS: {
+        send(message: {
+            to: string;
+            from: string;
+            subject: string;
+            content: { type: string; value: string }[];
+        }): Promise<void>;
+    };
 }

@@ -1,10 +1,10 @@
 import { Hono } from "hono";
-import { authMiddleware } from "@getmocha/users-service/backend";
+import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
 import { checkAndAwardBadges } from "./gamification";
-// import type { UserProfile } from "@/shared/types";
+import type { UserProfile } from "@/shared/types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 
 // Helper to get YYYY-MM-DD
 const toDateString = (date: Date) => date.toISOString().split("T")[0];

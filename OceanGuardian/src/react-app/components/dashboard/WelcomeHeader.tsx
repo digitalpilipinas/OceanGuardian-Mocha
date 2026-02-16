@@ -1,24 +1,15 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@getmocha/users-service/react";
+
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Progress } from "@/react-app/components/ui/progress";
 import { Card, CardContent } from "@/react-app/components/ui/card";
-import { xpProgressInLevel, type UserProfile } from "@/shared/types";
+import { xpProgressInLevel } from "@/shared/types";
 import { Award, Star } from "lucide-react";
 
 export default function WelcomeHeader() {
-    const { user } = useAuth();
-    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const { profile } = useUserProfile();
 
-    useEffect(() => {
-        if (user) {
-            fetch("/api/profiles/me")
-                .then((res) => (res.ok ? res.json() : null))
-                .then(setProfile)
-                .catch(() => { });
-        }
-    }, [user]);
 
-    if (!user || !profile) return null;
+    if (!profile) return null;
 
     const { current, required } = xpProgressInLevel(profile.xp || 0, profile.level || 1);
     const progressPercent = Math.min(100, (current / required) * 100);

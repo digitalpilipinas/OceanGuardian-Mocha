@@ -3,10 +3,10 @@ import { Link } from "react-router";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Brain, CheckCircle2, ArrowRight } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
 export default function DailyQuizCTA() {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const [completed, setCompleted] = useState(false);
     const [loading, setLoading] = useState(true);
 

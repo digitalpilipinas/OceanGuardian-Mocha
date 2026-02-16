@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/react-app/components/ui/dialog";
 import { Button } from "@/react-app/components/ui/button";
 import { Badge } from "@/react-app/components/ui/badge";
 import ImpactBadgeGenerator from "@/react-app/components/ImpactBadgeGenerator";
-import { useAuth } from "@getmocha/users-service/react";
-import type { UserProfile } from "@/shared/types";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
+
 import { Share2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -61,17 +61,8 @@ const RARITY_THEMES: Record<string, {
 export default function BadgeUnlockModal({ open, onClose, badge }: BadgeUnlockModalProps) {
     const theme = RARITY_THEMES[badge.rarity] || RARITY_THEMES.common;
     const [showGenerator, setShowGenerator] = useState(false);
-    const { user } = useAuth();
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const { profile: userProfile } = useUserProfile();
 
-    useEffect(() => {
-        if (open && user) {
-            fetch("/api/profiles/me")
-                .then(res => res.ok ? res.json() : null)
-                .then(data => setUserProfile(data))
-                .catch(err => console.error("Failed to fetch profile for badge modal", err));
-        }
-    }, [open, user]);
 
     if (showGenerator && userProfile) {
         return (

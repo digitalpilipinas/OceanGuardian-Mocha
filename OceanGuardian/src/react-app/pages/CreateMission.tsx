@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import { Input } from "@/react-app/components/ui/input";
@@ -9,10 +9,10 @@ import { Textarea } from "@/react-app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/react-app/components/ui/select";
 import { Loader2, ArrowLeft, MapPin, Calendar, Users, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/react-app/components/ui/use-toast";
-import type { UserProfile } from "@/shared/types";
+
 
 export default function CreateMission() {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
@@ -34,31 +34,23 @@ export default function CreateMission() {
     });
 
     useEffect(() => {
-        async function checkPermission() {
-            if (!user) return;
-            try {
-                const res = await fetch("/api/profiles/me");
-                if (res.ok) {
-                    const profile: UserProfile = await res.json();
-                    if (["admin", "ambassador"].includes(profile.role)) {
-                        setIsAuthorized(true);
-                    } else {
-                        toast({
-                            title: "Access Denied",
-                            description: "Only Ambassadors and Admins can create missions.",
-                            variant: "destructive",
-                        });
-                        navigate("/missions");
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to check permissions", err);
-            } finally {
-                setLoading(false);
+        if (user) {
+            if (["admin", "ambassador"].includes(user.role)) {
+                setIsAuthorized(true);
+            } else {
+                toast({
+                    title: "Access Denied",
+                    description: "Only Ambassadors and Admins can create missions.",
+                    variant: "destructive",
+                });
+                navigate("/missions");
             }
+            setLoading(false);
+        } else if (!user && !loading) {
+            // Wait for profile to load or fail
+            setLoading(false);
         }
-        checkPermission();
-    }, [user, navigate, toast]);
+    }, [user, navigate, toast, loading]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;

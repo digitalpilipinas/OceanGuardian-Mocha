@@ -6,7 +6,7 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { ScrollArea } from "@/react-app/components/ui/scroll-area";
 import { UserProfile } from "@/shared/types";
 import { Trophy, MapPin, Users, Flame, Crown, Globe } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
 interface LeaderboardEntry extends UserProfile {
     rank: number;
@@ -104,7 +104,7 @@ const LeaderboardRow = ({ entry, currentUserId }: { entry: LeaderboardEntry, cur
 };
 
 export default function Leaderboard() {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const [activeTab, setActiveTab] = useState("global");
     const [data, setData] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);

@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import { authMiddleware } from "@getmocha/users-service/backend";
+import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
-import type { Badge } from "@/shared/types";
+import type { Badge, UserProfile } from "@/shared/types";
 
 type TursoClient = ReturnType<typeof getTursoClient>;
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 
 // ── Level Perks Definition ────────────────────────────────────
 const LEVEL_PERKS: { level: number; title: string; description: string; icon: string }[] = [

@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router";
 import { Waves, Map, Target, User, Plus, LogOut, Globe, Settings, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/react-app/components/ui/button";
-import { useAuth } from "@getmocha/users-service/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
@@ -20,8 +19,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { user, redirectToLogin, logout } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, logout } = useUserProfile();
 
   const navItems = [
     { path: "/", icon: Waves, label: "Home" },
@@ -38,7 +36,6 @@ export default function Layout({ children }: LayoutProps) {
     navItems.push({ path: "/ambassador", icon: Globe, label: "Region" });
   }
   if (profile?.role === "scientist" || profile?.role === "admin") {
-    // Admins often want access to everything
     if (!navItems.find(i => i.path === "/scientist/dashboard")) {
       navItems.push({ path: "/scientist/dashboard", icon: FlaskConical, label: "Science" });
     }
@@ -88,24 +85,24 @@ export default function Layout({ children }: LayoutProps) {
             </Button>
 
             {/* Auth Controls */}
-            {user ? (
+            {profile ? (
               <div className="flex items-center gap-1">
                 <NotificationPopover />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full ml-1">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.google_user_data.picture || undefined} alt={user.email} />
+                        <AvatarImage src={profile.avatar_url || undefined} alt={profile.username || 'Guardian'} />
                         <AvatarFallback>
-                          {user.google_user_data.given_name?.[0] || user.email[0].toUpperCase()}
+                          {profile.username?.[0]?.toUpperCase() || 'G'}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <div className="px-2 py-1.5">
-                      <p className="text-sm font-medium">{user.google_user_data.name || user.email}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="text-sm font-medium">{profile.username}</p>
+                      <p className="text-xs text-muted-foreground">{profile.email || 'Guest User'}</p>
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild className="cursor-pointer">
@@ -129,36 +126,36 @@ export default function Layout({ children }: LayoutProps) {
                 </DropdownMenu>
               </div>
             ) : (
-              <Button onClick={() => redirectToLogin()} size="sm" className="ml-2">
-                Sign In
+              <Button asChild size="sm" className="ml-2">
+                <Link to="/login">Sign In</Link>
               </Button>
             )}
           </nav>
 
           {/* Mobile Sign In (when not logged in) */}
-          {!user && (
-            <Button onClick={() => redirectToLogin()} size="sm" className="md:hidden">
-              Sign In
+          {!profile && (
+            <Button asChild size="sm" className="md:hidden">
+              <Link to="/login">Sign In</Link>
             </Button>
           )}
 
           {/* Mobile user avatar */}
-          {user && (
+          {profile && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full md:hidden">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.google_user_data.picture || undefined} alt={user.email} />
+                    <AvatarImage src={profile.avatar_url || undefined} alt={profile.username || 'Guardian'} />
                     <AvatarFallback>
-                      {user.google_user_data.given_name?.[0] || user.email[0].toUpperCase()}
+                      {profile.username?.[0]?.toUpperCase() || 'G'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{user.google_user_data.name || user.email}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-sm font-medium">{profile.username}</p>
+                  <p className="text-xs text-muted-foreground">{profile.email || 'Guest'}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">

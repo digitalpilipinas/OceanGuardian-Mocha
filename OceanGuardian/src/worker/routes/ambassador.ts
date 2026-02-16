@@ -1,13 +1,14 @@
 import { Hono } from "hono";
-import { authMiddleware } from "@getmocha/users-service/backend";
+import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
+import type { UserProfile } from "@/shared/types";
 
 type Variables = {
     user: any;
     ambassador_region: string;
 };
 
-const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = new Hono<{ Bindings: Env; Variables: Variables & { user: UserProfile | null } }>();
 
 // Middleware to check for ambassador role (or admin/scientist can view too?)
 // Let's restrict to ambassador+

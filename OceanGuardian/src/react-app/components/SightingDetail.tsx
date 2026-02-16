@@ -6,7 +6,7 @@ import { Button } from "@/react-app/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { Input } from "@/react-app/components/ui/input";
 import { X, MapPin, Calendar, User, Waves, Trash2, Fish, Anchor, Thermometer, Droplets, ArrowDown, ThumbsUp, MessageSquare, Send } from "lucide-react";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import type { Sighting } from "@/react-app/pages/MapView";
 
 const typeConfig: Record<string, { icon: typeof Waves; label: string; color: string; bg: string; emoji: string }> = {
@@ -66,7 +66,7 @@ function formatRelativeTime(timestamp: string) {
 }
 
 export default function SightingDetail({ sighting, onClose }: SightingDetailProps) {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     const config = typeConfig[sighting.type] || typeConfig.garbage;
 
     const [comments, setComments] = useState<Comment[]>([]);
@@ -332,7 +332,7 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                             </form>
                         ) : (
                             <div className="bg-muted/50 rounded-lg p-2 text-center text-xs">
-                                <Link to="/auth/login" className="text-primary hover:underline">Log in</Link> to comment
+                                <Link to="/login" className="text-primary hover:underline">Log in</Link> to comment
                             </div>
                         )}
                     </div>

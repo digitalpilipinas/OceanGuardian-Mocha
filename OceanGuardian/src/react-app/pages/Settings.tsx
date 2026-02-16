@@ -4,13 +4,13 @@ import { Label } from "@/react-app/components/ui/label";
 import { Input } from "@/react-app/components/ui/input";
 import { Switch } from "@/react-app/components/ui/switch";
 import { Button } from "@/react-app/components/ui/button";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Loader2, Save } from "lucide-react";
 import { UserProfile } from "@/shared/types";
 import { useToast } from "@/react-app/components/ui/use-toast";
 
 export default function Settings() {
-    const { user } = useAuth();
+    const { profile: user } = useUserProfile();
     // const [profile, setProfile] = useState<UserProfile | null>(null); // Removed unused state
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);

@@ -1,9 +1,10 @@
 
 import { Hono } from "hono";
-import { authMiddleware } from "@getmocha/users-service/backend";
+import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
+import type { UserProfile } from "@/shared/types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 
 // Follow a user
 app.post("/api/users/:id/follow", authMiddleware, async (c) => {

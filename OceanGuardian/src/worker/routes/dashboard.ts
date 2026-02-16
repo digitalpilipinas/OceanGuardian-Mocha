@@ -1,7 +1,10 @@
 import { Hono } from "hono";
 import { getTursoClient } from "../db";
 
-const app = new Hono<{ Bindings: Env }>();
+import type { UserProfile } from "@/shared/types";
+import { authMiddleware } from "../middleware";
+
+const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 
 // GET /api/dashboard/stats
 app.get("/api/dashboard/stats", async (c) => {

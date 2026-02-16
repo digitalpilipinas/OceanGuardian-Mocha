@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "@getmocha/users-service/react";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { useGamification } from "@/react-app/components/GamificationProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
@@ -91,7 +91,8 @@ async function compressImage(file: File, maxSizeKB = 1024): Promise<File> {
 
 export default function ReportSighting() {
   const navigate = useNavigate();
-  const { user, redirectToLogin } = useAuth();
+  const { profile: user } = useUserProfile();
+  const redirectToLogin = () => window.location.href = "/login";
   const { triggerLevelUp, triggerBadgeUnlock } = useGamification();
 
   const [formData, setFormData] = useState({
@@ -151,7 +152,7 @@ export default function ReportSighting() {
               You need to be signed in to report marine sightings
             </p>
             <Button onClick={() => redirectToLogin()} className="w-full" size="lg">
-              Sign in with Google
+              Get Started
             </Button>
           </CardContent>
         </Card>
