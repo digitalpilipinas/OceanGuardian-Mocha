@@ -110,7 +110,7 @@ export default function SignIn() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 relative z-10">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -118,23 +118,23 @@ export default function SignIn() {
                 className="w-full max-w-md"
             >
                 <div className="flex flex-col items-center mb-8">
-                    <div className="bg-primary text-primary-foreground p-4 rounded-2xl shadow-lg mb-4">
-                        <Waves className="h-8 w-8" />
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_25px_rgba(6,182,212,0.4)] mb-6 animate-float-slow">
+                        <Waves className="h-10 w-10 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                        OceanGuardian
+                    <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg text-center">
+                        Welcome Back
                     </h1>
-                    <p className="text-muted-foreground">Protect our oceans, one report at a time.</p>
+                    <p className="text-cyan-100/80 text-center text-lg">Guardian</p>
                 </div>
 
-                <Card className="glass-liquid border-none shadow-2xl rounded-3xl overflow-hidden">
+                <Card className="bg-slate-900/40 backdrop-blur-xl border-white/10 shadow-2xl rounded-3xl overflow-hidden">
                     <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-2xl font-bold">
-                            {step === "email" ? "Welcome Back" : "Verify Email"}
+                        <CardTitle className="text-xl font-semibold text-white">
+                            {step === "email" ? "Sign In" : "Verify Email"}
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-slate-400">
                             {step === "email"
-                                ? "Enter your email to receive a sign-in code"
+                                ? "Enter your email to access your dashboard"
                                 : `We've sent a code to ${email}`}
                         </CardDescription>
                     </CardHeader>
@@ -151,11 +151,11 @@ export default function SignIn() {
                                 >
                                     <div className="space-y-2">
                                         <div className="relative">
-                                            <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                                            <Mail className="absolute left-3 top-3.5 h-5 w-5 text-cyan-500/70" />
                                             <Input
                                                 type="email"
                                                 placeholder="email@example.com"
-                                                className="pl-10 h-12 rounded-xl focus:ring-primary"
+                                                className="pl-10 h-12 rounded-xl bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 required
@@ -164,12 +164,12 @@ export default function SignIn() {
                                     </div>
                                     <Button
                                         type="submit"
-                                        className="w-full h-12 rounded-xl text-lg font-semibold"
+                                        className="w-full h-12 rounded-xl text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all"
                                         disabled={loading}
                                     >
                                         {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                                         {loading ? "Sending..." : "Send Code"}
-                                        <ArrowRight className="ml-2 h-5 w-5" />
+                                        {!loading && <ArrowRight className="ml-2 h-5 w-5" />}
                                     </Button>
                                 </motion.form>
                             ) : (
@@ -184,16 +184,17 @@ export default function SignIn() {
                                     <div className="space-y-2">
                                         <Input
                                             type="text"
-                                            placeholder="6-digit code"
-                                            className="h-12 text-center text-2xl tracking-[1em] rounded-xl focus:ring-primary font-mono"
+                                            placeholder="000000"
+                                            className="h-14 text-center text-3xl tracking-[0.5em] rounded-xl bg-slate-950/50 border-white/10 text-white focus:ring-cyan-500/50 focus:border-cyan-500/50 font-mono"
                                             value={otp}
                                             onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                             required
+                                            autoFocus
                                         />
                                     </div>
                                     <Button
                                         type="submit"
-                                        className="w-full h-12 rounded-xl text-lg font-semibold"
+                                        className="w-full h-12 rounded-xl text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all"
                                         disabled={loading || otp.length < 6}
                                     >
                                         {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
@@ -201,7 +202,8 @@ export default function SignIn() {
                                     </Button>
                                     <Button
                                         variant="ghost"
-                                        className="w-full"
+                                        type="button"
+                                        className="w-full text-slate-400 hover:text-white hover:bg-white/5"
                                         onClick={() => setStep("email")}
                                         disabled={loading}
                                     >
@@ -214,24 +216,24 @@ export default function SignIn() {
                     <CardFooter className="flex flex-col gap-4 pb-8">
                         <div className="relative w-full">
                             <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-muted-foreground/20"></span>
+                                <span className="w-full border-t border-white/10"></span>
                             </div>
                             <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-transparent px-2 text-muted-foreground font-medium">Or continue with</span>
+                                <span className="bg-transparent px-2 text-slate-500 font-medium">Or continue with</span>
                             </div>
                         </div>
                         <Button
                             variant="outline"
-                            className="w-full h-12 rounded-xl border-none neo-interactive"
+                            className="w-full h-12 rounded-xl border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all font-medium"
                             onClick={handleGuestLogin}
                             disabled={loading}
                         >
-                            <UserCircle className="mr-2 h-5 w-5" />
+                            <UserCircle className="mr-2 h-5 w-5 text-cyan-400" />
                             Guest Access
                         </Button>
                     </CardFooter>
                 </Card>
-                <p className="mt-8 text-center text-sm text-muted-foreground px-8">
+                <p className="mt-8 text-center text-xs text-slate-500 px-8">
                     By continuing, you agree to our terms and community guidelines for ocean protection.
                 </p>
             </motion.div>
