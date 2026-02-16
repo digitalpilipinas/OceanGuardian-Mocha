@@ -21,7 +21,7 @@ export default function DailyCheckIn({ checkedIn, onCheckIn, streakDays }: Daily
     };
 
     const handleShare = async () => {
-        const text = `I'm on a ${streakDays}-day Plastic-Free Streak on OceanGuardian! Join me in protecting our oceans. 🌊🔥`;
+        const text = `I'm on a ${streakDays}-day Plastic-Free Streak on OceanGuardian! Join me in protecting our oceans.`;
         if (navigator.share) {
             try {
                 await navigator.share({

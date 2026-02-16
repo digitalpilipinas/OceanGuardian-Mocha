@@ -37,23 +37,23 @@ export interface Sighting {
 const markerSvgs: Record<SightingType, string> = {
   garbage: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
     <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%23ef4444'/>
-    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
-    <text x='16' y='19' text-anchor='middle' font-size='12'>🗑️</text>
+    <circle cx='16' cy='15' r='7' fill='white' opacity='0.5'/>
+    <circle cx='16' cy='15' r='3' fill='%23ef4444'/>
   </svg>`,
   floating: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
     <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%23f97316'/>
-    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
-    <text x='16' y='19' text-anchor='middle' font-size='12'>🚢</text>
+    <circle cx='16' cy='15' r='7' fill='white' opacity='0.5'/>
+    <circle cx='16' cy='15' r='3' fill='%23f97316'/>
   </svg>`,
   wildlife: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
     <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%2322c55e'/>
-    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
-    <text x='16' y='19' text-anchor='middle' font-size='12'>🐢</text>
+    <circle cx='16' cy='15' r='7' fill='white' opacity='0.5'/>
+    <circle cx='16' cy='15' r='3' fill='%2322c55e'/>
   </svg>`,
   coral: `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'>
     <path d='M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z' fill='%23ec4899'/>
-    <circle cx='16' cy='15' r='8' fill='white' opacity='0.3'/>
-    <text x='16' y='19' text-anchor='middle' font-size='12'>🪸</text>
+    <circle cx='16' cy='15' r='7' fill='white' opacity='0.5'/>
+    <circle cx='16' cy='15' r='3' fill='%23ec4899'/>
   </svg>`,
 };
 
@@ -243,10 +243,11 @@ export default function MapView() {
 
       {/* Stats Badge */}
       <div className="absolute bottom-20 md:bottom-4 right-4 z-[1000]">
-        <Card className="shadow-lg backdrop-blur-sm bg-card/90">
+        <Card variant="neomorph" className="bg-card/90">
           <CardContent className="p-3">
-            <div className="text-sm font-medium">
-              {filteredSightings.length} sighting{filteredSightings.length !== 1 ? "s" : ""}
+            <div className="text-sm font-bold flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              {filteredSightings.length} Reports Found
             </div>
           </CardContent>
         </Card>

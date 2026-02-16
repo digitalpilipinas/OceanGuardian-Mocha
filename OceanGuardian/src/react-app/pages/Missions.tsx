@@ -50,29 +50,29 @@ export default function Missions() {
   }, [filter]);
 
   return (
-    <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
+    <div className="container mx-auto py-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-            Cleanup Missions
+          <h1 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">
+            Cleanup <span className="text-primary">Missions</span>
           </h1>
-          <p className="text-muted-foreground text-lg">Join the community to clean up our oceans!</p>
+          <p className="text-muted-foreground text-lg font-medium mt-2">Join the collective effort to restore our oceans.</p>
         </div>
 
         {canCreate && (
-          <Button variant="neomorph-primary" size="lg" className="h-12 px-6" onClick={() => navigate("/missions/create")}>
-            <Plus className="mr-2 h-5 w-5" />
+          <Button variant="neomorph-primary" size="lg" className="h-14 px-8 text-lg font-bold" onClick={() => navigate("/missions/create")}>
+            <Plus className="mr-2 h-6 w-6" />
             Create Mission
           </Button>
         )}
       </div>
 
-      <div className="mb-10">
+      <div className="mb-12">
         <Tabs defaultValue="upcoming" onValueChange={setFilter} className="w-full">
-          <TabsList className="bg-transparent p-1 neo-pressed rounded-2xl h-14">
-            <TabsTrigger value="upcoming" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8 transition-colors">Upcoming</TabsTrigger>
-            <TabsTrigger value="active" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8 transition-colors">Active Now</TabsTrigger>
-            <TabsTrigger value="completed" className="rounded-xl h-12 text-slate-400 data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-8 transition-colors">Completed</TabsTrigger>
+          <TabsList className="bg-transparent p-1.5 neo-pressed rounded-3xl h-16 w-full md:w-auto">
+            <TabsTrigger value="upcoming" className="rounded-2xl h-13 text-muted-foreground font-bold data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-10 transition-all">Upcoming</TabsTrigger>
+            <TabsTrigger value="active" className="rounded-2xl h-13 text-muted-foreground font-bold data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-10 transition-all">Active Now</TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-2xl h-13 text-muted-foreground font-bold data-[state=active]:neo-flat data-[state=active]:bg-card data-[state=active]:text-primary px-10 transition-all">Completed</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

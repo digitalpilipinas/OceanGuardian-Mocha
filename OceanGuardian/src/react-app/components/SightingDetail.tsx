@@ -5,15 +5,15 @@ import { Badge } from "@/react-app/components/ui/badge";
 import { Button } from "@/react-app/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/react-app/components/ui/avatar";
 import { Input } from "@/react-app/components/ui/input";
-import { X, MapPin, Calendar, User, Waves, Trash2, Fish, Anchor, Thermometer, Droplets, ArrowDown, ThumbsUp, MessageSquare, Send } from "lucide-react";
+import { X, MapPin, Calendar, User, Waves, Trash2, Fish, Anchor, Thermometer, Droplets, ArrowDown, ThumbsUp, MessageSquare, Send, AlertTriangle } from "lucide-react";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import type { Sighting } from "@/react-app/pages/MapView";
 
-const typeConfig: Record<string, { icon: typeof Waves; label: string; color: string; bg: string; emoji: string }> = {
-    garbage: { icon: Trash2, label: "Beach Garbage", color: "text-red-500", bg: "bg-red-100 dark:bg-red-900/30", emoji: "🗑️" },
-    floating: { icon: Anchor, label: "Floating Trash", color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30", emoji: "🚢" },
-    wildlife: { icon: Fish, label: "Wildlife", color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30", emoji: "🐢" },
-    coral: { icon: Waves, label: "Coral Health", color: "text-pink-500", bg: "bg-pink-100 dark:bg-pink-900/30", emoji: "🪸" },
+const typeConfig: Record<string, { icon: typeof Waves; label: string; color: string; bg: string }> = {
+    garbage: { icon: Trash2, label: "Beach Garbage", color: "text-red-500", bg: "bg-red-100 dark:bg-red-900/30" },
+    floating: { icon: Anchor, label: "Floating Trash", color: "text-orange-500", bg: "bg-orange-100 dark:bg-orange-900/30" },
+    wildlife: { icon: Fish, label: "Wildlife", color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30" },
+    coral: { icon: Waves, label: "Coral Health", color: "text-pink-500", bg: "bg-pink-100 dark:bg-pink-900/30" },
 };
 
 const statusColors: Record<string, string> = {
@@ -21,8 +21,6 @@ const statusColors: Record<string, string> = {
     approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
     flagged: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
 };
-
-const severityEmoji = ["", "🟢", "🟡", "🟠", "🔴", "🚨"];
 
 interface SightingDetailProps {
     sighting: Sighting;
@@ -179,7 +177,7 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className={`p-2.5 rounded-xl ${config.bg}`}>
-                                <span className="text-xl">{config.emoji}</span>
+                                <config.icon className={`h-5 w-5 ${config.color}`} />
                             </div>
                             <div>
                                 <h3 className="font-semibold text-lg">{sighting.subcategory}</h3>
@@ -197,8 +195,12 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                             <Badge className={statusColors[sighting.status] || statusColors.pending}>
                                 {sighting.status || "pending"}
                             </Badge>
-                            <Badge variant="outline" className="text-sm">
-                                {severityEmoji[sighting.severity] || "🟢"} Severity {sighting.severity}/5
+                            <Badge variant="outline" className="text-sm gap-1.5">
+                                <AlertTriangle className={`h-3 w-3 ${sighting.severity >= 4 ? "text-red-500 animate-pulse" :
+                                    sighting.severity >= 3 ? "text-orange-500" :
+                                        "text-muted-foreground"
+                                    }`} />
+                                Severity {sighting.severity}/5
                             </Badge>
                         </div>
 

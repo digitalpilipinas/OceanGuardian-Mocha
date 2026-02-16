@@ -9,9 +9,11 @@ import { DivIcon } from "leaflet";
 
 // Reuse icon logic simplified
 const createIcon = (type: string) => new DivIcon({
-    html: `<div style="font-size: 20px;">
-    ${type === 'coral' ? '🪸' : type === 'wildlife' ? '🐢' : type === 'floating' ? '🚢' : '🗑️'}
-  </div>`,
+    html: `<div style="width: 20px; height: 20px; border-radius: 50%; background: ${type === 'coral' ? '#ec4899' :
+            type === 'wildlife' ? '#22c55e' :
+                type === 'floating' ? '#f97316' :
+                    '#ef4444'
+        }; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
     className: "bg-transparent border-none",
     iconSize: [20, 20],
     iconAnchor: [10, 10],

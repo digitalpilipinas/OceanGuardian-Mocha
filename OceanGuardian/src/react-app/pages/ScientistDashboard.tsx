@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
-import { Check, X, MapPin, Loader2, AlertCircle, Download, FileJson, FileSpreadsheet } from "lucide-react";
+import { Check, X, MapPin, Loader2, AlertCircle, Download, FileJson, FileSpreadsheet, CheckCircle2, History } from "lucide-react";
 import { Badge } from "@/react-app/components/ui/badge";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import {
@@ -106,32 +106,40 @@ export default function ScientistDashboard() {
     }
 
     return (
-        <div className="container mx-auto p-4 py-8 space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="container mx-auto py-4 space-y-10">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold">Scientist Dashboard</h1>
-                    <p className="text-muted-foreground">Manage data quality and export research data.</p>
+                    <h1 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">
+                        Scientist <span className="text-primary">Station</span>
+                    </h1>
+                    <p className="text-muted-foreground text-lg font-medium mt-2">Manage data quality and export research data for conservation.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={fetchReviews} variant="outline" size="sm">Refresh Queue</Button>
+                <div className="flex gap-4">
+                    <Button onClick={fetchReviews} variant="neomorph" className="h-12 px-6 font-bold">
+                        <History className="mr-2 h-5 w-5 text-primary" /> Refresh Queue
+                    </Button>
                 </div>
             </div>
 
             {/* Export Section */}
-            <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
+            <Card variant="glass" className="relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <CardContent className="p-8 relative z-10 flex flex-col lg:flex-row items-center gap-8">
                     <div className="flex-1">
-                        <h3 className="font-semibold flex items-center gap-2">
-                            <Download className="h-4 w-4" /> Data Export
+                        <h3 className="text-xl font-bold flex items-center gap-3 text-foreground mb-1">
+                            <div className="p-2 rounded-xl neo-flat">
+                                <Download className="h-5 w-5 text-primary" />
+                            </div>
+                            Research Data Export
                         </h3>
-                        <p className="text-xs text-muted-foreground">Download verified sightings data for analysis.</p>
+                        <p className="text-sm text-muted-foreground font-medium">Download verified sightings data for in-depth analysis and reporting.</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
                         <Select value={exportDays} onValueChange={setExportDays}>
-                            <SelectTrigger className="w-[120px] bg-background">
+                            <SelectTrigger className="w-[160px] h-12 neo-interactive bg-background/50 border-none rounded-xl font-bold">
                                 <SelectValue placeholder="Period" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="glass-liquid border-white/10">
                                 <SelectItem value="7">Last 7 Days</SelectItem>
                                 <SelectItem value="30">Last 30 Days</SelectItem>
                                 <SelectItem value="90">Last 90 Days</SelectItem>
@@ -139,31 +147,38 @@ export default function ScientistDashboard() {
                             </SelectContent>
                         </Select>
                         <Select value={exportFormat} onValueChange={setExportFormat}>
-                            <SelectTrigger className="w-[120px] bg-background">
+                            <SelectTrigger className="w-[140px] h-12 neo-interactive bg-background/50 border-none rounded-xl font-bold">
                                 <SelectValue placeholder="Format" />
                             </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="csv">CSV</SelectItem>
+                            <SelectContent className="glass-liquid border-white/10">
+                                <SelectItem value="csv">CSV File</SelectItem>
                                 <SelectItem value="geojson">GeoJSON</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Button onClick={handleExport}>
-                            {exportFormat === "csv" ? <FileSpreadsheet className="mr-2 h-4 w-4" /> : <FileJson className="mr-2 h-4 w-4" />}
-                            Export
+                        <Button variant="neomorph-primary" className="h-12 px-8 font-bold text-sm uppercase tracking-widest" onClick={handleExport}>
+                            {exportFormat === "csv" ? <FileSpreadsheet className="mr-2 h-5 w-5" /> : <FileJson className="mr-2 h-5 w-5" />}
+                            Export Data
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            <div>
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <Check className="h-5 w-5 text-green-500" /> Review Queue ({reviews.length})
+            <div className="space-y-8">
+                <h2 className="text-2xl font-black flex items-center gap-4 text-foreground">
+                    <div className="p-2 rounded-xl neo-flat">
+                        <Check className="h-6 w-6 text-primary" />
+                    </div>
+                    Verification Queue <span className="text-muted-foreground font-medium ml-2 text-lg">({reviews.length} Pending)</span>
                 </h2>
 
                 {reviews.length === 0 ? (
-                    <Card className="bg-muted/50 border-dashed">
-                        <CardContent className="py-12 text-center text-muted-foreground">
-                            No pending reviews. Good job! 🪸
+                    <Card variant="neomorph" className="border-dashed border-2 border-primary/20 bg-background/50">
+                        <CardContent className="py-20 text-center">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 neo-flat">
+                                <CheckCircle2 className="h-8 w-8 text-primary" />
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">All Clear!</p>
+                            <p className="text-muted-foreground mt-2 font-medium">The verification queue is currently empty. Excellent work, Doctor.</p>
                         </CardContent>
                     </Card>
                 ) : (

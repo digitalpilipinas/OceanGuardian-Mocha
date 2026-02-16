@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/react-app/components/ui/dialog";
 import { Button } from "@/react-app/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Map as MapIcon, Target, Search, Waves, Handshake, Crown, Sparkles } from "lucide-react";
 
 interface LevelUpModalProps {
     open: boolean;
@@ -10,13 +10,13 @@ interface LevelUpModalProps {
     newLevel: number;
 }
 
-const LEVEL_PERKS: Record<number, { title: string; description: string; icon: string }> = {
-    5: { title: "Regional Explorer", description: "Unlock regional leaderboards", icon: "🗺️" },
-    10: { title: "Mission Creator", description: "Create private cleanup missions", icon: "🎯" },
-    15: { title: "Advanced Analyst", description: "Access advanced map filters", icon: "🔬" },
-    20: { title: "Coral Scientist", description: "Unlock AI coral analysis tools", icon: "🪸" },
-    25: { title: "Ambassador Nominator", description: "Nominate new Ambassadors", icon: "🤝" },
-    50: { title: "Marine Legend", description: "Lifetime Legend badge & all features", icon: "👑" },
+const LEVEL_PERKS: Record<number, { title: string; description: string; icon: any }> = {
+    5: { title: "Regional Explorer", description: "Unlock regional leaderboards", icon: MapIcon },
+    10: { title: "Mission Creator", description: "Create private cleanup missions", icon: Target },
+    15: { title: "Advanced Analyst", description: "Access advanced map filters", icon: Search },
+    20: { title: "Coral Scientist", description: "Unlock AI coral analysis tools", icon: Waves },
+    25: { title: "Ambassador Nominator", description: "Nominate new Ambassadors", icon: Handshake },
+    50: { title: "Marine Legend", description: "Lifetime Legend badge & all features", icon: Crown },
 };
 
 export default function LevelUpModal({ open, onClose, oldLevel, newLevel }: LevelUpModalProps) {
@@ -49,9 +49,9 @@ export default function LevelUpModal({ open, onClose, oldLevel, newLevel }: Leve
                                 initial={{ scale: 0 }}
                                 animate={{ scale: [0, 1.2, 1] }}
                                 transition={{ duration: 0.5 }}
-                                className="text-7xl mb-4"
+                                className="mb-4 p-4 rounded-3xl neo-flat"
                             >
-                                🎉
+                                <Sparkles className="w-16 h-16 text-amber-500" />
                             </motion.div>
                             <DialogTitle className="text-4xl font-black bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
                                 Level Up!
@@ -99,7 +99,7 @@ export default function LevelUpModal({ open, onClose, oldLevel, newLevel }: Leve
                                     animate={{ height: "auto", opacity: 1 }}
                                     className="space-y-4 mb-10"
                                 >
-                                    <h4 className="text-xs font-black text-center text-muted-foreground uppercase tracking-widest mb-4">🔓 New Powers Unlocked</h4>
+                                    <h4 className="text-xs font-black text-center text-muted-foreground uppercase tracking-widest mb-4">New Powers Unlocked</h4>
                                     <div className="grid gap-3">
                                         {unlockedPerks.map((perk, i) => (
                                             <motion.div
@@ -109,8 +109,8 @@ export default function LevelUpModal({ open, onClose, oldLevel, newLevel }: Leve
                                                 transition={{ delay: 0.1 * i }}
                                                 className="flex items-center gap-4 p-4 rounded-2xl neo-flat group hover:bg-amber-500/5 transition-colors"
                                             >
-                                                <div className="text-3xl neo-pressed p-2 rounded-xl group-hover:scale-110 transition-transform">
-                                                    {perk.icon}
+                                                <div className="neo-pressed p-3 rounded-xl group-hover:scale-110 transition-transform">
+                                                    <perk.icon className="w-8 h-8 text-amber-500" />
                                                 </div>
                                                 <div>
                                                     <p className="font-black text-sm text-foreground">{perk.title}</p>
@@ -129,7 +129,7 @@ export default function LevelUpModal({ open, onClose, oldLevel, newLevel }: Leve
                                 variant="neomorph-primary"
                                 className="w-full h-16 text-xl font-black uppercase tracking-[0.2em] shadow-amber-500/20"
                             >
-                                Continue 🚀
+                                Continue
                             </Button>
                         </DialogFooter>
                     </div>

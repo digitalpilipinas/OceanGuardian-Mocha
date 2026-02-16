@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Check, X, Trophy, ArrowRight, Home } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, X, Trophy, ArrowRight, Home, Flame } from "lucide-react";
+import { Link } from "react-router";
 
 interface Question {
     id: number;
@@ -140,7 +140,7 @@ export default function DailyQuiz() {
                                 <p className="text-sm text-gray-500 font-medium">Streak</p>
                                 <div className="flex items-center justify-center space-x-1">
                                     <p className="text-3xl font-bold text-orange-500">{streak}</p>
-                                    <span className="text-xl">🔥</span>
+                                    <Flame className="h-5 w-5 text-orange-500" />
                                 </div>
                             </div>
                             {streakBonus > 0 && (

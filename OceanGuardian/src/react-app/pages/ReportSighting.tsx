@@ -18,10 +18,10 @@ import { Trash2, Fish, Anchor, Waves, Upload, MapPin, Camera, Loader2, CheckCirc
 import type { SightingType } from "@/react-app/pages/MapView";
 
 const sightingTypes = [
-  { value: "garbage" as SightingType, label: "Beach Garbage", icon: Trash2, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800", activeBg: "bg-red-100 dark:bg-red-900/50", emoji: "🗑️" },
-  { value: "floating" as SightingType, label: "Floating Trash", icon: Anchor, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800", activeBg: "bg-orange-100 dark:bg-orange-900/50", emoji: "🚢" },
-  { value: "wildlife" as SightingType, label: "Wildlife", icon: Fish, color: "text-green-500", bg: "bg-green-50 dark:bg-green-950/30", border: "border-green-200 dark:border-green-800", activeBg: "bg-green-100 dark:bg-green-900/50", emoji: "🐢" },
-  { value: "coral" as SightingType, label: "Coral Health", icon: Waves, color: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-950/30", border: "border-pink-200 dark:border-pink-800", activeBg: "bg-pink-100 dark:bg-pink-900/50", emoji: "🪸" },
+  { value: "garbage" as SightingType, label: "Beach Garbage", icon: Trash2, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800", activeBg: "bg-red-100 dark:bg-red-900/50" },
+  { value: "floating" as SightingType, label: "Floating Trash", icon: Anchor, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800", activeBg: "bg-orange-100 dark:bg-orange-900/50" },
+  { value: "wildlife" as SightingType, label: "Wildlife", icon: Fish, color: "text-green-500", bg: "bg-green-50 dark:bg-green-950/30", border: "border-green-200 dark:border-green-800", activeBg: "bg-green-100 dark:bg-green-900/50" },
+  { value: "coral" as SightingType, label: "Coral Health", icon: Waves, color: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-950/30", border: "border-pink-200 dark:border-pink-800", activeBg: "bg-pink-100 dark:bg-pink-900/50" },
 ];
 
 const subcategories: Record<string, string[]> = {
@@ -32,11 +32,11 @@ const subcategories: Record<string, string[]> = {
 };
 
 const severityLevels = [
-  { value: 1, emoji: "🟢", label: "Minor" },
-  { value: 2, emoji: "🟡", label: "Low" },
-  { value: 3, emoji: "🟠", label: "Moderate" },
-  { value: 4, emoji: "🔴", label: "Serious" },
-  { value: 5, emoji: "🚨", label: "Critical" },
+  { value: 1, label: "Minor" },
+  { value: 2, label: "Low" },
+  { value: 3, label: "Moderate" },
+  { value: 4, label: "Serious" },
+  { value: 5, label: "Critical" },
 ];
 
 /** Compress an image file to < 1MB using Canvas API */
@@ -302,7 +302,7 @@ export default function ReportSighting() {
                 <CheckCircle className="h-12 w-12 text-green-500" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold">Sighting Reported! 🎉</h2>
+            <h2 className="text-2xl font-bold">Sighting Reported!</h2>
             <p className="text-muted-foreground">
               Thank you for helping protect our oceans
             </p>
@@ -356,9 +356,8 @@ export default function ReportSighting() {
                         }
                       `}
                     >
-                      <span className="text-2xl">{type.emoji}</span>
-                      <Icon className={`h-5 w-5 ${type.color}`} />
-                      <span className="text-xs font-medium">{type.label}</span>
+                      <Icon className={`h-10 w-10 ${type.color} mb-1`} />
+                      <span className="text-xs font-semibold">{type.label}</span>
                       {isSelected && (
                         <div className={`absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full ${type.color.replace("text-", "bg-")}`} />
                       )}
@@ -554,10 +553,13 @@ export default function ReportSighting() {
                         }
                       `}
                     >
-                      <span className={`text-xl ${formData.severity === level.value ? "scale-125" : ""} transition-transform`}>
-                        {level.emoji}
-                      </span>
-                      <span className="text-[10px] font-medium">{level.label}</span>
+                      <div className={`h-2.5 w-2.5 rounded-full ${level.value === 1 ? "bg-green-500" :
+                          level.value === 2 ? "bg-yellow-500" :
+                            level.value === 3 ? "bg-orange-500" :
+                              level.value === 4 ? "bg-red-500" :
+                                "bg-red-700 animate-pulse"
+                        }`} />
+                      <span className="text-[10px] font-bold">{level.label}</span>
                     </button>
                   ))}
                 </div>

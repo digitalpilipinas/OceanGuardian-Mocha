@@ -15,39 +15,54 @@ export default function Home() {
 
   if (user) {
     return (
-      <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
+      <div className="container mx-auto py-4">
         <WelcomeHeader />
 
         <DashboardStats />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
 
             {/* Live Map Preview */}
-            <div className="h-[400px]">
-              <MapPreview />
-            </div>
+            <Card variant="neomorph" className="p-1">
+              <div className="h-[450px] rounded-2xl overflow-hidden border border-white/5 shadow-inner">
+                <MapPreview />
+              </div>
+            </Card>
 
             {/* Active Missions */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold flex items-center gap-3">
+                  <div className="p-2 rounded-xl neo-flat">
+                    <Award className="h-6 w-6 text-primary" />
+                  </div>
                   Active Missions
                 </h2>
+                <Button variant="ghost" className="neo-interactive rounded-xl px-4 h-10 group">
+                  View All <TrendingUp className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
               </div>
               <MissionsCarousel />
             </div>
 
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Sidebar Area */}
+          <div className="space-y-8">
             <DailyQuizCTA />
 
-            <div className="h-[500px]">
-              <ActivityFeed />
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl neo-flat">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                Guardian Pulse
+              </h2>
+              <div className="h-[550px]">
+                <ActivityFeed />
+              </div>
             </div>
           </div>
         </div>

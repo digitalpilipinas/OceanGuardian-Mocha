@@ -63,9 +63,10 @@ const LeaderboardRow = ({ entry, currentUserId }: { entry: LeaderboardEntry, cur
         <div className={`flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors ${entry.id === currentUserId ? "bg-muted border border-primary/20" : ""}`}>
             <div className="w-8 text-center font-bold text-muted-foreground">
                 {entry.rank > 3 ? `#${entry.rank}` : ""}
-                {entry.rank === 1 && "🥇"}
-                {entry.rank === 2 && "🥈"}
-                {entry.rank === 3 && "🥉"}
+                {entry.rank <= 3 && <Trophy className={`h-4 w-4 mx-auto ${entry.rank === 1 ? "text-amber-500" :
+                    entry.rank === 2 ? "text-slate-400" :
+                        "text-orange-400"
+                    }`} />}
             </div>
 
             <Avatar className="w-10 h-10 border border-border">
@@ -220,7 +221,7 @@ export default function Leaderboard() {
                                 <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
                                     <p className="text-muted-foreground">
                                         No entries found for this leaderboard yet. <br />
-                                        Be the first to join! 🚀
+                                        Be the first to join!
                                     </p>
                                 </div>
                             )}

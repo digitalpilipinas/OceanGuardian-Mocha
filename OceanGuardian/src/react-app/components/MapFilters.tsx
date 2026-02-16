@@ -16,10 +16,10 @@ interface MapFiltersProps {
 }
 
 const filterOptions = [
-  { type: "garbage" as SightingType, icon: Trash2, label: "Garbage", color: "bg-red-500", emoji: "🗑️" },
-  { type: "floating" as SightingType, icon: Anchor, label: "Floating", color: "bg-orange-500", emoji: "🚢" },
-  { type: "wildlife" as SightingType, icon: Fish, label: "Wildlife", color: "bg-green-500", emoji: "🐢" },
-  { type: "coral" as SightingType, icon: Waves, label: "Coral", color: "bg-pink-500", emoji: "🪸" },
+  { type: "garbage" as SightingType, icon: Trash2, label: "Garbage", color: "bg-red-500" },
+  { type: "floating" as SightingType, icon: Anchor, label: "Floating", color: "bg-orange-500" },
+  { type: "wildlife" as SightingType, icon: Fish, label: "Wildlife", color: "bg-green-500" },
+  { type: "coral" as SightingType, icon: Waves, label: "Coral", color: "bg-pink-500" },
 ];
 
 const dateRanges = [
@@ -30,11 +30,11 @@ const dateRanges = [
 ];
 
 const severityOptions = [
-  { value: 1, label: "Any", emoji: "🟢" },
-  { value: 2, label: "2+", emoji: "🟡" },
-  { value: 3, label: "3+", emoji: "🟠" },
-  { value: 4, label: "4+", emoji: "🔴" },
-  { value: 5, label: "5", emoji: "🚨" },
+  { value: 1, label: "Any", icon: Waves },
+  { value: 2, label: "2+", icon: Waves },
+  { value: 3, label: "3+", icon: Waves },
+  { value: 4, label: "4+", icon: Waves },
+  { value: 5, label: "5", icon: AlertTriangle },
 ];
 
 export default function MapFilters({
@@ -134,7 +134,7 @@ export default function MapFilters({
                         }
                       `}
                     >
-                      <span className="text-sm">{option.emoji}</span>
+                      <option.icon className="h-4 w-4" />
                       <span className="text-xs">{option.label}</span>
                     </button>
                   );
@@ -182,14 +182,19 @@ export default function MapFilters({
                     key={sev.value}
                     onClick={() => onMinSeverityChange(sev.value)}
                     className={`
-                      flex-1 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-md transition-all
+                      flex-1 flex flex-col items-center gap-1 px-2 py-1.5 rounded-md transition-all
                       ${minSeverity === sev.value
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/50 text-muted-foreground hover:bg-muted"
                       }
                     `}
                   >
-                    <span className="text-sm">{sev.emoji}</span>
+                    <div className={`h-2.5 w-2.5 rounded-full ${sev.value === 1 ? "bg-green-500" :
+                        sev.value === 2 ? "bg-yellow-500" :
+                          sev.value === 3 ? "bg-orange-500" :
+                            sev.value === 4 ? "bg-red-500" :
+                              "bg-red-700 animate-pulse"
+                      }`} />
                     <span className="text-[10px] font-medium">{sev.label}</span>
                   </button>
                 ))}
