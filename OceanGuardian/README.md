@@ -5,11 +5,12 @@
 ![Ocean Conservation Platform](https://img.shields.io/badge/Status-Active-success)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
 ![React](https://img.shields.io/badge/React-19.0-61dafb)
+![Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare%20Workers-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 **A gamified citizen science platform for ocean conservation and marine biodiversity monitoring**
 
-[Features](#features) • [Architecture](#architecture) • [Tech Stack](#tech-stack) • [Getting Started](#getting-started) • [Project Versions](#project-versions)
+[Features](#features) • [Architecture](#architecture) • [Tech Stack](#tech-stack) • [Getting Started](#getting-started) • [Deployment](#deployment)
 
 </div>
 
@@ -17,7 +18,7 @@
 
 ## 📋 Executive Summary
 
-**OceanGuardian** is a comprehensive full-stack web application designed to empower citizens, scientists, and conservation organizations in protecting marine ecosystems. The platform combines real-time data collection, AI-powered analysis, gamification mechanics, and community engagement to create a sustainable ocean monitoring network.
+**OceanGuardian** is a comprehensive full-stack web application designed to empower citizens, scientists, and conservation organizations in protecting marine ecosystems. Built on **Cloudflare Workers** edge platform, the application combines real-time data collection, AI-powered analysis, gamification mechanics, and community engagement to create a sustainable ocean monitoring network.
 
 ### Key Objectives
 - **Citizen Science:** Enable users to report marine wildlife sightings, pollution incidents, and coral reef health
@@ -167,10 +168,10 @@ OceanGuardian/
 ### Prerequisites
 - **Node.js** 18.x or higher
 - **npm** 9.x or higher
+- **Cloudflare Account** (free tier available)
 - **Turso CLI** (for database management)
-- **Cloudflare Account** (for deployment)
 
-### Installation
+### Local Development Setup
 
 1. **Clone the repository**
    ```bash
@@ -191,15 +192,21 @@ OceanGuardian/
    # Edit .dev.vars with your credentials:
    # - TURSO_DATABASE_URL
    # - TURSO_AUTH_TOKEN
-   # - EMAIL_SERVICE_API_KEY (if using email features)
+   # - RESEND_API_KEY (optional, for email features)
    ```
 
-4. **Run database migrations**
+4. **Run database migrations** (if needed)
    ```bash
-   # Apply schema migrations to Turso
-   npm run migrate
+   # Install Turso CLI
+   curl -sSfL https://get.tur.so/install.sh | bash
    
-   # Seed initial data (optional)
+   # Authenticate
+   turso auth login
+   
+   # Apply schema
+   turso db shell your-database-name < migrations/turso-schema.sql
+   
+   # Optionally seed data
    npm run seed
    ```
 
@@ -223,21 +230,155 @@ npm run seed         # Populate database with sample data
 npm run cf-typegen   # Generate TypeScript types from Wrangler config
 ```
 
-### Deployment
+---
 
-**Cloudflare Pages (Recommended)**
+## ☁️ Deployment
+
+### Cloudflare Workers (Recommended & Native Platform)
+
+This application is **built specifically for Cloudflare Workers**. Deploy in minutes with zero infrastructure management.
+
+#### Why Cloudflare Workers?
+
+✅ **Zero Configuration** - App is pre-configured for Cloudflare
+✅ **Free Tier** - 100,000 requests/day at no cost
+✅ **Global Edge Network** - Sub-50ms latency worldwide
+✅ **Auto-scaling** - Handles traffic spikes automatically
+✅ **SSL Included** - Free HTTPS certificates
+✅ **Native Integrations** - Works seamlessly with Turso, R2, D1
+
+#### Step-by-Step Deployment Guide
+
+##### 1. Create Cloudflare Account
+
+- Visit [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up)
+- Sign up with email or GitHub
+- Verify your email address
+
+##### 2. Install & Authenticate Wrangler CLI
+
 ```bash
-# Build production assets
+# Install Wrangler globally
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+# Browser opens - click "Allow" to grant access
+```
+
+##### 3. Configure Your Worker Name
+
+Edit `wrangler.json` and change the worker name to something unique:
+
+```json
+{
+  "name": "oceanguardian-yourname",  // Make this unique!
+  "main": "./src/worker/index.ts",
+  // ... rest of config
+}
+```
+
+##### 4. Add Secrets (Environment Variables)
+
+```bash
+# Add Turso database credentials
+wrangler secret put TURSO_DB_URL
+# Paste your Turso database URL when prompted
+
+wrangler secret put TURSO_DB_AUTH_TOKEN
+# Paste your Turso auth token when prompted
+
+# (Optional) Add email service key
+wrangler secret put RESEND_API_KEY
+```
+
+##### 5. Build & Deploy
+
+```bash
+# Build the application
 npm run build
 
 # Deploy to Cloudflare Workers
 wrangler deploy
 ```
 
-**Manual Deployment**
-1. Build: `npm run build` (output in `dist/`)
-2. Upload `dist/` to your hosting provider
-3. Configure environment variables on hosting platform
+**Expected Output:**
+```
+⛅️ wrangler 3.x.x
+------------------
+Total Upload: 1.23 MB / gzip: 456 KB
+Uploaded oceanguardian-yourname (1.5 sec)
+Published oceanguardian-yourname (2.3 sec)
+  https://oceanguardian-yourname.workers.dev
+Current Deployment ID: abc123
+```
+
+🎉 **Your app is now live!** Visit `https://[your-worker-name].workers.dev`
+
+#### 6. Add Custom Domain (Optional)
+
+1. In Cloudflare Dashboard, go to **Workers & Pages**
+2. Click your worker name
+3. Navigate to **Custom Domains** tab
+4. Click **Add Custom Domain**
+5. Enter your domain (e.g., `oceanguardian.yourdomain.com`)
+6. Follow DNS configuration instructions
+
+#### Updating Your Deployment
+
+Every time you make changes:
+
+```bash
+npm run build
+wrangler deploy
+```
+
+Changes go live in ~10 seconds!
+
+#### Monitoring & Logs
+
+```bash
+# View real-time logs
+wrangler tail
+
+# List deployments
+wrangler deployments list
+
+# Check worker status
+wrangler status
+```
+
+#### Troubleshooting
+
+**Issue: "Worker name already exists"**
+- Solution: Change `name` in `wrangler.json` to something unique
+
+**Issue: "Database connection error"**
+- Solution: Verify secrets are set with `wrangler secret list`
+- Re-add if missing: `wrangler secret put TURSO_DB_URL`
+
+**Issue: "Build failed"**
+- Solution: Clear and reinstall dependencies
+  ```bash
+  rm -rf node_modules package-lock.json
+  npm install
+  npm run build
+  ```
+
+**Issue: "404 Not Found after deployment"**
+- Solution: Verify `wrangler.json` has `"assets": {"not_found_handling": "single-page-application"}`
+
+### Cloudflare Free Tier Limits
+
+| Resource | Free Tier | Paid Tier |
+|----------|-----------|----------|
+| Requests | 100,000/day | 10M for $5/mo |
+| CPU Time | 10ms/request | 50ms/request |
+| Bandwidth | Unlimited | Unlimited |
+| Storage | D1: 5GB | D1: 50GB |
+| Domains | Unlimited | Unlimited |
+
+**Your app will stay free** unless you exceed 100k requests/day!
 
 ---
 
@@ -247,6 +388,7 @@ wrangler deploy
 
 ### Version 1: Mocha + Google Antigravity IDE (This Repository)
 **Platform**: Initially created with [Mocha](https://getmocha.com), continued in Google Antigravity IDE  
+**Deployment**: Cloudflare Workers  
 **Status**: ⚠️ Missing LLM integration for coral analysis  
 **Database**: Turso (external third-party service)  
 **Development Journey**:
@@ -255,6 +397,7 @@ wrangler deploy
 - Hit project space limitations on Mocha's free tier
 - Downloaded codebase and continued development in Google Antigravity IDE
 - Integrated Turso database manually
+- Configured for Cloudflare Workers deployment
 - UI for coral scanning implemented, but AI model integration pending
 
 **Key Features**:
@@ -264,10 +407,12 @@ wrangler deploy
 - ✅ Role-based dashboards (Citizen, Ambassador, Scientist, Admin)
 - ✅ Learning hub with educational content
 - ✅ Authentication and user management
+- ✅ Cloudflare Workers edge deployment
 - ❌ AI-powered coral bleaching detection (UI only, no LLM backend)
 
 **Strengths**:
 - Full control over infrastructure choices
+- Cloudflare Workers edge performance
 - Flexible database configuration (Turso)
 - Custom API implementation with Hono framework
 - Detailed codebase for learning and customization
@@ -281,6 +426,7 @@ wrangler deploy
 
 ### Version 2: Creao.ai (Complete Stack)
 **Platform**: Fully created with [Creao.ai](https://creao.ai)  
+**Deployment**: Creao.ai platform  
 **Status**: ✅ Full-featured including AI coral analysis  
 **Database**: Creao.ai built-in database  
 **Development Journey**:
@@ -319,9 +465,10 @@ wrangler deploy
 | **Coral UI** | ✅ Complete | ✅ Complete |
 | **Coral AI Analysis** | ❌ Missing | ✅ Functional |
 | **Database** | Turso (External) | Creao.ai (Managed) |
-| **Deployment** | Manual/CF Workers | Platform-Integrated |
+| **Deployment** | Cloudflare Workers | Platform-Integrated |
 | **Infrastructure Control** | High | Medium |
-| **Setup Complexity** | Higher | Lower |
+| **Setup Complexity** | Medium | Lower |
+| **Edge Performance** | ✅ Global CDN | Platform-Dependent |
 
 ---
 
@@ -371,7 +518,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **Mocha Platform** - Initial rapid prototyping environment
 - **Creao.ai** - Complete AI-assisted development platform for Version 2
-- **Cloudflare** - Edge computing infrastructure
+- **Cloudflare** - Edge computing infrastructure and Workers platform
 - **Turso** - Distributed SQLite database
 - **OpenStreetMap** - Map data for Leaflet visualization
 - **Marine Conservation Community** - Inspiration and domain expertise
@@ -393,5 +540,7 @@ If OceanGuardian helps your conservation efforts or research, consider:
 **🌊 Together, we can protect our oceans, one sighting at a time. 🌊**
 
 Built with 💙 for marine conservation
+
+Deployed on ☁️ **Cloudflare Workers**
 
 </div>
