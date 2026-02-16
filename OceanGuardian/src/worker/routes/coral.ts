@@ -53,16 +53,17 @@ app.post("/api/coral/analyze", authMiddleware, async (c) => {
     const formData = await c.req.formData();
     const file = formData.get("image");
 
-    if (!file || !(file instanceof File)) {
+    if (!file || typeof file === "string") {
         return c.json({ error: "No image provided" }, 400);
     }
 
     // Upload to R2 immediately to get a key
-    const ext = file.name.split(".").pop() || "jpg";
+    const fileData = file as unknown as File;
+    const ext = fileData.name.split(".").pop() || "jpg";
     const key = `coral-analysis/${user.id}/${Date.now()}.${ext}`;
 
-    await c.env.R2_BUCKET.put(key, file, {
-        httpMetadata: { contentType: file.type },
+    await c.env.R2_BUCKET.put(key, fileData, {
+        httpMetadata: { contentType: fileData.type },
     });
 
     // Perform Mock Analysis

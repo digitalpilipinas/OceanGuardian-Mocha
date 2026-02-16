@@ -235,20 +235,22 @@ app.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   const formData = await c.req.formData();
   const file = formData.get("photo");
 
-  if (!file || !(file instanceof File)) {
+  if (!file || typeof file === "string") {
     return c.json({ error: "No photo provided" }, 400);
   }
 
-  if (!file.type.startsWith("image/")) {
+  const fileData = file as unknown as File;
+
+  if (!fileData.type.startsWith("image/")) {
     return c.json({ error: "File must be an image" }, 400);
   }
 
   // Upload to R2
-  const ext = file.name.split(".").pop() || "jpg";
+  const ext = fileData.name.split(".").pop() || "jpg";
   const key = `sightings/${id}/${Date.now()}.${ext}`;
 
-  await c.env.R2_BUCKET.put(key, file, {
-    httpMetadata: { contentType: file.type },
+  await c.env.R2_BUCKET.put(key, fileData, {
+    httpMetadata: { contentType: fileData.type },
   });
 
   // Update sighting with image key

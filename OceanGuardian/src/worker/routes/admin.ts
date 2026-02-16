@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../middleware";
 import { getTursoClient } from "../db";
-import type { UserProfile, UserRole } from "@/shared/types";
+import type { UserProfile } from "@/shared/types";
 import { UserRoleSchema } from "@/shared/types";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();

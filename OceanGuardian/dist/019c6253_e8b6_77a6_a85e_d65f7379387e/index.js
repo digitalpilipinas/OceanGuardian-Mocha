@@ -2490,7 +2490,241 @@ var setCookie = (c, name, value, opt) => {
   }
   c.header("Set-Cookie", cookie, { append: true });
 };
-var createMiddleware = (middleware) => middleware;
+var deleteCookie = (c, name, opt) => {
+  const deletedCookie = getCookie(c, name);
+  setCookie(c, name, "", { ...opt, maxAge: 0 });
+  return deletedCookie;
+};
+function getTursoClient(env2) {
+  const baseUrl = env2.TURSO_DB_URL.replace("libsql://", "https://");
+  const authToken = env2.TURSO_DB_AUTH_TOKEN;
+  return {
+    async execute({ sql, args = [] }) {
+      const response = await fetch(`${baseUrl}/v2/pipeline`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          requests: [
+            { type: "execute", stmt: { sql, args: args.map(valueToArg) } },
+            { type: "close" }
+          ]
+        })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Turso API error (${response.status}): ${errorText}`);
+      }
+      const data = await response.json();
+      const result = data.results?.[0];
+      if (result?.type === "error") {
+        throw new Error(`Turso query error: ${result.error?.message || JSON.stringify(result.error)}`);
+      }
+      const execResult = result?.response?.result;
+      if (!execResult) {
+        return { columns: [], rows: [], rowsAffected: 0, lastInsertRowid: 0 };
+      }
+      const columns = execResult.cols?.map((c) => c.name) || [];
+      const rows = (execResult.rows || []).map((row) => {
+        const obj = {};
+        columns.forEach((col, i) => {
+          const cell = row[i];
+          obj[col] = cell?.type === "null" ? null : cell?.value ?? null;
+        });
+        return obj;
+      });
+      return {
+        columns,
+        rows,
+        rowsAffected: execResult.affected_row_count || 0,
+        lastInsertRowid: execResult.last_insert_rowid ? BigInt(execResult.last_insert_rowid) : BigInt(0)
+      };
+    },
+    async executeMultiple(sql) {
+      const statements = [];
+      let current = "";
+      let parenDepth = 0;
+      for (const line of sql.split("\n")) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("--") || trimmed === "") continue;
+        current += line + "\n";
+        for (const char of line) {
+          if (char === "(") parenDepth++;
+          if (char === ")") parenDepth--;
+        }
+        if (trimmed.endsWith(";") && parenDepth === 0) {
+          statements.push(current.trim());
+          current = "";
+        }
+      }
+      if (current.trim()) statements.push(current.trim());
+      const requests = statements.flatMap((stmt) => [
+        { type: "execute", stmt: { sql: stmt } }
+      ]);
+      requests.push({ type: "close", stmt: void 0 });
+      const response = await fetch(`${baseUrl}/v2/pipeline`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ requests })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Turso batch error (${response.status}): ${errorText}`);
+      }
+    }
+  };
+}
+function valueToArg(value) {
+  if (value === null || value === void 0) {
+    return { type: "null", value: null };
+  }
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) {
+      return { type: "integer", value: String(value) };
+    }
+    return { type: "float", value };
+  }
+  if (typeof value === "bigint") {
+    return { type: "integer", value: String(value) };
+  }
+  return { type: "text", value: String(value) };
+}
+const SESSION_COOKIE_NAME = "og_session_token";
+async function authMiddleware(c, next) {
+  const sessionToken = getCookie(c, SESSION_COOKIE_NAME);
+  if (!sessionToken) {
+    c.set("user", null);
+    return await next();
+  }
+  const db = getTursoClient(c.env);
+  try {
+    const result = await db.execute({
+      sql: `
+                SELECT u.* 
+                FROM user_profiles u
+                JOIN auth_sessions s ON u.id = s.user_id
+                WHERE s.id = ? AND s.expires_at > datetime('now')
+            `,
+      args: [sessionToken]
+    });
+    if (result.rows.length > 0) {
+      c.set("user", result.rows[0]);
+    } else {
+      c.set("user", null);
+    }
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    c.set("user", null);
+  }
+  await next();
+}
+const auth = new Hono2();
+auth.post("/api/auth/otp/send", async (c) => {
+  const { email } = await c.req.json();
+  if (!email) return c.json({ error: "Email required" }, 400);
+  const code = Math.floor(1e5 + Math.random() * 9e5).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1e3).toISOString();
+  const db = getTursoClient(c.env);
+  await db.execute({
+    sql: "INSERT OR REPLACE INTO auth_otps (email, code, expires_at) VALUES (?, ?, ?)",
+    args: [email, code, expiresAt]
+  });
+  console.log(`OTP for ${email}: ${code}`);
+  if (c.env.EMAILS) {
+    try {
+      await c.env.EMAILS.send({
+        to: email,
+        from: "auth@oceanguardian.app",
+        subject: "Your OceanGuardian Login Code",
+        content: [{ type: "text/plain", value: `Your login code is: ${code}` }]
+      });
+    } catch (e) {
+      console.error("Failed to send email", e);
+    }
+  }
+  return c.json({ success: true, message: "OTP sent" });
+});
+auth.post("/api/auth/otp/verify", async (c) => {
+  const { email, code } = await c.req.json();
+  const db = getTursoClient(c.env);
+  const result = await db.execute({
+    sql: "SELECT * FROM auth_otps WHERE email = ? AND code = ? AND expires_at > datetime('now')",
+    args: [email, code]
+  });
+  if (result.rows.length === 0) {
+    return c.json({ error: "Invalid or expired code" }, 400);
+  }
+  await db.execute({ sql: "DELETE FROM auth_otps WHERE email = ?", args: [email] });
+  let userResult = await db.execute({
+    sql: "SELECT * FROM user_profiles WHERE email = ?",
+    args: [email]
+  });
+  let userId;
+  if (userResult.rows.length === 0) {
+    userId = crypto.randomUUID();
+    const username = email.split("@")[0];
+    await db.execute({
+      sql: "INSERT INTO user_profiles (id, username, email, role) VALUES (?, ?, ?, 'player')",
+      args: [userId, username, email]
+    });
+  } else {
+    userId = userResult.rows[0].id;
+  }
+  const sessionToken = crypto.randomUUID();
+  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3).toISOString();
+  await db.execute({
+    sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
+    args: [sessionToken, userId, sessionExpires]
+  });
+  setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
+    httpOnly: true,
+    path: "/",
+    secure: true,
+    sameSite: "Lax",
+    maxAge: 30 * 24 * 60 * 60
+  });
+  return c.json({ success: true });
+});
+auth.post("/api/auth/guest", async (c) => {
+  const db = getTursoClient(c.env);
+  const guestId = `guest_${crypto.randomUUID().substring(0, 8)}`;
+  await db.execute({
+    sql: "INSERT INTO user_profiles (id, username, role) VALUES (?, ?, 'guest')",
+    args: [guestId, "Guest Guardian"]
+  });
+  const sessionToken = crypto.randomUUID();
+  const sessionExpires = new Date(Date.now() + 24 * 60 * 60 * 1e3).toISOString();
+  await db.execute({
+    sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
+    args: [sessionToken, guestId, sessionExpires]
+  });
+  setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
+    httpOnly: true,
+    path: "/",
+    secure: true,
+    sameSite: "Lax",
+    maxAge: 24 * 60 * 60
+  });
+  return c.json({ success: true });
+});
+auth.get("/api/auth/me", authMiddleware, async (c) => {
+  const user = c.get("user");
+  return c.json({ user });
+});
+auth.post("/api/auth/logout", async (c) => {
+  const sessionToken = getCookie(c, SESSION_COOKIE_NAME);
+  if (sessionToken) {
+    const db = getTursoClient(c.env);
+    await db.execute({ sql: "DELETE FROM auth_sessions WHERE id = ?", args: [sessionToken] });
+  }
+  deleteCookie(c, SESSION_COOKIE_NAME);
+  return c.json({ success: true });
+});
 var HTTPException = class extends Error {
   res;
   status;
@@ -2512,140 +2746,6 @@ var HTTPException = class extends Error {
     });
   }
 };
-const DEFAULT_MOCHA_USERS_SERVICE_API_URL = "https://getmocha.com/u";
-const MOCHA_SESSION_TOKEN_COOKIE_NAME = "mocha_session_token";
-const SUPPORTED_OAUTH_PROVIDERS = ["google"];
-async function getOAuthRedirectUrl(provider, options) {
-  if (!SUPPORTED_OAUTH_PROVIDERS.includes(provider)) {
-    throw new Error(`Unsupported OAuth provider: ${provider}`);
-  }
-  const apiUrl = options.apiUrl || DEFAULT_MOCHA_USERS_SERVICE_API_URL;
-  const response = await fetch(`${apiUrl}/oauth/${provider}/redirect_url`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": options.apiKey
-    }
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to get redirect URL for provider ${provider}: ${response.statusText}`);
-  }
-  const { redirect_url } = await response.json();
-  return redirect_url;
-}
-async function exchangeCodeForSessionToken(code, options) {
-  const apiUrl = options.apiUrl || DEFAULT_MOCHA_USERS_SERVICE_API_URL;
-  const response = await fetch(`${apiUrl}/sessions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": options.apiKey
-    },
-    body: JSON.stringify({ code })
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to exchange code for session token: ${response.statusText}`);
-  }
-  const { session_token } = await response.json();
-  return session_token;
-}
-async function getCurrentUser(sessionToken, options) {
-  const apiUrl = options.apiUrl || DEFAULT_MOCHA_USERS_SERVICE_API_URL;
-  try {
-    const response = await fetch(`${apiUrl}/users/me`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-        "x-api-key": options.apiKey
-      }
-    });
-    if (!response.ok) {
-      return null;
-    }
-    const { data: user } = await response.json();
-    return user;
-  } catch (error) {
-    console.error("Error validating session:", error);
-    return null;
-  }
-}
-async function deleteSession(sessionToken, options) {
-  const apiUrl = options.apiUrl || DEFAULT_MOCHA_USERS_SERVICE_API_URL;
-  try {
-    await fetch(`${apiUrl}/sessions`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-        "x-api-key": options.apiKey
-      }
-    });
-  } catch (error) {
-    console.error("Error deleting session:", error);
-  }
-}
-const authMiddleware = createMiddleware(async (c, next) => {
-  const sessionToken = getCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME);
-  if (typeof sessionToken !== "string") {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const options = {
-    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY
-  };
-  const user = await getCurrentUser(sessionToken, options);
-  if (!user) {
-    throw new HTTPException(401, { message: "Invalid session token" });
-  }
-  c.set("user", user);
-  await next();
-});
-const auth = new Hono2();
-auth.get("/api/oauth/google/redirect_url", async (c) => {
-  const redirectUrl = await getOAuthRedirectUrl("google", {
-    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY
-  });
-  return c.json({ redirectUrl }, 200);
-});
-auth.post("/api/sessions", async (c) => {
-  const body = await c.req.json();
-  if (!body.code) {
-    return c.json({ error: "No authorization code provided" }, 400);
-  }
-  const sessionToken = await exchangeCodeForSessionToken(body.code, {
-    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY
-  });
-  setCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    path: "/",
-    sameSite: "none",
-    secure: true,
-    maxAge: 60 * 24 * 60 * 60
-    // 60 days
-  });
-  return c.json({ success: true }, 200);
-});
-auth.get("/api/users/me", authMiddleware, async (c) => {
-  return c.json(c.get("user"));
-});
-auth.get("/api/logout", async (c) => {
-  const sessionToken = getCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME);
-  if (typeof sessionToken === "string") {
-    await deleteSession(sessionToken, {
-      apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
-      apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY
-    });
-  }
-  setCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME, "", {
-    httpOnly: true,
-    path: "/",
-    sameSite: "none",
-    secure: true,
-    maxAge: 0
-  });
-  return c.json({ success: true }, 200);
-});
 var bufferToFormData = (arrayBuffer, contentType) => {
   const response = new Response(arrayBuffer, {
     headers: {
@@ -2756,105 +2856,6 @@ function zValidatorFunction(target, schema, hook, options) {
   });
 }
 const zValidator = zValidatorFunction;
-function getTursoClient(env2) {
-  const baseUrl = env2.TURSO_DB_URL.replace("libsql://", "https://");
-  const authToken = env2.TURSO_DB_AUTH_TOKEN;
-  return {
-    async execute({ sql, args = [] }) {
-      const response = await fetch(`${baseUrl}/v2/pipeline`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          requests: [
-            { type: "execute", stmt: { sql, args: args.map(valueToArg) } },
-            { type: "close" }
-          ]
-        })
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Turso API error (${response.status}): ${errorText}`);
-      }
-      const data = await response.json();
-      const result = data.results?.[0];
-      if (result?.type === "error") {
-        throw new Error(`Turso query error: ${result.error?.message || JSON.stringify(result.error)}`);
-      }
-      const execResult = result?.response?.result;
-      if (!execResult) {
-        return { columns: [], rows: [], rowsAffected: 0, lastInsertRowid: 0 };
-      }
-      const columns = execResult.cols?.map((c) => c.name) || [];
-      const rows = (execResult.rows || []).map((row) => {
-        const obj = {};
-        columns.forEach((col, i) => {
-          const cell = row[i];
-          obj[col] = cell?.type === "null" ? null : cell?.value ?? null;
-        });
-        return obj;
-      });
-      return {
-        columns,
-        rows,
-        rowsAffected: execResult.affected_row_count || 0,
-        lastInsertRowid: execResult.last_insert_rowid ? BigInt(execResult.last_insert_rowid) : BigInt(0)
-      };
-    },
-    async executeMultiple(sql) {
-      const statements = [];
-      let current = "";
-      let parenDepth = 0;
-      for (const line of sql.split("\n")) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("--") || trimmed === "") continue;
-        current += line + "\n";
-        for (const char of line) {
-          if (char === "(") parenDepth++;
-          if (char === ")") parenDepth--;
-        }
-        if (trimmed.endsWith(";") && parenDepth === 0) {
-          statements.push(current.trim());
-          current = "";
-        }
-      }
-      if (current.trim()) statements.push(current.trim());
-      const requests = statements.flatMap((stmt) => [
-        { type: "execute", stmt: { sql: stmt } }
-      ]);
-      requests.push({ type: "close", stmt: void 0 });
-      const response = await fetch(`${baseUrl}/v2/pipeline`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ requests })
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Turso batch error (${response.status}): ${errorText}`);
-      }
-    }
-  };
-}
-function valueToArg(value) {
-  if (value === null || value === void 0) {
-    return { type: "null", value: null };
-  }
-  if (typeof value === "number") {
-    if (Number.isInteger(value)) {
-      return { type: "integer", value: String(value) };
-    }
-    return { type: "float", value };
-  }
-  if (typeof value === "bigint") {
-    return { type: "integer", value: String(value) };
-  }
-  return { type: "text", value: String(value) };
-}
 var util;
 (function(util2) {
   util2.assertEqual = (_) => {
@@ -6969,16 +6970,17 @@ app$d.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   }
   const formData = await c.req.formData();
   const file = formData.get("photo");
-  if (!file || !(file instanceof File)) {
+  if (!file || typeof file === "string") {
     return c.json({ error: "No photo provided" }, 400);
   }
-  if (!file.type.startsWith("image/")) {
+  const fileData = file;
+  if (!fileData.type.startsWith("image/")) {
     return c.json({ error: "File must be an image" }, 400);
   }
-  const ext = file.name.split(".").pop() || "jpg";
+  const ext = fileData.name.split(".").pop() || "jpg";
   const key = `sightings/${id}/${Date.now()}.${ext}`;
-  await c.env.R2_BUCKET.put(key, file, {
-    httpMetadata: { contentType: file.type }
+  await c.env.R2_BUCKET.put(key, fileData, {
+    httpMetadata: { contentType: fileData.type }
   });
   await db.execute({
     sql: "UPDATE sightings SET image_key = ?, updated_at = datetime('now') WHERE id = ?",
@@ -7059,8 +7061,8 @@ app$c.get("/api/profiles/me", authMiddleware, async (c) => {
     });
     return c.json(result.rows[0]);
   }
-  const username = user.google_user_data?.name || user.email?.split("@")[0] || "Guardian";
-  const avatarUrl = user.google_user_data?.picture || null;
+  const username = user.email?.split("@")[0] || "Guardian";
+  const avatarUrl = null;
   await db.execute({
     sql: `INSERT INTO user_profiles (id, username, avatar_url, email, role, level, xp)
           VALUES (?, ?, ?, ?, 'player', 1, 0)`,
@@ -7787,13 +7789,14 @@ app$7.post("/api/coral/analyze", authMiddleware, async (c) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
   const formData = await c.req.formData();
   const file = formData.get("image");
-  if (!file || !(file instanceof File)) {
+  if (!file || typeof file === "string") {
     return c.json({ error: "No image provided" }, 400);
   }
-  const ext = file.name.split(".").pop() || "jpg";
+  const fileData = file;
+  const ext = fileData.name.split(".").pop() || "jpg";
   const key = `coral-analysis/${user.id}/${Date.now()}.${ext}`;
-  await c.env.R2_BUCKET.put(key, file, {
-    httpMetadata: { contentType: file.type }
+  await c.env.R2_BUCKET.put(key, fileData, {
+    httpMetadata: { contentType: fileData.type }
   });
   const analysis = analyzeCoralImage();
   return c.json({
