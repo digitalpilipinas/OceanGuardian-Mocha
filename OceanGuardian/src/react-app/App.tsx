@@ -16,6 +16,11 @@ import SettingsPage from "@/react-app/pages/Settings";
 import CoralScan from "@/react-app/pages/CoralScan";
 import ScientistDashboard from "@/react-app/pages/ScientistDashboard";
 import { Toaster } from "@/react-app/components/ui/toaster";
+import LearningHub from "@/react-app/pages/LearningHub";
+import DailyQuiz from "@/react-app/components/DailyQuiz";
+import FactLibrary from "@/react-app/components/FactLibrary";
+import DeepDiveLessons from "@/react-app/components/DeepDiveLessons";
+import LessonView from "@/react-app/pages/LessonView";
 
 export default function App() {
   return (
@@ -36,6 +41,11 @@ export default function App() {
               <Route path="/profile/:id" element={<ProfilePage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/learning" element={<LearningHub />} />
+              <Route path="/learning/quiz" element={<DailyQuiz />} />
+              <Route path="/learning/facts" element={<FactLibrary />} />
+              <Route path="/learning/lessons" element={<DeepDiveLessons />} />
+              <Route path="/learning/lessons/:slug" element={<LessonView />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
             </Routes>
             <Toaster />

@@ -10,6 +10,7 @@ import social from "./routes/social";
 import leaderboard from "./routes/leaderboard";
 
 import coral from "./routes/coral";
+import learning from "./routes/learning";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -22,5 +23,6 @@ app.route("/", missions);
 app.route("/", social);
 app.route("/", leaderboard);
 app.route("/", coral);
+app.route("/", learning);
 
 export default app;
