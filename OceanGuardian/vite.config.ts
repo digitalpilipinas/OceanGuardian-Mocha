@@ -45,11 +45,7 @@ export default defineConfig({
 		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
 			output: {
-				manualChunks: {
-					vendor: ["react", "react-dom", "react-router", "react-router-dom"],
-					ui: ["lucide-react", "clsx", "tailwind-merge"],
-					maps: ["leaflet", "react-leaflet", "react-leaflet-cluster"],
-				},
+				// manualChunks removed to let Vite handle splitting
 			},
 		},
 	},

@@ -3,6 +3,8 @@ import { motion, useTransform, useSpring, useMotionValue, Variants } from 'frame
 import { Link } from 'react-router';
 import { ArrowRight, Waves, Activity, Users, Shield, Globe, CheckCircle, Award, Quote, Facebook, Twitter, Instagram, Linkedin, PlayCircle } from 'lucide-react';
 import { Button } from '@/react-app/components/ui/button';
+import logo from "@/react-app/assets/logo.png";
+import heroDiver from "@/react-app/assets/hero-diver.png";
 
 const LandingPage = () => {
     // Mouse move parallax effect
@@ -102,7 +104,7 @@ const LandingPage = () => {
                 <Link to="/" className="flex items-center gap-3 group cursor-pointer transition-transform hover:scale-105 active:scale-95">
                     <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(6,182,212,0.4)] group-hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transition-all">
                         <img
-                            src="/src/react-app/assets/logo.png"
+                            src={logo}
                             alt="OceanGuardian Logo"
                             className="w-full h-full object-cover"
                         />
@@ -219,8 +221,8 @@ const LandingPage = () => {
                             >
                                 <div className="relative w-full h-[550px] rounded-[40px] overflow-hidden border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.5)] group">
                                     <img
-                                        src="/src/react-app/assets/hero-diver.png"
-                                        alt="Diver"
+                                        src={heroDiver}
+                                        alt="Scuba diver observing coral reef"
                                         className="w-full h-full object-cover scale-110 group-hover:scale-105 transition-transform duration-1000"
                                     />
                                     {/* Overlay Gradient */}

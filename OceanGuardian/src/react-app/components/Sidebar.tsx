@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
+import logo from "@/react-app/assets/logo.png";
 import { Waves, Map, Target, User, Globe, Shield, FlaskConical, LayoutDashboard, Settings } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
@@ -39,9 +40,9 @@ export default function Sidebar() {
             <Link to="/dashboard" className="flex items-center gap-3 px-2 relative z-10 transition-transform hover:scale-105 active:scale-95">
                 <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-lg shadow-accent/20 border border-white/10">
                     <img
-                        src="/src/react-app/assets/logo.png"
-                        alt="OceanGuardian Logo"
-                        className="w-full h-full object-cover"
+                        src={logo}
+                        alt="OceanGuardian"
+                        className="h-8 w-8 transition-transform group-hover:scale-110"
                     />
                 </div>
                 <div className="flex flex-col -gap-1">

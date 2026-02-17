@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
+// import MarkerClusterGroup from "react-leaflet-cluster";
 import { DivIcon, LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useMemo } from "react";
@@ -68,22 +68,23 @@ function createCustomIcon(type: SightingType) {
 }
 
 // Cluster icon creator
-function createClusterIcon(cluster: any) {
-  const count = cluster.getChildCount();
-  let size = "small";
-  let bgColor = "bg-primary";
-  if (count >= 100) { size = "large"; bgColor = "bg-red-500"; }
-  else if (count >= 10) { size = "medium"; bgColor = "bg-orange-500"; }
-
-  return new DivIcon({
-    html: `<div class="cluster-marker ${bgColor} ${size}">
-      <span>${count}</span>
-    </div>`,
-    className: "custom-cluster-icon",
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
-}
+// Cluster icon creator
+// function createClusterIcon(cluster: any) {
+//   const count = cluster.getChildCount();
+//   let size = "small";
+//   let bgColor = "bg-primary";
+//   if (count >= 100) { size = "large"; bgColor = "bg-red-500"; }
+//   else if (count >= 10) { size = "medium"; bgColor = "bg-orange-500"; }
+//
+//   return new DivIcon({
+//     html: `<div class="cluster-marker ${bgColor} ${size}">
+//       <span>${count}</span>
+//     </div>`,
+//     className: "custom-cluster-icon",
+//     iconSize: [40, 40],
+//     iconAnchor: [20, 20],
+//   });
+// }
 
 // Component to handle map bounds when sightings change
 function MapBoundsHandler({ sightings }: { sightings: Sighting[] }) {
@@ -219,24 +220,24 @@ export default function MapView() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MarkerClusterGroup
+        {/* <MarkerClusterGroup
           chunkedLoading
           maxClusterRadius={60}
           iconCreateFunction={createClusterIcon}
           spiderfyOnMaxZoom
           showCoverageOnHover={false}
-        >
-          {filteredSightings.map((sighting) => (
-            <Marker
-              key={sighting.id}
-              position={[sighting.latitude, sighting.longitude]}
-              icon={createCustomIcon(sighting.type)}
-              eventHandlers={{
-                click: () => setSelectedSighting(sighting),
-              }}
-            />
-          ))}
-        </MarkerClusterGroup>
+        > */}
+        {filteredSightings.map((sighting) => (
+          <Marker
+            key={sighting.id}
+            position={[sighting.latitude, sighting.longitude]}
+            icon={createCustomIcon(sighting.type)}
+            eventHandlers={{
+              click: () => setSelectedSighting(sighting),
+            }}
+          />
+        ))}
+        {/* </MarkerClusterGroup> */}
 
         {filteredSightings.length > 0 && <MapBoundsHandler sightings={filteredSightings} />}
       </MapContainer>
