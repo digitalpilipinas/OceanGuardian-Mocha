@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import auth from "./routes/auth";
 import sightings from "./routes/sightings";
 import profiles from "./routes/profiles";
@@ -20,7 +19,36 @@ import dashboard from "./routes/dashboard";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use("*", cors());
+app.use("*", async (c, next) => {
+    const requestOrigin = new URL(c.req.url).origin;
+    const origin = c.req.header("Origin");
+    const allowedOrigins = new Set<string>([requestOrigin]);
+
+    const configuredOrigins = (c.env as Env & { CORS_ORIGINS?: string }).CORS_ORIGINS;
+    if (configuredOrigins) {
+        for (const configuredOrigin of configuredOrigins.split(",")) {
+            const trimmed = configuredOrigin.trim();
+            if (trimmed.length > 0) {
+                allowedOrigins.add(trimmed);
+            }
+        }
+    }
+
+    if (origin && allowedOrigins.has(origin)) {
+        c.header("Access-Control-Allow-Origin", origin);
+        c.header("Access-Control-Allow-Credentials", "true");
+        c.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+        c.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        c.header("Vary", "Origin");
+    }
+
+    if (c.req.method === "OPTIONS") {
+        return c.body(null, 204);
+    }
+
+    await next();
+});
+
 app.use("*", async (c, next) => {
     await next();
     c.header("X-Frame-Options", "DENY");
@@ -29,7 +57,7 @@ app.use("*", async (c, next) => {
     c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
     c.header(
         "Content-Security-Policy",
-        "default-src 'self'; connect-src 'self' *; img-src 'self' data: blob: *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; connect-src 'self'; img-src 'self' data: blob: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; worker-src 'self' blob:; form-action 'self';"
     );
 });
 

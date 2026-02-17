@@ -4,6 +4,13 @@ import { getTursoClient } from "../db";
 import type { UserProfile } from "@/shared/types";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
+const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const IMAGE_EXTENSION_BY_MIME: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+};
 
 // Mock AI Analysis Logic
 const analyzeCoralImage = () => {
@@ -59,7 +66,15 @@ app.post("/api/coral/analyze", authMiddleware, async (c) => {
 
     // Upload to R2 immediately to get a key
     const fileData = file as unknown as File;
-    const ext = fileData.name.split(".").pop() || "jpg";
+    if (fileData.size > MAX_IMAGE_BYTES) {
+        return c.json({ error: "Image is too large. Maximum allowed size is 10MB." }, 400);
+    }
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(fileData.type)) {
+        return c.json({ error: "Unsupported image format. Allowed formats: JPEG, PNG, WEBP." }, 400);
+    }
+
+    const ext = IMAGE_EXTENSION_BY_MIME[fileData.type] || "jpg";
     const key = `coral-analysis/${user.id}/${Date.now()}.${ext}`;
 
     await c.env.R2_BUCKET.put(key, fileData, {

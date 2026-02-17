@@ -7,6 +7,25 @@ import type { Sighting } from "@/shared/types";
 import { checkAndAwardBadges } from "./gamification";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB hard cap for uploads
+const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const IMAGE_EXTENSION_BY_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+function validateImageFile(file: File): string | null {
+  if (file.size > MAX_IMAGE_BYTES) {
+    return "Image is too large. Maximum allowed size is 10MB.";
+  }
+
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+    return "Unsupported image format. Allowed formats: JPEG, PNG, WEBP.";
+  }
+
+  return null;
+}
 
 // Get all sightings
 app.get("/api/sightings", async (c) => {
@@ -105,6 +124,17 @@ app.post(
     }
 
     // Insert sighting
+    let imageKey: string | null = null;
+    if (typeof data.image_key === "string" && data.image_key.trim().length > 0) {
+      // Only allow keys uploaded via the coral scan flow for the same user.
+      const normalizedKey = data.image_key.trim();
+      const allowedPrefix = `coral-analysis/${user.id}/`;
+      if (!normalizedKey.startsWith(allowedPrefix)) {
+        return c.json({ error: "Invalid image key" }, 400);
+      }
+      imageKey = normalizedKey;
+    }
+
     const result = await db.execute({
       sql: `INSERT INTO sightings (
               user_id, type, subcategory, description, severity,
@@ -123,7 +153,7 @@ app.post(
         data.bleach_percent || null,
         data.water_temp || null,
         data.depth || null,
-        data.image_key || null,
+        imageKey,
         data.ai_analysis || null,
       ],
     });
@@ -240,13 +270,13 @@ app.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   }
 
   const fileData = file as unknown as File;
-
-  if (!fileData.type.startsWith("image/")) {
-    return c.json({ error: "File must be an image" }, 400);
+  const validationError = validateImageFile(fileData);
+  if (validationError) {
+    return c.json({ error: validationError }, 400);
   }
 
   // Upload to R2
-  const ext = fileData.name.split(".").pop() || "jpg";
+  const ext = IMAGE_EXTENSION_BY_MIME[fileData.type] || "jpg";
   const key = `sightings/${id}/${Date.now()}.${ext}`;
 
   await c.env.R2_BUCKET.put(key, fileData, {
@@ -304,6 +334,14 @@ app.get("/api/sightings/:id/photo", async (c) => {
 
   // If it's a full URL, redirect directly
   if (imageKey.startsWith("http")) {
+    try {
+      const parsed = new URL(imageKey);
+      if (parsed.hostname !== "images.unsplash.com") {
+        return c.json({ error: "Invalid external image source" }, 400);
+      }
+    } catch {
+      return c.json({ error: "Invalid image URL" }, 400);
+    }
     return c.redirect(imageKey);
   }
 
@@ -346,7 +384,12 @@ app.delete("/api/sightings/:id", authMiddleware, async (c) => {
 
   // Delete image from R2 if exists
   if (sighting.image_key) {
-    await c.env.R2_BUCKET.delete(sighting.image_key as string);
+    const imageKey = String(sighting.image_key);
+    const userScopedCoralPrefix = `coral-analysis/${user.id}/`;
+    const isManagedBucketKey = imageKey.startsWith("sightings/") || imageKey.startsWith(userScopedCoralPrefix);
+    if (isManagedBucketKey) {
+      await c.env.R2_BUCKET.delete(imageKey);
+    }
   }
 
   await db.execute({

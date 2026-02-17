@@ -509,20 +509,20 @@ const LandingPage = () => {
                     <div>
                         <h4 className="text-white font-bold mb-6">Platform</h4>
                         <ul className="space-y-4">
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Missions</a></li>
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Coral AI</a></li>
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Community</a></li>
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Leaderboard</a></li>
+                            <li><Link to="/missions" className="hover:text-cyan-400 transition-colors">Missions</Link></li>
+                            <li><Link to="/coral-scan" className="hover:text-cyan-400 transition-colors">Coral AI</Link></li>
+                            <li><Link to="/dashboard" className="hover:text-cyan-400 transition-colors">Community</Link></li>
+                            <li><Link to="/leaderboard" className="hover:text-cyan-400 transition-colors">Leaderboard</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="text-white font-bold mb-6">Company</h4>
                         <ul className="space-y-4">
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">About Us</a></li>
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Careers</a></li>
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Blog</a></li>
-                            <li><a href="#" className="hover:text-cyan-400 transition-colors">Contact</a></li>
+                            <li><a href="https://rogemar.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">About Us</a></li>
+                            <li><a href="https://rogemar.dev" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">Careers</a></li>
+                            <li><a href="https://rogemar.dev/blog" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">Blog</a></li>
+                            <li><a href="mailto:hello@rogemar.dev" className="hover:text-cyan-400 transition-colors">Contact</a></li>
                         </ul>
                     </div>
                 </div>
@@ -530,8 +530,8 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
                     <div>© 2026 OceanGuardian. All rights reserved.</div>
                     <div className="flex gap-8">
-                        <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+                        <a href="https://rogemar.dev/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+                        <a href="https://rogemar.dev/terms" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Terms of Service</a>
                     </div>
                 </div>
             </footer>
@@ -540,7 +540,13 @@ const LandingPage = () => {
 };
 
 // Helper Component for Feature Cards (Deep Glassmorphism)
-const FeatureCard = ({ icon, title, desc, color }: { icon: React.ReactNode, title: string, desc: string, color: string }) => {
+const FeatureCard = ({ icon, title, desc, color }: { icon: React.ReactNode, title: string, desc: string, color: "cyan" | "purple" | "blue" }) => {
+    const linkColors: Record<"cyan" | "purple" | "blue", string> = {
+        cyan: "text-cyan-400 group-hover:text-cyan-300",
+        purple: "text-purple-400 group-hover:text-purple-300",
+        blue: "text-blue-400 group-hover:text-blue-300",
+    };
+
     return (
         <motion.div
             whileHover={{ y: -10 }}
@@ -551,7 +557,7 @@ const FeatureCard = ({ icon, title, desc, color }: { icon: React.ReactNode, titl
             </div>
             <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
             <p className="text-slate-400 leading-relaxed">{desc}</p>
-            <div className={`mt-6 flex items-center text-${color}-400 font-medium cursor-pointer group-hover:text-${color}-300`}>
+            <div className={`mt-6 flex items-center font-medium cursor-pointer ${linkColors[color]}`}>
                 Learn more <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
         </motion.div>

@@ -274,6 +274,7 @@ export default function ReportSighting() {
       if (!navigator.onLine) {
         const offlineData: SightingData = {
           id: crypto.randomUUID(),
+          userId: user.id,
           timestamp: Date.now(),
           type: formData.type,
           subcategory: formData.subcategory,

@@ -128,7 +128,7 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                 setValidationCount(data.validation_count);
                 // setHasValidated based on action? already done optimistically.
             }
-        } catch (error) {
+        } catch {
             setHasValidated(!hasValidated);
             setValidationCount(prev => hasValidated ? prev + 1 : prev - 1);
         }
@@ -161,7 +161,9 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
     return (
         <div className="fixed inset-x-0 bottom-0 z-[1100] animate-in slide-in-from-bottom duration-300">
             {/* Backdrop */}
-            <div
+            <button
+                type="button"
+                aria-label="Close sighting details"
                 className="fixed inset-0 bg-black/40 -z-10"
                 onClick={onClose}
             />
@@ -221,7 +223,7 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
                         <div className="rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl relative group">
                             <img
                                 src={`/api/sightings/${sighting.id}/photo`}
-                                alt="Sighting photo"
+                                alt="Sighting"
                                 className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                                 loading="lazy"
                             />

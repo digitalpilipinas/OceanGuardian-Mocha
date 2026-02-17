@@ -41,6 +41,15 @@ export default function MissionDetail() {
     const [checkingIn, setCheckingIn] = useState(false);
 
     const [userRole, setUserRole] = useState<string>("player");
+    const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+    const [completing, setCompleting] = useState(false);
+    const [impactData, setImpactData] = useState({
+        total_trash_weight: "",
+        trash_bags_count: "",
+        participants_count: "",
+        duration_minutes: "",
+        notes: "",
+    });
 
     const fetchMission = async () => {
         try {
@@ -77,7 +86,7 @@ export default function MissionDetail() {
                 const err = await res.json();
                 toast({ title: "Error", description: err.error, variant: "destructive" });
             }
-        } catch (err) {
+        } catch {
             toast({ title: "Error", description: "Failed to join mission", variant: "destructive" });
         } finally {
             setJoining(false);
@@ -113,13 +122,13 @@ export default function MissionDetail() {
                         const err = await res.json();
                         toast({ title: "Check-in Failed", description: err.error, variant: "destructive" });
                     }
-                } catch (err) {
+                } catch {
                     toast({ title: "Error", description: "Network error", variant: "destructive" });
                 } finally {
                     setCheckingIn(false);
                 }
             },
-            (_err) => {
+            () => {
                 toast({ title: "GPS Error", description: "Could not get location. Ensure permissions are granted.", variant: "destructive" });
                 setCheckingIn(false);
             }
@@ -148,17 +157,6 @@ export default function MissionDetail() {
     // const isOngoing = now >= startTime && now <= endTime;
     const isEnded = now > endTime;
     const checkInOpen = now >= new Date(startTime.getTime() - 30 * 60000) && now <= endTime;
-
-    // Additional state for completion
-    const [showCompleteDialog, setShowCompleteDialog] = useState(false);
-    const [completing, setCompleting] = useState(false);
-    const [impactData, setImpactData] = useState({
-        total_trash_weight: "",
-        trash_bags_count: "",
-        participants_count: "",
-        duration_minutes: "",
-        notes: "",
-    });
 
     const isOrganizer = user && mission.organizer_id === user.id;
     const canComplete = (isOrganizer || userRole === 'admin') && mission.status !== 'completed' && isStarted;

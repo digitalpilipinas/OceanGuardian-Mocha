@@ -227,10 +227,36 @@ app.post("/api/missions/:id/check-in", authMiddleware, async (c) => {
 });
 
 // Get Chat Messages
-app.get("/api/missions/:id/chat", async (c) => {
+app.get("/api/missions/:id/chat", authMiddleware, async (c) => {
     const id = c.req.param("id");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
     const db = getTursoClient(c.env);
     const limit = 50;
+
+    const missionResult = await db.execute({
+        sql: "SELECT organizer_id FROM missions WHERE id = ?",
+        args: [id],
+    });
+    if (missionResult.rows.length === 0) {
+        return c.json({ error: "Mission not found" }, 404);
+    }
+
+    const organizerId = String(missionResult.rows[0].organizer_id);
+    const allowedChatStatuses = new Set(["rsvp", "checked_in"]);
+    if (organizerId !== user.id) {
+        const participantResult = await db.execute({
+            sql: "SELECT status FROM mission_participants WHERE mission_id = ? AND user_id = ?",
+            args: [id, user.id],
+        });
+        if (
+            participantResult.rows.length === 0 ||
+            !allowedChatStatuses.has(String(participantResult.rows[0].status))
+        ) {
+            return c.json({ error: "Only organizers or mission participants can view chat." }, 403);
+        }
+    }
 
     const result = await db.execute({
         sql: `SELECT mcm.*, up.username, up.avatar_url
@@ -262,7 +288,8 @@ app.post("/api/missions/:id/chat", authMiddleware, async (c) => {
         args: [id, user.id],
     });
 
-    if (partResult.rows.length === 0 || partResult.rows[0].status === "cancelled") {
+    const participantStatus = String(partResult.rows[0]?.status || "");
+    if (partResult.rows.length === 0 || !new Set(["rsvp", "checked_in"]).has(participantStatus)) {
         return c.json({ error: "You must join the mission to chat." }, 403);
     }
 

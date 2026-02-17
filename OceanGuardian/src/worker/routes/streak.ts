@@ -51,18 +51,19 @@ app.get("/api/streak", authMiddleware, async (c) => {
                 freezes -= diffDays;
                 restoredDays = diffDays;
 
-                // Log freezes
-                const freezeInserts = [];
+                await db.execute({
+                    sql: "UPDATE user_profiles SET streak_freezes = ? WHERE id = ?",
+                    args: [freezes, user.id],
+                });
+
                 for (let i = 0; i < diffDays; i++) {
                     const freezeDate = new Date(lastDate);
                     freezeDate.setDate(freezeDate.getDate() + i + 1);
-                    freezeInserts.push(`('${user.id}', '${toDateString(freezeDate)}', 'freeze')`);
+                    await db.execute({
+                        sql: "INSERT INTO streak_log (user_id, activity_date, type) VALUES (?, ?, 'freeze')",
+                        args: [user.id, toDateString(freezeDate)],
+                    });
                 }
-
-                await db.executeMultiple(`
-                    UPDATE user_profiles SET streak_freezes = ${freezes} WHERE id = '${user.id}';
-                    INSERT INTO streak_log (user_id, activity_date, type) VALUES ${freezeInserts.join(",")};
-                `);
 
                 // Streak is preserved
             } else {
@@ -114,11 +115,20 @@ app.post("/api/streak/check-in", authMiddleware, async (c) => {
 
     // 2. Perform Check-in
     // Increment streak, set last_check_in, award some XP (e.g. 10)
-    await db.executeMultiple(`
-        INSERT INTO streak_log (user_id, activity_date, type) VALUES ('${user.id}', '${todayStr}', 'check_in');
-        UPDATE user_profiles SET streak_days = streak_days + 1, last_check_in = '${todayStr}', xp = xp + 10 WHERE id = '${user.id}';
-        INSERT INTO activity_log (user_id, type, description, xp_earned) VALUES ('${user.id}', 'streak', 'Daily Plastic-Free Pledge', 10);
-    `);
+    await db.execute({
+        sql: "INSERT INTO streak_log (user_id, activity_date, type) VALUES (?, ?, 'check_in')",
+        args: [user.id, todayStr],
+    });
+
+    await db.execute({
+        sql: "UPDATE user_profiles SET streak_days = streak_days + 1, last_check_in = ?, xp = xp + 10 WHERE id = ?",
+        args: [todayStr, user.id],
+    });
+
+    await db.execute({
+        sql: "INSERT INTO activity_log (user_id, type, description, xp_earned) VALUES (?, 'streak', 'Daily Plastic-Free Pledge', 10)",
+        args: [user.id],
+    });
 
     // 3. Check for Badges (7, 30, 100, 365)
     // We reuse the gamification logic which checks all badges

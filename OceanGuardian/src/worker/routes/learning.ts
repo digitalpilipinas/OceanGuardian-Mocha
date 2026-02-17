@@ -128,21 +128,45 @@ app.post("/api/learning/quiz/submit", authMiddleware, async (c) => {
 
     // 3. Persist Updates
     if (isFirstTimeToday) {
-        await db.executeMultiple(`
-            INSERT INTO user_quiz_stats (user_id, streak_days, last_quiz_date, total_xp_earned, quizzes_completed, perfect_scores)
-            VALUES ('${user.id}', ${streak}, '${todayStr}', ${earnedXp}, 1, ${correctCount === 5 ? 1 : 0})
-            ON CONFLICT(user_id) DO UPDATE SET
-                streak_days = ${streak},
-                last_quiz_date = '${todayStr}',
-                total_xp_earned = total_xp_earned + ${earnedXp},
-                quizzes_completed = quizzes_completed + 1,
-                perfect_scores = perfect_scores + ${correctCount === 5 ? 1 : 0};
-            
-            UPDATE user_profiles SET xp = xp + ${earnedXp} WHERE id = '${user.id}';
-            
-            INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
-            VALUES ('${user.id}', 'quiz', 'Completed Daily Quiz', ${earnedXp}, '${JSON.stringify({ correct: correctCount, bonus: streakBonus })}');
-        `);
+        const perfectScoreIncrement = correctCount === 5 ? 1 : 0;
+        await db.execute({
+            sql: `
+                INSERT INTO user_quiz_stats (
+                    user_id, streak_days, last_quiz_date, total_xp_earned, quizzes_completed, perfect_scores
+                )
+                VALUES (?, ?, ?, ?, 1, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    streak_days = ?,
+                    last_quiz_date = ?,
+                    total_xp_earned = total_xp_earned + ?,
+                    quizzes_completed = quizzes_completed + 1,
+                    perfect_scores = perfect_scores + ?
+            `,
+            args: [
+                user.id,
+                streak,
+                todayStr,
+                earnedXp,
+                perfectScoreIncrement,
+                streak,
+                todayStr,
+                earnedXp,
+                perfectScoreIncrement,
+            ],
+        });
+
+        await db.execute({
+            sql: "UPDATE user_profiles SET xp = xp + ? WHERE id = ?",
+            args: [earnedXp, user.id],
+        });
+
+        await db.execute({
+            sql: `
+                INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+                VALUES (?, 'quiz', 'Completed Daily Quiz', ?, ?)
+            `,
+            args: [user.id, earnedXp, JSON.stringify({ correct: correctCount, bonus: streakBonus })],
+        });
     }
 
     // 4. Check Badges
@@ -180,7 +204,7 @@ app.get("/api/learning/facts", async (c) => {
     const { search, category } = c.req.query();
 
     let sql = "SELECT * FROM facts";
-    const args: any[] = [];
+    const args: (string | number)[] = [];
     const conditions = [];
 
     if (search) {
@@ -266,17 +290,28 @@ app.post("/api/learning/lessons/:id/complete", authMiddleware, async (c) => {
     const xpReward = Number(lessonResult.rows[0].xp_reward);
 
     try {
-        await db.executeMultiple(`
-            INSERT INTO user_lessons (user_id, lesson_id, xp_awarded) VALUES ('${user.id}', ${id}, ${xpReward});
-            UPDATE user_profiles SET xp = xp + ${xpReward} WHERE id = '${user.id}';
-            INSERT INTO activity_log (user_id, type, description, xp_earned) 
-            VALUES ('${user.id}', 'lesson', 'Completed Lesson', ${xpReward});
-        `);
+        await db.execute({
+            sql: "INSERT INTO user_lessons (user_id, lesson_id, xp_awarded) VALUES (?, ?, ?)",
+            args: [user.id, id, xpReward],
+        });
+
+        await db.execute({
+            sql: "UPDATE user_profiles SET xp = xp + ? WHERE id = ?",
+            args: [xpReward, user.id],
+        });
+
+        await db.execute({
+            sql: `
+                INSERT INTO activity_log (user_id, type, description, xp_earned) 
+                VALUES (?, 'lesson', 'Completed Lesson', ?)
+            `,
+            args: [user.id, xpReward],
+        });
 
         const newBadges = await checkAndAwardBadges(db, user.id);
 
         return c.json({ success: true, xpEarned: xpReward, newBadges });
-    } catch (e) {
+    } catch {
         // Likely unique constraint violation if already completed
         return c.json({ success: false, message: "Already completed" });
     }

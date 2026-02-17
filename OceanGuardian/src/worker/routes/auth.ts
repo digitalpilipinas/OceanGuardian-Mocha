@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { getTursoClient } from "../db";
 import { SESSION_COOKIE_NAME, authMiddleware } from "../middleware";
@@ -7,6 +7,64 @@ import { hashPassword, verifyPassword } from "../hash";
 import type { UserProfile } from "@/shared/types";
 
 const auth = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
+const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+const GUEST_SESSION_MAX_AGE_SECONDS = 24 * 60 * 60;
+
+type RateLimitState = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitStore = new Map<string, RateLimitState>();
+type AuthContext = Context<{ Bindings: Env; Variables: { user: UserProfile | null } }>;
+
+function consumeRateLimit(key: string, limit: number, windowMs: number): number | null {
+  const now = Date.now();
+
+  // Opportunistic cleanup to keep memory bounded in long-lived isolates.
+  if (rateLimitStore.size > 5000) {
+    for (const [entryKey, state] of rateLimitStore.entries()) {
+      if (state.resetAt <= now) {
+        rateLimitStore.delete(entryKey);
+      }
+    }
+  }
+
+  const current = rateLimitStore.get(key);
+  if (!current || current.resetAt <= now) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+    return null;
+  }
+
+  if (current.count >= limit) {
+    return Math.ceil((current.resetAt - now) / 1000);
+  }
+
+  current.count += 1;
+  rateLimitStore.set(key, current);
+  return null;
+}
+
+function getClientIp(c: AuthContext): string {
+  const cfIp = c.req.header("CF-Connecting-IP");
+  if (cfIp) return cfIp;
+
+  const forwarded = c.req.header("X-Forwarded-For");
+  if (forwarded) {
+    const [first] = forwarded.split(",");
+    return first.trim();
+  }
+
+  return "unknown";
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function sessionCookieSecure(c: AuthContext): boolean {
+  return new URL(c.req.url).protocol === "https:";
+}
 
 // ──────────────────────────────────────
 //  Password-based Sign Up
@@ -14,21 +72,15 @@ const auth = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }
 auth.post("/api/auth/signup", async (c) => {
   const { email, password, username } = await c.req.json();
   if (!email || !password) return c.json({ error: "Email and password required" }, 400);
+  const normalizedEmail = normalizeEmail(email);
   if (password.length < 6) return c.json({ error: "Password must be at least 6 characters" }, 400);
 
   const db = getTursoClient(c.env);
 
-  // Ensure password_hash column exists (idempotent migration)
-  try {
-    await db.execute({ sql: "ALTER TABLE user_profiles ADD COLUMN password_hash TEXT", args: [] });
-  } catch (_) {
-    // Column already exists — that's fine
-  }
-
   // Check if email already taken
   const existing = await db.execute({
     sql: "SELECT id FROM user_profiles WHERE email = ?",
-    args: [email],
+    args: [normalizedEmail],
   });
   if (existing.rows.length > 0) {
     return c.json({ error: "An account with this email already exists. Please sign in." }, 409);
@@ -37,16 +89,16 @@ auth.post("/api/auth/signup", async (c) => {
   // Hash password and create user
   const passwordHash = await hashPassword(password);
   const userId = crypto.randomUUID();
-  const displayName = username || email.split("@")[0];
+  const displayName = username || normalizedEmail.split("@")[0];
 
   await db.execute({
     sql: "INSERT INTO user_profiles (id, username, email, role, password_hash) VALUES (?, ?, ?, 'player', ?)",
-    args: [userId, displayName, email, passwordHash],
+    args: [userId, displayName, normalizedEmail, passwordHash],
   });
 
   // Create session
   const sessionToken = crypto.randomUUID();
-  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const sessionExpires = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000).toISOString();
   await db.execute({
     sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
     args: [sessionToken, userId, sessionExpires],
@@ -55,9 +107,9 @@ auth.post("/api/auth/signup", async (c) => {
   setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     path: "/",
-    secure: true,
+    secure: sessionCookieSecure(c),
     sameSite: "Lax",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 
   return c.json({ success: true });
@@ -69,33 +121,43 @@ auth.post("/api/auth/signup", async (c) => {
 auth.post("/api/auth/login", async (c) => {
   const { email, password } = await c.req.json();
   if (!email || !password) return c.json({ error: "Email and password required" }, 400);
+  const normalizedEmail = normalizeEmail(email);
+  const clientIp = getClientIp(c);
+
+  const ipRetryAfter = consumeRateLimit(`auth:login:ip:${clientIp}`, 25, 15 * 60 * 1000);
+  const emailRetryAfter = consumeRateLimit(`auth:login:email:${normalizedEmail}`, 10, 15 * 60 * 1000);
+  if (ipRetryAfter || emailRetryAfter) {
+    const retryAfter = Math.max(ipRetryAfter ?? 0, emailRetryAfter ?? 0);
+    c.header("Retry-After", String(retryAfter));
+    return c.json({ error: "Too many login attempts. Please try again later." }, 429);
+  }
 
   const db = getTursoClient(c.env);
 
   const userResult = await db.execute({
     sql: "SELECT id, password_hash FROM user_profiles WHERE email = ?",
-    args: [email],
+    args: [normalizedEmail],
   });
 
   if (userResult.rows.length === 0) {
-    return c.json({ error: "No account found with this email" }, 401);
+    return c.json({ error: "Invalid email or password" }, 401);
   }
 
   const user = userResult.rows[0];
   const storedHash = user.password_hash as string | null;
 
   if (!storedHash) {
-    return c.json({ error: "This account was created without a password. Please sign up again or use OTP login." }, 401);
+    return c.json({ error: "Invalid email or password" }, 401);
   }
 
   const valid = await verifyPassword(password, storedHash);
   if (!valid) {
-    return c.json({ error: "Incorrect password" }, 401);
+    return c.json({ error: "Invalid email or password" }, 401);
   }
 
   // Create session
   const sessionToken = crypto.randomUUID();
-  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const sessionExpires = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000).toISOString();
   await db.execute({
     sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
     args: [sessionToken, user.id as string, sessionExpires],
@@ -104,9 +166,9 @@ auth.post("/api/auth/login", async (c) => {
   setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     path: "/",
-    secure: true,
+    secure: sessionCookieSecure(c),
     sameSite: "Lax",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 
   return c.json({ success: true });
@@ -120,6 +182,16 @@ auth.post("/api/auth/login", async (c) => {
 auth.post("/api/auth/otp/send", async (c) => {
   const { email } = await c.req.json();
   if (!email) return c.json({ error: "Email required" }, 400);
+  const normalizedEmail = normalizeEmail(email);
+  const clientIp = getClientIp(c);
+
+  const ipRetryAfter = consumeRateLimit(`auth:otp-send:ip:${clientIp}`, 15, 10 * 60 * 1000);
+  const emailRetryAfter = consumeRateLimit(`auth:otp-send:email:${normalizedEmail}`, 5, 10 * 60 * 1000);
+  if (ipRetryAfter || emailRetryAfter) {
+    const retryAfter = Math.max(ipRetryAfter ?? 0, emailRetryAfter ?? 0);
+    c.header("Retry-After", String(retryAfter));
+    return c.json({ error: "Too many OTP requests. Please try again later." }, 429);
+  }
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
@@ -127,19 +199,14 @@ auth.post("/api/auth/otp/send", async (c) => {
   const db = getTursoClient(c.env);
   await db.execute({
     sql: "INSERT OR REPLACE INTO auth_otps (email, code, expires_at) VALUES (?, ?, ?)",
-    args: [email, code, expiresAt],
+    args: [normalizedEmail, code, expiresAt],
   });
-
-  // Log OTP for dev convenience
-  console.log(`OTP for ${email}: ${code}`);
 
   // Send OTP email via Resend
   const resendApiKey = c.env.RESEND_API_KEY;
-  const emailResult = await sendOtpEmail(resendApiKey, email, code);
+  const emailResult = await sendOtpEmail(resendApiKey, normalizedEmail, code);
   if (!emailResult.success) {
     console.error("Failed to send OTP email:", emailResult.error);
-  } else {
-    console.log(`OTP email sent successfully to ${email}`);
   }
 
   return c.json({ success: true, message: "OTP sent" });
@@ -150,12 +217,24 @@ auth.post("/api/auth/otp/verify", async (c) => {
   const body = await c.req.json();
   const email = body.email;
   const code = body.code || body.otp;
+  if (!email || !code) return c.json({ error: "Email and code required" }, 400);
+  const normalizedEmail = normalizeEmail(email);
+  const clientIp = getClientIp(c);
+
+  const ipRetryAfter = consumeRateLimit(`auth:otp-verify:ip:${clientIp}`, 30, 10 * 60 * 1000);
+  const emailRetryAfter = consumeRateLimit(`auth:otp-verify:email:${normalizedEmail}`, 10, 10 * 60 * 1000);
+  if (ipRetryAfter || emailRetryAfter) {
+    const retryAfter = Math.max(ipRetryAfter ?? 0, emailRetryAfter ?? 0);
+    c.header("Retry-After", String(retryAfter));
+    return c.json({ error: "Too many OTP attempts. Please try again later." }, 429);
+  }
+
   const db = getTursoClient(c.env);
 
   const now = new Date().toISOString();
   const result = await db.execute({
     sql: "SELECT * FROM auth_otps WHERE email = ? AND code = ? AND expires_at > ?",
-    args: [email, code, now],
+    args: [normalizedEmail, code, now],
   });
 
   if (result.rows.length === 0) {
@@ -163,21 +242,21 @@ auth.post("/api/auth/otp/verify", async (c) => {
   }
 
   // Clear OTP
-  await db.execute({ sql: "DELETE FROM auth_otps WHERE email = ?", args: [email] });
+  await db.execute({ sql: "DELETE FROM auth_otps WHERE email = ?", args: [normalizedEmail] });
 
   // Get or create user
-  let userResult = await db.execute({
+  const userResult = await db.execute({
     sql: "SELECT * FROM user_profiles WHERE email = ?",
-    args: [email],
+    args: [normalizedEmail],
   });
 
   let userId: string;
   if (userResult.rows.length === 0) {
     userId = crypto.randomUUID();
-    const username = email.split("@")[0];
+    const username = normalizedEmail.split("@")[0];
     await db.execute({
       sql: "INSERT INTO user_profiles (id, username, email, role) VALUES (?, ?, ?, 'player')",
-      args: [userId, username, email],
+      args: [userId, username, normalizedEmail],
     });
   } else {
     userId = userResult.rows[0].id as string;
@@ -185,7 +264,7 @@ auth.post("/api/auth/otp/verify", async (c) => {
 
   // Create session
   const sessionToken = crypto.randomUUID();
-  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const sessionExpires = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000).toISOString();
   await db.execute({
     sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
     args: [sessionToken, userId, sessionExpires],
@@ -194,9 +273,9 @@ auth.post("/api/auth/otp/verify", async (c) => {
   setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     path: "/",
-    secure: true,
+    secure: sessionCookieSecure(c),
     sameSite: "Lax",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 
   return c.json({ success: true });
@@ -224,9 +303,9 @@ auth.post("/api/auth/guest", async (c) => {
   setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     path: "/",
-    secure: true,
+    secure: sessionCookieSecure(c),
     sameSite: "Lax",
-    maxAge: 24 * 60 * 60,
+    maxAge: GUEST_SESSION_MAX_AGE_SECONDS,
   });
 
   return c.json({ success: true });

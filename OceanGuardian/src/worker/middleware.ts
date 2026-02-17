@@ -21,7 +21,7 @@ export async function authMiddleware(c: Context<{ Bindings: Env; Variables: { us
                 SELECT u.* 
                 FROM user_profiles u
                 JOIN auth_sessions s ON u.id = s.user_id
-                WHERE s.id = ? AND s.expires_at > datetime('now')
+                WHERE s.id = ? AND datetime(s.expires_at) > datetime('now')
             `,
             args: [sessionToken],
         });

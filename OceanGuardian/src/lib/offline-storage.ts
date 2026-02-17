@@ -1,10 +1,12 @@
 
 const DB_NAME = "OceanGuardianDB";
 const STORE_NAME = "pending_sightings";
-const DB_VERSION = 1;
+const USER_ID_INDEX = "by_user_id";
+const DB_VERSION = 2;
 
 export interface SightingData {
     id: string; // UUID
+    userId: string;
     timestamp: number;
     type: string;
     subcategory: string;
@@ -29,8 +31,15 @@ export const offlineStorage = {
 
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
+                let store: IDBObjectStore;
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                    store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                } else {
+                    store = (event.target as IDBOpenDBRequest).transaction!.objectStore(STORE_NAME);
+                }
+
+                if (!store.indexNames.contains(USER_ID_INDEX)) {
+                    store.createIndex(USER_ID_INDEX, "userId", { unique: false });
                 }
             };
         });
@@ -48,12 +57,12 @@ export const offlineStorage = {
         });
     },
 
-    async getPendingSightings(): Promise<SightingData[]> {
+    async getPendingSightings(userId: string): Promise<SightingData[]> {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(STORE_NAME, "readonly");
             const store = transaction.objectStore(STORE_NAME);
-            const request = store.getAll();
+            const request = store.index(USER_ID_INDEX).getAll(userId);
 
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);

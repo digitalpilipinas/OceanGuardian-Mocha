@@ -4,6 +4,13 @@ import { getTursoClient } from "../db";
 import type { UserProfile } from "@/shared/types";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
+const DANGEROUS_CSV_PREFIX = /^[=+\-@]/;
+
+function escapeCsvCell(value: unknown): string {
+    const raw = String(value ?? "").replace(/\r?\n/g, " ");
+    const neutralized = DANGEROUS_CSV_PREFIX.test(raw) ? `'${raw}` : raw;
+    return `"${neutralized.replace(/"/g, '""')}"`;
+}
 
 const scientistMiddleware = async (c: any, next: any) => {
     const user = c.get("user");
@@ -28,7 +35,8 @@ app.use("/api/scientist/*", authMiddleware, scientistMiddleware);
 app.get("/api/scientist/export", async (c) => {
     const format = c.req.query("format") || "csv";
     const type = c.req.query("type"); // optional filter
-    const days = parseInt(c.req.query("days") || "30");
+    const parsedDays = parseInt(c.req.query("days") || "30", 10);
+    const days = Number.isFinite(parsedDays) ? Math.min(Math.max(parsedDays, 1), 3650) : 30;
 
     const db = getTursoClient(c.env);
 
@@ -36,7 +44,7 @@ app.get("/api/scientist/export", async (c) => {
                FROM sightings s
                LEFT JOIN user_profiles up ON s.user_id = up.id
                WHERE s.created_at > datetime('now', '-' || ? || ' days')`;
-    const args: any[] = [days];
+    const args: (string | number)[] = [days];
 
     if (type && type !== "all") {
         sql += " AND s.type = ?";
@@ -75,24 +83,24 @@ app.get("/api/scientist/export", async (c) => {
     // We'll construct CSV manually or use library. Manual is fine for this size.
     const headers = ["id", "type", "subcategory", "latitude", "longitude", "severity", "date", "username", "description"];
     const csvRows = rows.map((row: any) => [
-        row.id,
-        row.type,
-        row.subcategory,
-        row.latitude,
-        row.longitude,
-        row.severity,
-        row.created_at,
-        row.username,
-        `"${(row.description || "").replace(/"/g, '""')}"` // Escape quotes
+        escapeCsvCell(row.id),
+        escapeCsvCell(row.type),
+        escapeCsvCell(row.subcategory),
+        escapeCsvCell(row.latitude),
+        escapeCsvCell(row.longitude),
+        escapeCsvCell(row.severity),
+        escapeCsvCell(row.created_at),
+        escapeCsvCell(row.username),
+        escapeCsvCell(row.description),
     ]);
 
     const csvContent = [
-        headers.join(","),
+        headers.map(escapeCsvCell).join(","),
         ...csvRows.map(r => r.join(","))
     ].join("\n");
 
     return c.text(csvContent, 200, {
-        "Content-Type": "text/csv",
+        "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="ocean-data-export.csv"`
     });
 });

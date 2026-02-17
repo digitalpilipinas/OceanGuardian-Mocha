@@ -4,8 +4,17 @@ import react from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { VitePWA } from "vite-plugin-pwa";
 
+const PUBLIC_API_CACHE_PATHS = [
+	/^\/api\/dashboard\/stats$/,
+	/^\/api\/missions$/,
+	/^\/api\/sightings$/,
+	/^\/api\/leaderboard\/global$/,
+	/^\/api\/leaderboard\/streak$/,
+	/^\/api\/coral\/heatmap$/,
+	/^\/api\/learning\/facts$/,
+];
+
 export default defineConfig({
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	plugins: [
 		react(),
 		cloudflare(),
@@ -75,12 +84,14 @@ export default defineConfig({
 								statuses: [0, 200],
 							},
 						},
-					},
-					{
-						urlPattern: ({ url }) => url.pathname.startsWith("/api"),
-						handler: "NetworkFirst",
-						options: {
-							cacheName: "api-cache",
+						},
+						{
+							urlPattern: ({ request, url }) =>
+								request.method === "GET" &&
+								PUBLIC_API_CACHE_PATHS.some((pattern) => pattern.test(url.pathname)),
+							handler: "NetworkFirst",
+							options: {
+								cacheName: "api-cache",
 							networkTimeoutSeconds: 10,
 							expiration: {
 								maxEntries: 50,
@@ -117,4 +128,3 @@ export default defineConfig({
 		},
 	},
 });
-

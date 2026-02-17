@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/react-app/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/react-app/components/ui/popover";
-import { Bell, MessageSquare, ThumbsUp, UserPlus, Info } from "lucide-react";
+import { Bell, MessageSquare, ThumbsUp, UserPlus, Info, type LucideIcon } from "lucide-react";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 
 interface Notification {
@@ -10,12 +10,12 @@ interface Notification {
     type: string;
     title: string;
     message: string;
-    is_read: boolean; // Note: SQLite uses 0/1, need to handle
+    is_read: boolean | 0 | 1; // SQLite can serialize booleans as 0/1
     related_id?: number;
     created_at: string;
 }
 
-const notificationIcons: Record<string, any> = {
+const notificationIcons: Record<string, LucideIcon> = {
     comment: MessageSquare,
     validation: ThumbsUp,
     follow: UserPlus,
@@ -44,7 +44,7 @@ export default function NotificationPopover() {
                 const data = await res.json();
                 setNotifications(data);
                 // SQLite returns 0/1 for booleans usually, but check
-                const unread = data.filter((n: any) => !n.is_read || n.is_read === 0).length;
+                const unread = data.filter((n: Notification) => n.is_read === false || n.is_read === 0).length;
                 setUnreadCount(unread);
             }
         } catch (error) {
@@ -104,12 +104,13 @@ export default function NotificationPopover() {
                     ) : (
                         notifications.map((notification) => {
                             const Icon = notificationIcons[notification.type] || Info;
-                            const isUnread = !notification.is_read || notification.is_read === 0 as any; // Handle SQLite 0/1
+                            const isUnread = notification.is_read === false || notification.is_read === 0;
 
                             return (
-                                <div
+                                <button
+                                    type="button"
                                     key={notification.id}
-                                    className={`flex gap-3 p-4 border-b last:border-0 hover:bg-muted/50 transition-colors ${isUnread ? "bg-muted/20" : ""}`}
+                                    className={`flex w-full gap-3 p-4 border-b last:border-0 hover:bg-muted/50 transition-colors text-left ${isUnread ? "bg-muted/20" : ""}`}
                                     onClick={() => isUnread && markAsRead(notification.id)}
                                 >
                                     <div className={`mt-1 p-1.5 rounded-full ${isUnread ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
@@ -133,7 +134,7 @@ export default function NotificationPopover() {
                                             <div className="h-2 w-2 rounded-full bg-blue-500" />
                                         </div>
                                     )}
-                                </div>
+                                </button>
                             );
                         })
                     )}

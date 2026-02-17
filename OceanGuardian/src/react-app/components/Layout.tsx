@@ -1,6 +1,5 @@
 import { useLocation } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import OceanBackground from "@/react-app/components/OceanBackground";
 import Sidebar from "@/react-app/components/Sidebar";
 import BottomNav from "@/react-app/components/BottomNav";
@@ -12,7 +11,6 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { } = useUserProfile();
 
   const isLandingPage = location.pathname === "/" || location.pathname === "/login";
 

@@ -1,6 +1,4 @@
 import { createClient } from "@libsql/client";
-import * as fs from "fs";
-import * as path from "path";
 
 const dbUrl = process.env.TURSO_DATABASE_URL || "file:./local.db";
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -33,7 +31,7 @@ async function main() {
             try {
                 const result = await client.execute(`SELECT COUNT(*) as count FROM ${table}`);
                 console.log(`- ${table}: ${result.rows[0].count} rows`);
-            } catch (e) {
+            } catch {
                 console.log(`- ${table}: ❌ Error (Table might not exist)`);
             }
         }
