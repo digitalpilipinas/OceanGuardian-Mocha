@@ -13,6 +13,10 @@ type AuthMode = "signin" | "signup";
 export default function SignIn() {
     const [searchParams] = useSearchParams();
     const initialMode = (searchParams.get("mode") as AuthMode) || "signin";
+    const redirectParam = searchParams.get("redirect");
+    const safeRedirect = redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+        ? redirectParam
+        : "/dashboard";
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -47,7 +51,7 @@ export default function SignIn() {
                         ? "Your guardian account is ready."
                         : "You have signed in successfully.",
                 });
-                navigate("/dashboard");
+                navigate(safeRedirect);
             } else {
                 const data = await res.json();
                 toast({
@@ -76,7 +80,7 @@ export default function SignIn() {
                     title: "Guest Session Started",
                     description: "You're now browsing as a guest.",
                 });
-                navigate("/dashboard");
+                navigate(safeRedirect);
             } else {
                 toast({
                     title: "Error",

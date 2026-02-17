@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
@@ -29,16 +29,25 @@ interface MissionDetailData {
     impact_report: MissionImpactReport | null;
 }
 
+interface JoinMissionResponse {
+    error?: string;
+    already_joined?: boolean;
+    invited_by?: { id: string; username: string | null } | null;
+}
+
 export default function MissionDetail() {
     const { id } = useParams();
     const { profile: user } = useUserProfile();
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
+    const inviterId = new URLSearchParams(location.search).get("inviter")?.trim() || "";
 
     const [data, setData] = useState<MissionDetailData | null>(null);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [checkingIn, setCheckingIn] = useState(false);
+    const [inviterName, setInviterName] = useState<string | null>(null);
 
     const [userRole, setUserRole] = useState<string>("player");
     const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -74,17 +83,72 @@ export default function MissionDetail() {
         }
     }, [id, navigate, user]);
 
+    useEffect(() => {
+        if (!inviterId || inviterId === user?.id) {
+            setInviterName(null);
+            return;
+        }
+
+        let active = true;
+        fetch(`/api/profiles/${inviterId}`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((profile) => {
+                if (!active) return;
+                const username = typeof profile?.username === "string" ? profile.username : null;
+                setInviterName(username && username.length > 0 ? username : "a fellow Guardian");
+            })
+            .catch(() => {
+                if (!active) return;
+                setInviterName("a fellow Guardian");
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [inviterId, user?.id]);
+
+    const trackMissionInviteShare = async (inviteUrl: string) => {
+        if (!id || !user) return;
+        try {
+            await fetch(`/api/missions/${id}/invite-events`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    event: "mission_invite_shared",
+                    invite_url: inviteUrl,
+                }),
+            });
+        } catch (error) {
+            console.error("Failed to track mission invite share", error);
+        }
+    };
+
     const handleJoin = async () => {
-        if (!user) return;
+        if (!user) {
+            const redirect = `${location.pathname}${location.search}`;
+            navigate(`/login?mode=signup&redirect=${encodeURIComponent(redirect)}`);
+            return;
+        }
         setJoining(true);
         try {
-            const res = await fetch(`/api/missions/${id}/join`, { method: "POST" });
+            const inviterForJoin = inviterId && inviterId !== user.id ? inviterId : undefined;
+            const res = await fetch(`/api/missions/${id}/join`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(inviterForJoin ? { inviter_id: inviterForJoin } : {}),
+            });
+            const payload = await res.json().catch(() => ({} as JoinMissionResponse));
             if (res.ok) {
-                toast({ title: "Joined!", description: "You have RSVP'd to this mission." });
+                if (payload.already_joined) {
+                    toast({ title: "Already Joined", description: "You're already RSVP'd to this mission." });
+                } else if (payload.invited_by?.username) {
+                    toast({ title: "Joined!", description: `You have RSVP'd via ${payload.invited_by.username}'s invite.` });
+                } else {
+                    toast({ title: "Joined!", description: "You have RSVP'd to this mission." });
+                }
                 fetchMission();
             } else {
-                const err = await res.json();
-                toast({ title: "Error", description: err.error, variant: "destructive" });
+                toast({ title: "Error", description: payload.error || "Failed to join mission", variant: "destructive" });
             }
         } catch {
             toast({ title: "Error", description: "Failed to join mission", variant: "destructive" });
@@ -454,6 +518,18 @@ export default function MissionDetail() {
 
                 {/* Right Column: Actions */}
                 <div className="space-y-6">
+                    {inviterId && inviterId !== user?.id && (
+                        <Card className="border-primary/30 bg-primary/10">
+                            <CardContent className="p-4">
+                                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Mission Invite</p>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Invited by <span className="font-semibold text-foreground">{inviterName || "a fellow Guardian"}</span>.
+                                    Join this mission to support your local cleanup team.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Your Status</CardTitle>
@@ -507,14 +583,21 @@ export default function MissionDetail() {
                                 variant="outline"
                                 className="w-full"
                                 onClick={async () => {
-                                    console.log("[analytics] mission_share_clicked");
+                                    const baseUrl = `${window.location.origin}/missions/${id}`;
+                                    const inviteUrl = user ? `${baseUrl}?inviter=${encodeURIComponent(user.id)}` : baseUrl;
+                                    if (user) {
+                                        console.log("[analytics] mission_invite_shared");
+                                        void trackMissionInviteShare(inviteUrl);
+                                    } else {
+                                        console.log("[analytics] mission_share_clicked");
+                                    }
                                     const text = `Join the "${mission.title}" cleanup mission on OceanGuardian! 🌊 ${participants.length} guardian${participants.length !== 1 ? "s" : ""} already signed up.`;
                                     if (navigator.share) {
                                         try {
-                                            await navigator.share({ title: mission.title, text, url: window.location.href });
+                                            await navigator.share({ title: mission.title, text, url: inviteUrl });
                                         } catch (err) { console.error("Share failed", err); }
                                     } else {
-                                        await navigator.clipboard.writeText(`${text}\n${window.location.href}`);
+                                        await navigator.clipboard.writeText(`${text}\n${inviteUrl}`);
                                         toast({ title: "Copied!", description: "Mission link copied to clipboard." });
                                     }
                                 }}

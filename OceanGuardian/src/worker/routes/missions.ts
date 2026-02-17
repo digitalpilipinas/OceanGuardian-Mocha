@@ -132,12 +132,54 @@ app.post(
 );
 
 // RSVP / Join a mission
+app.post("/api/missions/:id/invite-events", authMiddleware, async (c) => {
+    const missionId = c.req.param("id");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const db = getTursoClient(c.env);
+    const payload: { event?: string; invite_url?: string } = await c.req
+        .json<{ event?: string; invite_url?: string }>()
+        .catch(() => ({} as { event?: string; invite_url?: string }));
+    if (payload.event !== "mission_invite_shared") {
+        return c.json({ error: "Unsupported invite event" }, 400);
+    }
+
+    const missionResult = await db.execute({
+        sql: "SELECT id FROM missions WHERE id = ?",
+        args: [missionId],
+    });
+    if (missionResult.rows.length === 0) {
+        return c.json({ error: "Mission not found" }, 404);
+    }
+
+    await db.execute({
+        sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+          VALUES (?, 'mission_invite', ?, 0, ?)`,
+        args: [
+            user.id,
+            "Shared a mission invite link",
+            JSON.stringify({
+                event: "mission_invite_shared",
+                mission_id: missionId,
+                invite_url: payload.invite_url || null,
+            }),
+        ],
+    });
+
+    return c.json({ success: true });
+});
+
 app.post("/api/missions/:id/join", authMiddleware, async (c) => {
     const id = c.req.param("id");
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const db = getTursoClient(c.env);
+    const payload: { inviter_id?: string } = await c.req
+        .json<{ inviter_id?: string }>()
+        .catch(() => ({} as { inviter_id?: string }));
+    const inviterIdRaw = typeof payload.inviter_id === "string" ? payload.inviter_id.trim() : "";
 
     // Check if mission exists and is upcoming
     const missionResult = await db.execute({
@@ -163,6 +205,16 @@ app.post("/api/missions/:id/join", authMiddleware, async (c) => {
         }
     }
 
+    const existingParticipantResult = await db.execute({
+        sql: "SELECT status FROM mission_participants WHERE mission_id = ? AND user_id = ?",
+        args: [id, user.id],
+    });
+    const existingStatus = String(existingParticipantResult.rows[0]?.status || "");
+    const alreadyJoined = existingParticipantResult.rows.length > 0 && existingStatus !== "cancelled";
+    if (alreadyJoined) {
+        return c.json({ success: true, message: "Already joined mission", already_joined: true });
+    }
+
     // Insert or update participant
     await db.execute({
         sql: `INSERT INTO mission_participants (mission_id, user_id, status)
@@ -171,7 +223,38 @@ app.post("/api/missions/:id/join", authMiddleware, async (c) => {
         args: [id, user.id],
     });
 
-    return c.json({ success: true, message: "Joined mission" });
+    let invitedBy: { id: string; username: string | null } | null = null;
+    const inviterId = inviterIdRaw && inviterIdRaw !== user.id ? inviterIdRaw : "";
+
+    if (inviterId) {
+        const inviterResult = await db.execute({
+            sql: "SELECT id, username FROM user_profiles WHERE id = ?",
+            args: [inviterId],
+        });
+
+        if (inviterResult.rows.length > 0) {
+            invitedBy = {
+                id: String(inviterResult.rows[0].id),
+                username: (inviterResult.rows[0].username as string | null) ?? null,
+            };
+
+            await db.execute({
+                sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+                  VALUES (?, 'mission_invite', ?, 0, ?)`,
+                args: [
+                    invitedBy.id,
+                    "Mission invite accepted",
+                    JSON.stringify({
+                        event: "mission_invite_accepted",
+                        mission_id: id,
+                        invitee_id: user.id,
+                    }),
+                ],
+            });
+        }
+    }
+
+    return c.json({ success: true, message: "Joined mission", invited_by: invitedBy });
 });
 
 // GPS Check-in
