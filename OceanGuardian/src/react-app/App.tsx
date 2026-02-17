@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { Suspense, lazy } from "react";
 import Layout from "@/react-app/components/Layout";
@@ -29,6 +30,10 @@ const LandingPage = lazy(() => import("@/react-app/pages/LandingPage"));
 const DailyQuiz = lazy(() => import("@/react-app/components/DailyQuiz"));
 const FactLibrary = lazy(() => import("@/react-app/components/FactLibrary"));
 const DeepDiveLessons = lazy(() => import("@/react-app/components/DeepDiveLessons"));
+
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
+import { OfflineSyncManager } from "@/components/pwa/OfflineSyncManager";
 
 export default function App() {
   return (
@@ -67,9 +72,11 @@ export default function App() {
             </Routes>
           </Suspense>
           <Toaster />
+          <InstallPrompt />
+          <OfflineIndicator />
+          <OfflineSyncManager />
         </Layout>
       </Router>
     </GamificationProvider>
   );
 }
-

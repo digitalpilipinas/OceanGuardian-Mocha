@@ -15,11 +15,12 @@ import {
   SelectValue,
 } from "@/react-app/components/ui/select";
 import { Badge } from "@/react-app/components/ui/badge";
-import { Trash2, Fish, Anchor, Waves, Upload, MapPin, Camera, Loader2, CheckCircle, AlertTriangle, Thermometer, Droplets, ArrowDown, Map as MapIcon, Share2 } from "lucide-react";
+import { Trash2, Fish, Anchor, Waves, Upload, MapPin, Camera, Loader2, CheckCircle, AlertTriangle, Thermometer, Droplets, ArrowDown, Map as MapIcon, Share2, Wifi } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import { DivIcon, LatLng } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { SightingType } from "@/react-app/pages/MapView";
+import { offlineStorage, type SightingData } from "@/lib/offline-storage";
 
 const sightingTypes = [
   { value: "garbage" as SightingType, label: "Beach Garbage", icon: Trash2, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800", activeBg: "bg-red-100 dark:bg-red-900/50" },
@@ -250,6 +251,10 @@ export default function ReportSighting() {
     }
   };
 
+
+
+  // ... inside component ...
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -261,6 +266,32 @@ export default function ReportSighting() {
 
       if (isNaN(latitude) || isNaN(longitude)) {
         alert("Invalid location format. Use: latitude, longitude");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check for offline mode
+      if (!navigator.onLine) {
+        const offlineData: SightingData = {
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+          type: formData.type,
+          subcategory: formData.subcategory,
+          description: formData.description,
+          severity: formData.severity,
+          location: formData.location,
+          latitude,
+          longitude,
+          waterTemp: formData.waterTemp,
+          bleachPercent: formData.bleachPercent,
+          depth: formData.depth,
+          photoBlob: photo, // Store the blob directly
+        };
+
+        await offlineStorage.saveSighting(offlineData);
+
+        // Mock success result for UI
+        setSubmitResult({ xp: 0 }); // 0 XP for now, will get when synced
         setIsSubmitting(false);
         return;
       }
@@ -364,15 +395,30 @@ export default function ReportSighting() {
               </div>
             </div>
             <div>
-              <h2 className="text-3xl font-black text-white tracking-tighter">Protocol Complete</h2>
+              <h2 className="text-3xl font-black text-white tracking-tighter">
+                {submitResult.xp > 0 ? "Protocol Complete" : "Saved to Outbox"}
+              </h2>
               <p className="text-sm font-bold text-white/40 mt-3 italic">
-                Data transmission successful. Thank you for protecting our oceans.
+                {submitResult.xp > 0
+                  ? "Data transmission successful. Thank you for protecting our oceans."
+                  : "Device is offline. Data securely stored and will auto-upload when connection is restored."
+                }
               </p>
             </div>
 
-            <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 shadow-inner">
-              <p className="text-4xl font-black text-white tracking-tighter">+{submitResult.xp} <span className="text-primary brightness-125">XP</span></p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mt-2">Guardian Contribution Reward</p>
+            <div className={`p-6 rounded-[2rem] border border-white/10 shadow-inner ${submitResult.xp > 0 ? "bg-white/5" : "bg-yellow-500/10 border-yellow-500/20"}`}>
+              {submitResult.xp > 0 ? (
+                <>
+                  <p className="text-4xl font-black text-white tracking-tighter">+{submitResult.xp} <span className="text-primary brightness-125">XP</span></p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mt-2">Guardian Contribution Reward</p>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Wifi className="h-6 w-6 text-yellow-500 animate-pulse" />
+                  <p className="text-lg font-black text-yellow-200 tracking-tight">Pending Upload</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-500/50 mt-1">XP awarded upon sync</p>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-4 pt-2">

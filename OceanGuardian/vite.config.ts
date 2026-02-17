@@ -18,16 +18,78 @@ export default defineConfig({
 				short_name: "OceanGuardian",
 				description: "Protecting our oceans through community action and citizen science.",
 				theme_color: "#0ea5e9",
+				background_color: "#0f172a",
+				display: "standalone",
+				categories: ["education", "environment", "productivity"],
+				orientation: "portrait",
 				icons: [
 					{
 						src: "pwa-192x192.png",
 						sizes: "192x192",
 						type: "image/png",
+						purpose: "any maskable",
 					},
 					{
 						src: "pwa-512x512.png",
 						sizes: "512x512",
 						type: "image/png",
+						purpose: "any maskable",
+					},
+				],
+				shortcuts: [
+					{
+						name: "Report Sighting",
+						short_name: "Report",
+						description: "Report a new marine sighting",
+						url: "/report",
+						icons: [{ src: "pwa-192x192.png", sizes: "192x192" }],
+					},
+				],
+			},
+			workbox: {
+				runtimeCaching: [
+					{
+						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "google-fonts-cache",
+							expiration: {
+								maxEntries: 10,
+								maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+							},
+							cacheableResponse: {
+								statuses: [0, 200],
+							},
+						},
+					},
+					{
+						urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "gstatic-fonts-cache",
+							expiration: {
+								maxEntries: 10,
+								maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+							},
+							cacheableResponse: {
+								statuses: [0, 200],
+							},
+						},
+					},
+					{
+						urlPattern: ({ url }) => url.pathname.startsWith("/api"),
+						handler: "NetworkFirst",
+						options: {
+							cacheName: "api-cache",
+							networkTimeoutSeconds: 10,
+							expiration: {
+								maxEntries: 50,
+								maxAgeSeconds: 60 * 60 * 24, // 1 day
+							},
+							cacheableResponse: {
+								statuses: [0, 200],
+							},
+						},
 					},
 				],
 			},
