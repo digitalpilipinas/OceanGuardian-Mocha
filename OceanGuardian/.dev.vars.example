@@ -1,0 +1,5 @@
+# Local development secrets for Wrangler/Vite.
+# Copy to .dev.vars and fill in real values.
+TURSO_DB_URL=libsql://your-database-name.turso.io
+TURSO_DB_AUTH_TOKEN=your-turso-auth-token
+
