@@ -1,0 +1,716 @@
+diff --git a/OceanGuardian/src/components/pwa/InstallPrompt.tsx b/OceanGuardian/src/components/pwa/InstallPrompt.tsx
+index 441b6d90..7b2abe24 100644
+--- a/OceanGuardian/src/components/pwa/InstallPrompt.tsx
++++ b/OceanGuardian/src/components/pwa/InstallPrompt.tsx
+@@ -1,22 +1,63 @@
+ 
+ import { useState, useEffect } from "react";
+ import { motion, AnimatePresence } from "framer-motion";
+-import { X, Share, PlusSquare, Download } from "lucide-react";
++import { X, Share, PlusSquare, Download, MonitorSmartphone } from "lucide-react";
+ import { usePWAInstall } from "../../hooks/usePWAInstall";
+ import { Button } from "../../react-app/components/ui/button";
+ 
++const INSTALL_PROMPT_DISMISS_KEY = "og-install-prompt-dismissed-at";
++const INSTALL_PROMPT_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
++
++function isPromptDismissedRecently() {
++    if (typeof window === "undefined") return false;
++
++    const dismissedAtRaw = window.localStorage.getItem(INSTALL_PROMPT_DISMISS_KEY);
++    if (!dismissedAtRaw) return false;
++
++    const dismissedAt = Number(dismissedAtRaw);
++    if (!Number.isFinite(dismissedAt)) return false;
++
++    return Date.now() - dismissedAt < INSTALL_PROMPT_COOLDOWN_MS;
++}
++
++function markPromptDismissed() {
++    if (typeof window === "undefined") return;
++    window.localStorage.setItem(INSTALL_PROMPT_DISMISS_KEY, String(Date.now()));
++}
++
+ export function InstallPrompt() {
+     const { deferredPrompt, isIOS, isStandalone, installPWA } = usePWAInstall();
+     const [isOpen, setIsOpen] = useState(false);
++    const [isDismissed, setIsDismissed] = useState(() => isPromptDismissedRecently());
++    const canUseNativeInstallPrompt = Boolean(deferredPrompt);
++    const shouldOfferInstall = !isStandalone && !isDismissed && (canUseNativeInstallPrompt || isIOS);
+ 
+     useEffect(() => {
+-        // Show prompt if available and not already installed
+-        if (!isStandalone && (deferredPrompt || isIOS)) {
+-            // Delay slightly to not clutter initial load
+-            const timer = setTimeout(() => setIsOpen(true), 3000);
+-            return () => clearTimeout(timer);
++        if (!shouldOfferInstall) {
++            setIsOpen(false);
++            return;
++        }
++
++        // Delay install CTA until after initial rendering and route hydration.
++        const timer = setTimeout(() => setIsOpen(true), 6000);
++        return () => clearTimeout(timer);
++    }, [shouldOfferInstall]);
++
++    const handleDismiss = () => {
++        markPromptDismissed();
++        setIsDismissed(true);
++        setIsOpen(false);
++    };
++
++    const handleInstall = async () => {
++        try {
++            await installPWA();
++        } finally {
++            markPromptDismissed();
++            setIsDismissed(true);
++            setIsOpen(false);
+         }
+-    }, [deferredPrompt, isIOS, isStandalone]);
++    };
+ 
+     if (!isOpen) return null;
+ 
+@@ -32,7 +73,7 @@ export function InstallPrompt() {
+                     <div className="relative overflow-hidden rounded-xl border border-white/20 bg-slate-900/90 p-4 shadow-xl backdrop-blur-xl">
+                         {/* Close Button */}
+                         <button
+-                            onClick={() => setIsOpen(false)}
++                            onClick={handleDismiss}
+                             className="absolute right-2 top-2 rounded-full p-1 text-slate-400 hover:bg-white/10 hover:text-white"
+                         >
+                             <X className="h-4 w-4" />
+@@ -48,7 +89,14 @@ export function InstallPrompt() {
+                                     Add to your home screen for the best experience and offline access.
+                                 </p>
+ 
+-                                {isIOS ? (
++                                {canUseNativeInstallPrompt ? (
++                                    <Button
++                                        onClick={handleInstall}
++                                        className="mt-3 w-full bg-blue-600 hover:bg-blue-500"
++                                    >
++                                        Install App
++                                    </Button>
++                                ) : isIOS ? (
+                                     <div className="mt-3 space-y-2 rounded-lg bg-white/5 p-3 text-sm text-slate-300">
+                                         <div className="flex items-center gap-2">
+                                             <Share className="h-4 w-4 text-blue-400" />
+@@ -60,12 +108,12 @@ export function InstallPrompt() {
+                                         </div>
+                                     </div>
+                                 ) : (
+-                                    <Button
+-                                        onClick={installPWA}
+-                                        className="mt-3 w-full bg-blue-600 hover:bg-blue-500"
+-                                    >
+-                                        Install App
+-                                    </Button>
++                                    <div className="mt-3 rounded-lg bg-white/5 p-3 text-sm text-slate-300">
++                                        <div className="flex items-center gap-2">
++                                            <MonitorSmartphone className="h-4 w-4 text-blue-400" />
++                                            <span>Use your browser menu and choose "Install app" or "Add to Home Screen"</span>
++                                        </div>
++                                    </div>
+                                 )}
+                             </div>
+                         </div>
+diff --git a/OceanGuardian/src/hooks/usePWAInstall.ts b/OceanGuardian/src/hooks/usePWAInstall.ts
+index 44ad8ac9..ce66d444 100644
+--- a/OceanGuardian/src/hooks/usePWAInstall.ts
++++ b/OceanGuardian/src/hooks/usePWAInstall.ts
+@@ -1,51 +1,135 @@
+ 
+-import { useState, useEffect } from "react";
++import { useEffect, useState } from "react";
+ 
+ interface BeforeInstallPromptEvent extends Event {
+     prompt: () => Promise<void>;
+     userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+ }
+ 
++interface IOSNavigator extends Navigator {
++    standalone?: boolean;
++}
++
++interface InstallPromptWindow extends Window {
++    __ogDeferredInstallPrompt?: BeforeInstallPromptEvent | null;
++    __ogInstallPromptListenerInitialized?: boolean;
++}
++
++const INSTALL_PROMPT_READY_EVENT = "og:install-prompt-ready";
++const INSTALL_PROMPT_CLEARED_EVENT = "og:install-prompt-cleared";
++
++function getInstallPromptWindow(): InstallPromptWindow | null {
++    return typeof window === "undefined" ? null : (window as InstallPromptWindow);
++}
++
++function getCachedDeferredPrompt(): BeforeInstallPromptEvent | null {
++    return getInstallPromptWindow()?.__ogDeferredInstallPrompt ?? null;
++}
++
++function setCachedDeferredPrompt(promptEvent: BeforeInstallPromptEvent | null) {
++    const installWindow = getInstallPromptWindow();
++    if (!installWindow) return;
++    installWindow.__ogDeferredInstallPrompt = promptEvent;
++}
++
++function isInStandaloneMode() {
++    if (typeof window === "undefined") return false;
++
++    return (
++        window.matchMedia("(display-mode: standalone)").matches ||
++        window.matchMedia("(display-mode: fullscreen)").matches ||
++        (window.navigator as IOSNavigator).standalone === true ||
++        document.referrer.includes("android-app://")
++    );
++}
++
++function detectIOS() {
++    if (typeof navigator === "undefined") return false;
++
++    const userAgentIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
++    const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
++
++    return userAgentIOS || iPadOS;
++}
++
++function initializeInstallPromptListener() {
++    const installWindow = getInstallPromptWindow();
++    if (!installWindow || installWindow.__ogInstallPromptListenerInitialized) return;
++
++    installWindow.__ogInstallPromptListenerInitialized = true;
++
++    window.addEventListener("beforeinstallprompt", (event) => {
++        event.preventDefault();
++        setCachedDeferredPrompt(event as BeforeInstallPromptEvent);
++        window.dispatchEvent(new Event(INSTALL_PROMPT_READY_EVENT));
++    });
++
++    window.addEventListener("appinstalled", () => {
++        setCachedDeferredPrompt(null);
++        window.dispatchEvent(new Event(INSTALL_PROMPT_CLEARED_EVENT));
++    });
++}
++
++initializeInstallPromptListener();
++
+ export function usePWAInstall() {
+-    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
++    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(() =>
++        getCachedDeferredPrompt(),
++    );
+     const [isIOS, setIsIOS] = useState(false);
+     const [isStandalone, setIsStandalone] = useState(false);
+ 
+     useEffect(() => {
+-        // Check if running in standalone mode (already installed)
+-        const isInStandaloneMode = () =>
+-            window.matchMedia("(display-mode: standalone)").matches ||
+-            (window.navigator as any).standalone ||
+-            document.referrer.includes("android-app://");
++        if (typeof window === "undefined") return;
+ 
++        setIsIOS(detectIOS());
+         setIsStandalone(isInStandaloneMode());
++        setDeferredPrompt(getCachedDeferredPrompt());
+ 
+-        // Check if device is iOS
+-        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+-        setIsIOS(isIOSDevice);
++        const syncDeferredPrompt = () => {
++            setDeferredPrompt(getCachedDeferredPrompt());
++        };
+ 
+-        const handleBeforeInstallPrompt = (e: Event) => {
+-            // Prevent Chrome 67 and earlier from automatically showing the prompt
+-            e.preventDefault();
+-            // Stash the event so it can be triggered later.
+-            setDeferredPrompt(e as BeforeInstallPromptEvent);
++        const handleInstalled = () => {
++            setDeferredPrompt(null);
++            setIsStandalone(true);
+         };
+ 
+-        window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
++        const handleDisplayModeChange = () => {
++            setIsStandalone(isInStandaloneMode());
++        };
++
++        window.addEventListener(INSTALL_PROMPT_READY_EVENT, syncDeferredPrompt);
++        window.addEventListener(INSTALL_PROMPT_CLEARED_EVENT, handleInstalled);
++
++        const standaloneMediaQuery = window.matchMedia("(display-mode: standalone)");
++        if (typeof standaloneMediaQuery.addEventListener === "function") {
++            standaloneMediaQuery.addEventListener("change", handleDisplayModeChange);
++        } else {
++            standaloneMediaQuery.addListener(handleDisplayModeChange);
++        }
+ 
+         return () => {
+-            window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
++            window.removeEventListener(INSTALL_PROMPT_READY_EVENT, syncDeferredPrompt);
++            window.removeEventListener(INSTALL_PROMPT_CLEARED_EVENT, handleInstalled);
++            if (typeof standaloneMediaQuery.removeEventListener === "function") {
++                standaloneMediaQuery.removeEventListener("change", handleDisplayModeChange);
++            } else {
++                standaloneMediaQuery.removeListener(handleDisplayModeChange);
++            }
+         };
+     }, []);
+ 
+     const installPWA = async () => {
+-        if (deferredPrompt) {
+-            deferredPrompt.prompt();
+-            const { outcome } = await deferredPrompt.userChoice;
+-            if (outcome === "accepted") {
+-                setDeferredPrompt(null);
+-            }
+-        }
++        const promptEvent = deferredPrompt ?? getCachedDeferredPrompt();
++        if (!promptEvent) return;
++
++        // A prompt event is single-use, so clear it before invoking.
++        setDeferredPrompt(null);
++        setCachedDeferredPrompt(null);
++
++        await promptEvent.prompt();
++        await promptEvent.userChoice;
+     };
+ 
+     return { deferredPrompt, isIOS, isStandalone, installPWA };
+diff --git a/OceanGuardian/src/react-app/App.tsx b/OceanGuardian/src/react-app/App.tsx
+index e2461dc0..80f01d03 100644
+--- a/OceanGuardian/src/react-app/App.tsx
++++ b/OceanGuardian/src/react-app/App.tsx
+@@ -73,11 +73,11 @@ export default function App() {
+                 <Route path="/login" element={<SignIn />} />
+               </Routes>
+             </Suspense>
+-            <Toaster />
+-            <InstallPrompt />
+-            <OfflineIndicator />
+-            <OfflineSyncManager />
+           </Layout>
++          <Toaster />
++          <InstallPrompt />
++          <OfflineIndicator />
++          <OfflineSyncManager />
+         </Router>
+       </UserProfileProvider>
+     </GamificationProvider>
+diff --git a/OceanGuardian/src/react-app/components/Layout.tsx b/OceanGuardian/src/react-app/components/Layout.tsx
+index 6ab0e531..b0f2abe9 100644
+--- a/OceanGuardian/src/react-app/components/Layout.tsx
++++ b/OceanGuardian/src/react-app/components/Layout.tsx
+@@ -16,15 +16,15 @@ export default function Layout({ children }: LayoutProps) {
+ 
+   if (isLandingPage) {
+     return (
+-      <div className="min-h-screen bg-background relative selection:bg-primary/30">
++        <div className="min-h-screen bg-background relative selection:bg-primary/30">
+         <main className="relative z-10 transition-all duration-500">
+-          <AnimatePresence mode="wait">
++          <AnimatePresence>
+             <motion.div
+               key={location.pathname}
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+-              transition={{ duration: 0.4 }}
++              transition={{ duration: 0.2 }}
+             >
+               {children}
+             </motion.div>
+@@ -48,13 +48,13 @@ export default function Layout({ children }: LayoutProps) {
+ 
+         <main className="flex-1 overflow-y-auto overflow-x-hidden pt-4 pb-28 md:pb-8 px-4 md:px-8">
+           <div className="max-w-7xl mx-auto">
+-            <AnimatePresence mode="wait">
++            <AnimatePresence>
+               <motion.div
+                 key={location.pathname}
+                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                 animate={{ opacity: 1, scale: 1, y: 0 }}
+                 exit={{ opacity: 0, scale: 1.02, y: -10 }}
+-                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
++                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                 className="w-full"
+               >
+                 {children}
+diff --git a/OceanGuardian/src/react-app/components/OceanBackground.tsx b/OceanGuardian/src/react-app/components/OceanBackground.tsx
+index 575b7105..0743f414 100644
+--- a/OceanGuardian/src/react-app/components/OceanBackground.tsx
++++ b/OceanGuardian/src/react-app/components/OceanBackground.tsx
+@@ -1,104 +1,21 @@
+-import React, { useMemo } from 'react';
+-import { motion, Variants, useSpring, useTransform, useMotionValue, useReducedMotion } from 'framer-motion';
+-
+ interface OceanBackgroundProps {
+     interactive?: boolean;
+     bubbleDensity?: 'low' | 'medium' | 'high';
+     variant?: 'default' | 'deep';
+ }
+ 
+-const OceanBackground = ({ interactive = false, bubbleDensity = 'medium', variant = 'default' }: OceanBackgroundProps) => {
+-    const shouldReduceMotion = useReducedMotion();
+-
+-    // Mouse move parallax effect (only if interactive)
+-    const mouseX = useMotionValue(0);
+-    const mouseY = useMotionValue(0);
+-
+-    const handleMouseMove = (e: React.MouseEvent) => {
+-        if (!interactive) return;
+-        const { clientX, clientY } = e;
+-        const { innerWidth, innerHeight } = window;
+-        mouseX.set(clientX / innerWidth - 0.5);
+-        mouseY.set(clientY / innerHeight - 0.5);
+-    };
+-
+-    const bgParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
+-    const bgParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
+-
+-    const bubbleCount = shouldReduceMotion ? 0 : bubbleDensity === 'high' ? 20 : bubbleDensity === 'medium' ? 12 : 6;
+-
+-    const bubbles = useMemo(
+-        () =>
+-            Array.from({ length: bubbleCount }, () => ({
+-                width: Math.random() * 15 + 5,
+-                height: Math.random() * 15 + 5,
+-                left: `${Math.random() * 100}%`,
+-                drift: Math.random() * 40 - 20,
+-                duration: Math.random() * 10 + 12,
+-                delay: Math.random() * 6,
+-            })),
+-        [bubbleCount]
+-    );
+-
+-    const bubbleVariants: Variants = {
+-        animate: (bubble: { drift: number; duration: number; delay: number }) => ({
+-            y: [0, -1200],
+-            x: [0, bubble.drift],
+-            opacity: [0, 0.4, 0],
+-            scale: [0.5, 1.5, 0.5],
+-            transition: {
+-                duration: bubble.duration,
+-                repeat: Infinity,
+-                delay: bubble.delay,
+-                ease: "linear"
+-            }
+-        })
+-    };
+-
++const OceanBackground = ({ variant = 'default' }: OceanBackgroundProps) => {
+     return (
+-        <div
+-            className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
+-            onMouseMove={interactive ? handleMouseMove : undefined}
+-        >
++        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+             {/* Deep Ocean Gradient Background with Caustics Simulation */}
+             <div className={`absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] ${variant === 'deep' ? 'from-cyan-950 via-blue-950 to-slate-950' : 'from-cyan-900/40 via-blue-950 to-slate-950'} z-0`}></div>
+ 
+             {/* Noise Overlay */}
+-            <motion.div
+-                style={interactive ? { x: bgParallaxX, y: bgParallaxY } : {}}
+-                className="absolute inset-0 opacity-5 z-0 [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px]"
+-            ></motion.div>
+-
+-            {/* Ambient Light Effects - Dynamic */}
+-            <motion.div
+-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+-                transition={shouldReduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: "easeInOut" }}
+-                className="absolute top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] mix-blend-screen"
+-            ></motion.div>
+-            <motion.div
+-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+-                transition={shouldReduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+-                className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] mix-blend-screen"
+-            ></motion.div>
++            <div className="absolute inset-0 opacity-5 z-0 [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px]"></div>
+ 
+-            {/* Bubble Particles */}
+-            <div className="absolute inset-0 z-0 overflow-hidden">
+-                {bubbles.map((bubble, i) => (
+-                    <motion.div
+-                        key={i}
+-                        custom={bubble}
+-                        variants={bubbleVariants}
+-                        animate="animate"
+-                        className="absolute rounded-full bg-cyan-200/10 backdrop-blur-[1px] border border-white/5"
+-                        style={{
+-                            width: bubble.width,
+-                            height: bubble.height,
+-                            left: bubble.left,
+-                            bottom: '-10%'
+-                        }}
+-                    />
+-                ))}
+-            </div>
++            {/* Static ambient lighting layers */}
++            <div className="absolute top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-[128px] mix-blend-screen"></div>
++            <div className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] mix-blend-screen"></div>
+         </div>
+     );
+ };
+diff --git a/OceanGuardian/src/react-app/hooks/useUserProfile.tsx b/OceanGuardian/src/react-app/hooks/useUserProfile.tsx
+index 4f09ed4c..8fe5f917 100644
+--- a/OceanGuardian/src/react-app/hooks/useUserProfile.tsx
++++ b/OceanGuardian/src/react-app/hooks/useUserProfile.tsx
+@@ -17,6 +17,17 @@ interface UserProfileContextValue {
+ }
+ 
+ const UserProfileContext = createContext<UserProfileContextValue | null>(null);
++const FALLBACK_USER_PROFILE_CONTEXT: UserProfileContextValue = {
++    profile: null,
++    loading: false,
++    refresh: async () => null,
++    logout: async () => {
++        if (typeof window !== "undefined") {
++            window.location.href = "/login";
++        }
++    },
++};
++
+ let profileCache: UserProfile | null | undefined = undefined;
+ let profileRequest: Promise<UserProfile | null> | null = null;
+ 
+@@ -99,54 +110,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
+     );
+ }
+ 
+-function useStandaloneUserProfile(disabled: boolean): UserProfileContextValue {
+-    const [profile, setProfile] = useState<UserProfile | null>(null);
+-    const [loading, setLoading] = useState(!disabled);
+-
+-    const fetchProfile = useCallback(async () => {
+-        if (disabled) return null;
+-        setLoading(true);
+-        const nextProfile = await fetchProfileRequest();
+-        setProfile(nextProfile);
+-        setLoading(false);
+-        return nextProfile;
+-    }, [disabled]);
+-
+-    useEffect(() => {
+-        if (disabled) {
+-            setLoading(false);
+-            return;
+-        }
+-
+-        void fetchProfile();
+-
+-        const handleRefresh = () => {
+-            void fetchProfile();
+-        };
+-
+-        window.addEventListener("og:user-data-refresh", handleRefresh);
+-        return () => {
+-            window.removeEventListener("og:user-data-refresh", handleRefresh);
+-        };
+-    }, [disabled, fetchProfile]);
+-
+-    const logout = useCallback(async () => {
+-        if (disabled) return;
+-        try {
+-            await fetch("/api/auth/logout", { method: "POST" });
+-        } catch (error) {
+-            console.error("Logout failed", error);
+-        } finally {
+-            setProfile(null);
+-            window.location.href = "/login";
+-        }
+-    }, [disabled]);
+-
+-    return { profile, loading, refresh: fetchProfile, logout };
+-}
+-
+ export function useUserProfile() {
+-    const ctx = useContext(UserProfileContext);
+-    const standalone = useStandaloneUserProfile(Boolean(ctx));
+-    return ctx ?? standalone;
++    return useContext(UserProfileContext) ?? FALLBACK_USER_PROFILE_CONTEXT;
+ }
+diff --git a/OceanGuardian/src/react-app/main.tsx b/OceanGuardian/src/react-app/main.tsx
+index 78574786..9e70c075 100644
+--- a/OceanGuardian/src/react-app/main.tsx
++++ b/OceanGuardian/src/react-app/main.tsx
+@@ -5,8 +5,8 @@ import "./index.css";
+ // import "./pwa"; // ensure pwa is loaded
+ import { registerSW } from "virtual:pwa-register";
+ 
+-// Register Service Worker for PWA
+-registerSW({ immediate: true });
++// Register Service Worker for PWA without blocking initial hydration.
++registerSW({ immediate: false });
+ 
+ ReactDOM.createRoot(document.getElementById("root")!).render(
+   <React.StrictMode>
+diff --git a/OceanGuardian/src/react-app/pages/LandingPage.tsx b/OceanGuardian/src/react-app/pages/LandingPage.tsx
+index 1a94ab00..6847d840 100644
+--- a/OceanGuardian/src/react-app/pages/LandingPage.tsx
++++ b/OceanGuardian/src/react-app/pages/LandingPage.tsx
+@@ -1,4 +1,4 @@
+-import React, { useMemo } from 'react';
++import React, { useEffect } from 'react';
+ import { motion, useTransform, useSpring, useMotionValue, Variants, useReducedMotion } from 'framer-motion';
+ import { Link } from 'react-router-dom';
+ import { ArrowRight, Waves, Activity, Users, Shield, Globe, CheckCircle, Award, Quote, Facebook, Twitter, Instagram, Linkedin, PlayCircle } from 'lucide-react';
+@@ -8,6 +8,22 @@ import heroDiver from "@/react-app/assets/hero-diver.png";
+ 
+ const LandingPage = () => {
+     const shouldReduceMotion = useReducedMotion();
++
++    useEffect(() => {
++        const preloadAuthenticatedRoutes = () => {
++            void import("@/react-app/pages/SignIn");
++            void import("@/react-app/pages/Home");
++        };
++
++        if (typeof window.requestIdleCallback === "function") {
++            const idleCallbackId = window.requestIdleCallback(preloadAuthenticatedRoutes, { timeout: 1200 });
++            return () => window.cancelIdleCallback(idleCallbackId);
++        }
++
++        const timeoutId = window.setTimeout(preloadAuthenticatedRoutes, 1200);
++        return () => window.clearTimeout(timeoutId);
++    }, []);
++
+     // Mouse move parallax effect
+     const mouseX = useMotionValue(0);
+     const mouseY = useMotionValue(0);
+@@ -22,8 +38,6 @@ const LandingPage = () => {
+ 
+     const heroParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 });
+     const heroParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 });
+-    const bgParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
+-    const bgParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
+ 
+     // Animation variants
+ 
+@@ -44,35 +58,6 @@ const LandingPage = () => {
+         visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+     };
+ 
+-    const bubbleCount = shouldReduceMotion ? 0 : 18;
+-    const bubbles = useMemo(
+-        () =>
+-            Array.from({ length: bubbleCount }, () => ({
+-                width: Math.random() * 15 + 5,
+-                height: Math.random() * 15 + 5,
+-                left: `${Math.random() * 100}%`,
+-                drift: Math.random() * 40 - 20,
+-                duration: Math.random() * 8 + 12,
+-                delay: Math.random() * 6,
+-            })),
+-        [bubbleCount]
+-    );
+-
+-    const bubbleVariants: Variants = {
+-        animate: (bubble: { drift: number; duration: number; delay: number }) => ({
+-            y: [0, -1200],
+-            x: [0, bubble.drift],
+-            opacity: [0, 0.4, 0],
+-            scale: [0.5, 1.5, 0.5],
+-            transition: {
+-                duration: bubble.duration,
+-                repeat: Infinity,
+-                delay: bubble.delay,
+-                ease: "linear"
+-            }
+-        })
+-    };
+-
+     return (
+         <div
+             className="min-h-screen bg-slate-950 text-white font-sans overflow-x-hidden relative selection:bg-cyan-500/30"
+@@ -80,41 +65,11 @@ const LandingPage = () => {
+         >
+             {/* Deep Ocean Gradient Background with Caustics Simulation */}
+             <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/40 via-blue-950 to-slate-950 z-0"></div>
+-            <motion.div
+-                style={{ x: bgParallaxX, y: bgParallaxY }}
+-                className="fixed inset-0 opacity-30 z-0 pointer-events-none [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px] opacity-5"
+-            ></motion.div>
+-
+-            {/* Ambient Light Effects - Dynamic */}
+-            <motion.div
+-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+-                transition={shouldReduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: "easeInOut" }}
+-                className="fixed top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
+-            ></motion.div>
+-            <motion.div
+-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+-                transition={shouldReduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+-                className="fixed bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
+-            ></motion.div>
+-
+-            {/* High Density Bubble Particles */}
+-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+-                {bubbles.map((bubble, i) => (
+-                    <motion.div
+-                        key={i}
+-                        custom={bubble}
+-                        variants={bubbleVariants}
+-                        animate="animate"
+-                        className="absolute rounded-full bg-cyan-200/10 backdrop-blur-[1px] border border-white/5"
+-                        style={{
+-                            width: bubble.width,
+-                            height: bubble.height,
+-                            left: bubble.left,
+-                            bottom: '-10%'
+-                        }}
+-                    />
+-                ))}
+-            </div>
++            <div className="fixed inset-0 z-0 pointer-events-none [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px] opacity-5"></div>
++
++            {/* Static ambient lighting (no continuous animation) */}
++            <div className="fixed top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"></div>
++            <div className="fixed bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"></div>
+ 
+             {/* Navbar - Glass Morphism */}
+             <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center backdrop-blur-xl bg-slate-950/30 border-b border-white/5 transition-all duration-300">
+diff --git a/OceanGuardian/vite.config.ts b/OceanGuardian/vite.config.ts
+index a5b028be..87403772 100644
+--- a/OceanGuardian/vite.config.ts
++++ b/OceanGuardian/vite.config.ts
+@@ -6,8 +6,6 @@ import { VitePWA } from "vite-plugin-pwa";
+ 
+ const PUBLIC_API_CACHE_PATHS = [
+ 	/^\/api\/dashboard\/stats$/,
+-	/^\/api\/missions$/,
+-	/^\/api\/sightings$/,
+ 	/^\/api\/leaderboard\/global$/,
+ 	/^\/api\/leaderboard\/streak$/,
+ 	/^\/api\/coral\/heatmap$/,
+@@ -84,18 +82,17 @@ export default defineConfig({
+ 								statuses: [0, 200],
+ 							},
+ 						},
+-						},
+-						{
+-							urlPattern: ({ request, url }) =>
+-								request.method === "GET" &&
+-								PUBLIC_API_CACHE_PATHS.some((pattern) => pattern.test(url.pathname)),
+-							handler: "NetworkFirst",
+-							options: {
+-								cacheName: "api-cache",
+-							networkTimeoutSeconds: 10,
++					},
++					{
++						urlPattern: ({ request, url }) =>
++							request.method === "GET" &&
++							PUBLIC_API_CACHE_PATHS.some((pattern) => pattern.test(url.pathname)),
++						handler: "StaleWhileRevalidate",
++						options: {
++							cacheName: "api-cache",
+ 							expiration: {
+ 								maxEntries: 50,
+-								maxAgeSeconds: 60 * 60 * 24, // 1 day
++								maxAgeSeconds: 60 * 5, // 5 minutes
+ 							},
+ 							cacheableResponse: {
+ 								statuses: [0, 200],

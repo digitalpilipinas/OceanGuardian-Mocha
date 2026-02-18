@@ -5,8 +5,8 @@ import "./index.css";
 // import "./pwa"; // ensure pwa is loaded
 import { registerSW } from "virtual:pwa-register";
 
-// Register Service Worker for PWA
-registerSW({ immediate: true });
+// Register Service Worker for PWA without blocking initial hydration.
+registerSW({ immediate: false });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

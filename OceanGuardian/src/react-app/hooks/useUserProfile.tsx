@@ -17,6 +17,17 @@ interface UserProfileContextValue {
 }
 
 const UserProfileContext = createContext<UserProfileContextValue | null>(null);
+const FALLBACK_USER_PROFILE_CONTEXT: UserProfileContextValue = {
+    profile: null,
+    loading: false,
+    refresh: async () => null,
+    logout: async () => {
+        if (typeof window !== "undefined") {
+            window.location.href = "/login";
+        }
+    },
+};
+
 let profileCache: UserProfile | null | undefined = undefined;
 let profileRequest: Promise<UserProfile | null> | null = null;
 
@@ -99,54 +110,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     );
 }
 
-function useStandaloneUserProfile(disabled: boolean): UserProfileContextValue {
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [loading, setLoading] = useState(!disabled);
-
-    const fetchProfile = useCallback(async () => {
-        if (disabled) return null;
-        setLoading(true);
-        const nextProfile = await fetchProfileRequest();
-        setProfile(nextProfile);
-        setLoading(false);
-        return nextProfile;
-    }, [disabled]);
-
-    useEffect(() => {
-        if (disabled) {
-            setLoading(false);
-            return;
-        }
-
-        void fetchProfile();
-
-        const handleRefresh = () => {
-            void fetchProfile();
-        };
-
-        window.addEventListener("og:user-data-refresh", handleRefresh);
-        return () => {
-            window.removeEventListener("og:user-data-refresh", handleRefresh);
-        };
-    }, [disabled, fetchProfile]);
-
-    const logout = useCallback(async () => {
-        if (disabled) return;
-        try {
-            await fetch("/api/auth/logout", { method: "POST" });
-        } catch (error) {
-            console.error("Logout failed", error);
-        } finally {
-            setProfile(null);
-            window.location.href = "/login";
-        }
-    }, [disabled]);
-
-    return { profile, loading, refresh: fetchProfile, logout };
-}
-
 export function useUserProfile() {
-    const ctx = useContext(UserProfileContext);
-    const standalone = useStandaloneUserProfile(Boolean(ctx));
-    return ctx ?? standalone;
+    return useContext(UserProfileContext) ?? FALLBACK_USER_PROFILE_CONTEXT;
 }

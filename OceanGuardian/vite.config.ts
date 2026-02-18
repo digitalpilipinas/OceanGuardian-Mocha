@@ -6,8 +6,6 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const PUBLIC_API_CACHE_PATHS = [
 	/^\/api\/dashboard\/stats$/,
-	/^\/api\/missions$/,
-	/^\/api\/sightings$/,
 	/^\/api\/leaderboard\/global$/,
 	/^\/api\/leaderboard\/streak$/,
 	/^\/api\/coral\/heatmap$/,
@@ -84,18 +82,17 @@ export default defineConfig({
 								statuses: [0, 200],
 							},
 						},
-						},
-						{
-							urlPattern: ({ request, url }) =>
-								request.method === "GET" &&
-								PUBLIC_API_CACHE_PATHS.some((pattern) => pattern.test(url.pathname)),
-							handler: "NetworkFirst",
-							options: {
-								cacheName: "api-cache",
-							networkTimeoutSeconds: 10,
+					},
+					{
+						urlPattern: ({ request, url }) =>
+							request.method === "GET" &&
+							PUBLIC_API_CACHE_PATHS.some((pattern) => pattern.test(url.pathname)),
+						handler: "StaleWhileRevalidate",
+						options: {
+							cacheName: "api-cache",
 							expiration: {
 								maxEntries: 50,
-								maxAgeSeconds: 60 * 60 * 24, // 1 day
+								maxAgeSeconds: 60 * 5, // 5 minutes
 							},
 							cacheableResponse: {
 								statuses: [0, 200],

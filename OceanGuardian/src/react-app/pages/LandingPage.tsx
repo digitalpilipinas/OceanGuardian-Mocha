@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { motion, useTransform, useSpring, useMotionValue, Variants, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Waves, Activity, Users, Shield, Globe, CheckCircle, Award, Quote, Facebook, Twitter, Instagram, Linkedin, PlayCircle } from 'lucide-react';
@@ -8,6 +8,22 @@ import heroDiver from "@/react-app/assets/hero-diver.png";
 
 const LandingPage = () => {
     const shouldReduceMotion = useReducedMotion();
+
+    useEffect(() => {
+        const preloadAuthenticatedRoutes = () => {
+            void import("@/react-app/pages/SignIn");
+            void import("@/react-app/pages/Home");
+        };
+
+        if (typeof window.requestIdleCallback === "function") {
+            const idleCallbackId = window.requestIdleCallback(preloadAuthenticatedRoutes, { timeout: 1200 });
+            return () => window.cancelIdleCallback(idleCallbackId);
+        }
+
+        const timeoutId = window.setTimeout(preloadAuthenticatedRoutes, 1200);
+        return () => window.clearTimeout(timeoutId);
+    }, []);
+
     // Mouse move parallax effect
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
@@ -22,8 +38,6 @@ const LandingPage = () => {
 
     const heroParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 });
     const heroParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 });
-    const bgParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
-    const bgParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
 
     // Animation variants
 
@@ -44,35 +58,6 @@ const LandingPage = () => {
         visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
     };
 
-    const bubbleCount = shouldReduceMotion ? 0 : 18;
-    const bubbles = useMemo(
-        () =>
-            Array.from({ length: bubbleCount }, () => ({
-                width: Math.random() * 15 + 5,
-                height: Math.random() * 15 + 5,
-                left: `${Math.random() * 100}%`,
-                drift: Math.random() * 40 - 20,
-                duration: Math.random() * 8 + 12,
-                delay: Math.random() * 6,
-            })),
-        [bubbleCount]
-    );
-
-    const bubbleVariants: Variants = {
-        animate: (bubble: { drift: number; duration: number; delay: number }) => ({
-            y: [0, -1200],
-            x: [0, bubble.drift],
-            opacity: [0, 0.4, 0],
-            scale: [0.5, 1.5, 0.5],
-            transition: {
-                duration: bubble.duration,
-                repeat: Infinity,
-                delay: bubble.delay,
-                ease: "linear"
-            }
-        })
-    };
-
     return (
         <div
             className="min-h-screen bg-slate-950 text-white font-sans overflow-x-hidden relative selection:bg-cyan-500/30"
@@ -80,41 +65,11 @@ const LandingPage = () => {
         >
             {/* Deep Ocean Gradient Background with Caustics Simulation */}
             <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/40 via-blue-950 to-slate-950 z-0"></div>
-            <motion.div
-                style={{ x: bgParallaxX, y: bgParallaxY }}
-                className="fixed inset-0 opacity-30 z-0 pointer-events-none [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px] opacity-5"
-            ></motion.div>
+            <div className="fixed inset-0 z-0 pointer-events-none [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px] opacity-5"></div>
 
-            {/* Ambient Light Effects - Dynamic */}
-            <motion.div
-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={shouldReduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                className="fixed top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
-            ></motion.div>
-            <motion.div
-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
-                transition={shouldReduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                className="fixed bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
-            ></motion.div>
-
-            {/* High Density Bubble Particles */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                {bubbles.map((bubble, i) => (
-                    <motion.div
-                        key={i}
-                        custom={bubble}
-                        variants={bubbleVariants}
-                        animate="animate"
-                        className="absolute rounded-full bg-cyan-200/10 backdrop-blur-[1px] border border-white/5"
-                        style={{
-                            width: bubble.width,
-                            height: bubble.height,
-                            left: bubble.left,
-                            bottom: '-10%'
-                        }}
-                    />
-                ))}
-            </div>
+            {/* Static ambient lighting (no continuous animation) */}
+            <div className="fixed top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"></div>
+            <div className="fixed bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"></div>
 
             {/* Navbar - Glass Morphism */}
             <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center backdrop-blur-xl bg-slate-950/30 border-b border-white/5 transition-all duration-300">

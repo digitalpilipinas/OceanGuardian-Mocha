@@ -73,11 +73,11 @@ export default function App() {
                 <Route path="/login" element={<SignIn />} />
               </Routes>
             </Suspense>
-            <Toaster />
-            <InstallPrompt />
-            <OfflineIndicator />
-            <OfflineSyncManager />
           </Layout>
+          <Toaster />
+          <InstallPrompt />
+          <OfflineIndicator />
+          <OfflineSyncManager />
         </Router>
       </UserProfileProvider>
     </GamificationProvider>
