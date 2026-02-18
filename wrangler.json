@@ -15,7 +15,7 @@
   },
   "upload_source_maps": true,
   "assets": {
-    "directory": "./OceanGuardian/dist",
+    "directory": "./OceanGuardian/dist/client",
     "not_found_handling": "single-page-application"
   },
   "r2_buckets": [
