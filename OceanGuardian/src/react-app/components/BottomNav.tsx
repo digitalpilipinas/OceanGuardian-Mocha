@@ -7,7 +7,7 @@ export default function BottomNav() {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-8 h-28 flex items-center justify-center">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-5 h-24 flex items-center justify-center">
             <div className="w-full h-18 flex items-center justify-around px-4 relative">
                 {/* Background Layer - Absolute positioned to avoid overflow clipping on parent */}
                 <div className="absolute inset-0 glass-liquid rounded-[2.5rem] shadow-2xl shadow-black/40 -z-10" />
