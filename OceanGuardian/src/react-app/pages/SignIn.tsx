@@ -51,6 +51,7 @@ export default function SignIn() {
                         ? "Your guardian account is ready."
                         : "You have signed in successfully.",
                 });
+                window.dispatchEvent(new Event("og:user-data-refresh"));
                 navigate(safeRedirect);
             } else {
                 const data = await res.json();
@@ -80,6 +81,7 @@ export default function SignIn() {
                     title: "Guest Session Started",
                     description: "You're now browsing as a guest.",
                 });
+                window.dispatchEvent(new Event("og:user-data-refresh"));
                 navigate(safeRedirect);
             } else {
                 toast({

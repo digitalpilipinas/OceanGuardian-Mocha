@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/react-app/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/react-app/components/ui/popover";
 import { Bell, MessageSquare, ThumbsUp, UserPlus, Info, type LucideIcon } from "lucide-react";
@@ -28,29 +28,45 @@ export default function NotificationPopover() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
 
-    useEffect(() => {
-        if (user) {
-            fetchNotifications();
-            // Poll for notifications every minute
-            const interval = setInterval(fetchNotifications, 60000);
-            return () => clearInterval(interval);
-        }
-    }, [user]);
-
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const res = await fetch("/api/notifications?limit=20");
             if (res.ok) {
                 const data = await res.json();
                 setNotifications(data);
-                // SQLite returns 0/1 for booleans usually, but check
                 const unread = data.filter((n: Notification) => n.is_read === false || n.is_read === 0).length;
                 setUnreadCount(unread);
             }
         } catch (error) {
             console.error("Failed to fetch notifications", error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (!user) {
+            return;
+        }
+
+        void fetchNotifications();
+        const interval = window.setInterval(() => {
+            if (document.visibilityState === "visible") {
+                void fetchNotifications();
+            }
+        }, 60000);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") {
+                void fetchNotifications();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            window.clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
+    }, [user, fetchNotifications]);
 
     const markAsRead = async (id: number) => {
         // Optimistic update

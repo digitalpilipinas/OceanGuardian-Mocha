@@ -148,6 +148,10 @@ export function OfflineSyncManager() {
     }, [toast, user?.id]);
 
     useEffect(() => {
+        if (!user?.id) {
+            return;
+        }
+
         const handleOnline = () => {
             void syncSightings();
         };
@@ -161,7 +165,9 @@ export function OfflineSyncManager() {
         document.addEventListener("visibilitychange", handleVisibility);
 
         const intervalId = window.setInterval(() => {
-            void syncSightings();
+            if (document.visibilityState === "visible") {
+                void syncSightings();
+            }
         }, PERIODIC_SYNC_INTERVAL_MS);
 
         let initialTimeoutId: number | undefined;
@@ -180,7 +186,7 @@ export function OfflineSyncManager() {
                 window.clearTimeout(initialTimeoutId);
             }
         };
-    }, [syncSightings]);
+    }, [syncSightings, user?.id]);
 
     return null;
 }

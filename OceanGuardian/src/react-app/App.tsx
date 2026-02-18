@@ -1,8 +1,9 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import Layout from "@/react-app/components/Layout";
 import { GamificationProvider } from "@/react-app/components/GamificationProvider";
+import { UserProfileProvider } from "@/react-app/hooks/useUserProfile";
 import { Toaster } from "@/react-app/components/ui/toaster";
 
 // Lazy load pages
@@ -38,45 +39,47 @@ import { OfflineSyncManager } from "@/components/pwa/OfflineSyncManager";
 export default function App() {
   return (
     <GamificationProvider>
-      <Router>
-        <Layout>
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center min-h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
-              </div>
-            }
-          >
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/dashboard" element={<HomePage />} />
-              <Route path="/map" element={<MapViewPage />} />
-              <Route path="/report" element={<ReportSighting />} />
-              <Route path="/coral-scan" element={<CoralScan />} />
-              <Route path="/scientist/dashboard" element={<ScientistDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/ambassador" element={<AmbassadorDashboard />} />
-              <Route path="/missions" element={<MissionsPage />} />
-              <Route path="/missions/create" element={<CreateMission />} />
-              <Route path="/missions/:id" element={<MissionDetail />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/profile/:id" element={<ProfilePage />} />
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/learning" element={<LearningHub />} />
-              <Route path="/learning/quiz" element={<DailyQuiz />} />
-              <Route path="/learning/facts" element={<FactLibrary />} />
-              <Route path="/learning/lessons" element={<DeepDiveLessons />} />
-              <Route path="/learning/lessons/:slug" element={<LessonView />} />
-              <Route path="/login" element={<SignIn />} />
-            </Routes>
-          </Suspense>
-          <Toaster />
-          <InstallPrompt />
-          <OfflineIndicator />
-          <OfflineSyncManager />
-        </Layout>
-      </Router>
+      <UserProfileProvider>
+        <Router>
+          <Layout>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-[50vh]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
+                </div>
+              }
+            >
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/dashboard" element={<HomePage />} />
+                <Route path="/map" element={<MapViewPage />} />
+                <Route path="/report" element={<ReportSighting />} />
+                <Route path="/coral-scan" element={<CoralScan />} />
+                <Route path="/scientist/dashboard" element={<ScientistDashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/ambassador" element={<AmbassadorDashboard />} />
+                <Route path="/missions" element={<MissionsPage />} />
+                <Route path="/missions/create" element={<CreateMission />} />
+                <Route path="/missions/:id" element={<MissionDetail />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile/:id" element={<ProfilePage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/learning" element={<LearningHub />} />
+                <Route path="/learning/quiz" element={<DailyQuiz />} />
+                <Route path="/learning/facts" element={<FactLibrary />} />
+                <Route path="/learning/lessons" element={<DeepDiveLessons />} />
+                <Route path="/learning/lessons/:slug" element={<LessonView />} />
+                <Route path="/login" element={<SignIn />} />
+              </Routes>
+            </Suspense>
+            <Toaster />
+            <InstallPrompt />
+            <OfflineIndicator />
+            <OfflineSyncManager />
+          </Layout>
+        </Router>
+      </UserProfileProvider>
     </GamificationProvider>
   );
 }

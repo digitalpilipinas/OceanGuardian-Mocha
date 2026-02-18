@@ -1,17 +1,19 @@
-import React from 'react';
-import { motion, useTransform, useSpring, useMotionValue, Variants } from 'framer-motion';
-import { Link } from 'react-router';
+import React, { useMemo } from 'react';
+import { motion, useTransform, useSpring, useMotionValue, Variants, useReducedMotion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Waves, Activity, Users, Shield, Globe, CheckCircle, Award, Quote, Facebook, Twitter, Instagram, Linkedin, PlayCircle } from 'lucide-react';
 import { Button } from '@/react-app/components/ui/button';
-import logo from "@/react-app/assets/logo.png";
+import logo from "@/react-app/assets/logo-256.png";
 import heroDiver from "@/react-app/assets/hero-diver.png";
 
 const LandingPage = () => {
+    const shouldReduceMotion = useReducedMotion();
     // Mouse move parallax effect
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
 
     const handleMouseMove = (e: React.MouseEvent) => {
+        if (shouldReduceMotion) return;
         const { clientX, clientY } = e;
         const { innerWidth, innerHeight } = window;
         mouseX.set(clientX / innerWidth - 0.5);
@@ -42,16 +44,30 @@ const LandingPage = () => {
         visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
     };
 
+    const bubbleCount = shouldReduceMotion ? 0 : 18;
+    const bubbles = useMemo(
+        () =>
+            Array.from({ length: bubbleCount }, () => ({
+                width: Math.random() * 15 + 5,
+                height: Math.random() * 15 + 5,
+                left: `${Math.random() * 100}%`,
+                drift: Math.random() * 40 - 20,
+                duration: Math.random() * 8 + 12,
+                delay: Math.random() * 6,
+            })),
+        [bubbleCount]
+    );
+
     const bubbleVariants: Variants = {
-        animate: () => ({
+        animate: (bubble: { drift: number; duration: number; delay: number }) => ({
             y: [0, -1200],
-            x: [0, Math.random() * 50 - 25],
+            x: [0, bubble.drift],
             opacity: [0, 0.4, 0],
             scale: [0.5, 1.5, 0.5],
             transition: {
-                duration: Math.random() * 15 + 15,
+                duration: bubble.duration,
                 repeat: Infinity,
-                delay: Math.random() * 10,
+                delay: bubble.delay,
                 ease: "linear"
             }
         })
@@ -60,39 +76,40 @@ const LandingPage = () => {
     return (
         <div
             className="min-h-screen bg-slate-950 text-white font-sans overflow-x-hidden relative selection:bg-cyan-500/30"
-            onMouseMove={handleMouseMove}
+            onMouseMove={shouldReduceMotion ? undefined : handleMouseMove}
         >
             {/* Deep Ocean Gradient Background with Caustics Simulation */}
             <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/40 via-blue-950 to-slate-950 z-0"></div>
             <motion.div
                 style={{ x: bgParallaxX, y: bgParallaxY }}
-                className="fixed inset-0 opacity-30 z-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat opacity-5"
+                className="fixed inset-0 opacity-30 z-0 pointer-events-none [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px] opacity-5"
             ></motion.div>
 
             {/* Ambient Light Effects - Dynamic */}
             <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={shouldReduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: "easeInOut" }}
                 className="fixed top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
             ></motion.div>
             <motion.div
-                animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+                transition={shouldReduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
                 className="fixed bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] pointer-events-none z-0 mix-blend-screen"
             ></motion.div>
 
             {/* High Density Bubble Particles */}
             <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                {[...Array(40)].map((_, i) => (
+                {bubbles.map((bubble, i) => (
                     <motion.div
                         key={i}
+                        custom={bubble}
                         variants={bubbleVariants}
                         animate="animate"
                         className="absolute rounded-full bg-cyan-200/10 backdrop-blur-[1px] border border-white/5"
                         style={{
-                            width: Math.random() * 15 + 5,
-                            height: Math.random() * 15 + 5,
-                            left: `${Math.random() * 100}%`,
+                            width: bubble.width,
+                            height: bubble.height,
+                            left: bubble.left,
                             bottom: '-10%'
                         }}
                     />
@@ -187,9 +204,9 @@ const LandingPage = () => {
 
                         <motion.div variants={fadeIn} className="mt-16 flex items-center gap-6 p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-sm max-w-md hover:bg-white/10 transition-colors">
                             <div className="flex -space-x-4 pl-2">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="w-12 h-12 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative shadow-lg hover:scale-110 hover:z-10 transition-transform cursor-pointer">
-                                        <img src={`https://i.pravatar.cc/100?img=${10 + i}`} alt="User" className="w-full h-full object-cover" />
+                                {["AR", "SC", "MJ", "KL"].map((initials) => (
+                                    <div key={initials} className="w-12 h-12 rounded-full border-2 border-slate-900 bg-gradient-to-br from-cyan-700 to-blue-800 overflow-hidden relative shadow-lg hover:scale-110 hover:z-10 transition-transform cursor-pointer flex items-center justify-center text-xs font-bold text-white">
+                                        {initials}
                                     </div>
                                 ))}
                                 <div className="w-12 h-12 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-xs font-bold text-white relative hover:scale-110 hover:z-10 transition-transform cursor-pointer bg-gradient-to-br from-cyan-600 to-blue-700">
@@ -430,7 +447,13 @@ const LandingPage = () => {
                                 <Quote className="absolute top-8 right-8 w-8 h-8 text-white/5 group-hover:text-cyan-500/20 transition-colors" />
                                 <p className="text-slate-300 mb-6 italic relative z-10">"{t.text}"</p>
                                 <div className="flex items-center gap-4">
-                                    <img src={t.img} alt={t.name} className="w-12 h-12 rounded-full border-2 border-white/20 shadow-md group-hover:border-cyan-400 transition-colors" />
+                                    <img
+                                        src={t.img}
+                                        alt={t.name}
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="w-12 h-12 rounded-full border-2 border-white/20 shadow-md group-hover:border-cyan-400 transition-colors"
+                                    />
                                     <div>
                                         <div className="font-bold text-white">{t.name}</div>
                                         <div className="text-xs text-cyan-400 font-medium uppercase tracking-wide">{t.role}</div>

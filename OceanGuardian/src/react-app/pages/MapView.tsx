@@ -57,15 +57,36 @@ const markerSvgs: Record<SightingType, string> = {
   </svg>`,
 };
 
-function createCustomIcon(type: SightingType) {
-  return new DivIcon({
-    html: markerSvgs[type],
+const markerIcons: Record<SightingType, DivIcon> = {
+  garbage: new DivIcon({
+    html: markerSvgs.garbage,
     className: "custom-marker-icon",
     iconSize: [32, 40],
     iconAnchor: [16, 40],
     popupAnchor: [0, -40],
-  });
-}
+  }),
+  floating: new DivIcon({
+    html: markerSvgs.floating,
+    className: "custom-marker-icon",
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40],
+  }),
+  wildlife: new DivIcon({
+    html: markerSvgs.wildlife,
+    className: "custom-marker-icon",
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40],
+  }),
+  coral: new DivIcon({
+    html: markerSvgs.coral,
+    className: "custom-marker-icon",
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40],
+  }),
+};
 
 // Cluster icon creator
 // Cluster icon creator
@@ -145,7 +166,9 @@ export default function MapView() {
 
     void fetchSightings();
     const interval = setInterval(() => {
-      void fetchSightings();
+      if (document.visibilityState === "visible") {
+        void fetchSightings();
+      }
     }, 30000);
 
     window.addEventListener("og:sightings-refresh", handleRefresh);
@@ -242,7 +265,7 @@ export default function MapView() {
           <Marker
             key={sighting.id}
             position={[sighting.latitude, sighting.longitude]}
-            icon={createCustomIcon(sighting.type)}
+            icon={markerIcons[sighting.type]}
             eventHandlers={{
               click: () => setSelectedSighting(sighting),
             }}

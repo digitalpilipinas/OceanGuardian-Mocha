@@ -1,17 +1,32 @@
 import { Waves, Map, Award, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+import { Suspense, lazy } from "react";
 import { CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
 import ActivityFeed from "@/react-app/components/ActivityFeed";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";
 import WelcomeHeader from "@/react-app/components/dashboard/WelcomeHeader";
 import DashboardStats from "@/react-app/components/dashboard/DashboardStats";
-import MapPreview from "@/react-app/components/dashboard/MapPreview";
 import MissionsCarousel from "@/react-app/components/dashboard/MissionsCarousel";
 import DailyQuizCTA from "@/react-app/components/dashboard/DailyQuizCTA";
 
+const MapPreview = lazy(() => import("@/react-app/components/dashboard/MapPreview"));
+
 export default function Home() {
-  const { profile: user } = useUserProfile();
+  const { profile: user, loading } = useUserProfile();
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="h-20 rounded-3xl bg-secondary/60 border border-white/10 animate-pulse mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-36 rounded-3xl bg-secondary/60 border border-white/10 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (user) {
     return (
@@ -27,7 +42,9 @@ export default function Home() {
             {/* Live Map Preview */}
             <div className="p-2 rounded-[2.5rem] bg-secondary border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden">
               <div className="h-[500px] rounded-[2.2rem] overflow-hidden border border-white/5 shadow-inner">
-                <MapPreview />
+                <Suspense fallback={<div className="h-full w-full bg-secondary/60 animate-pulse" />}>
+                  <MapPreview />
+                </Suspense>
               </div>
             </div>
 

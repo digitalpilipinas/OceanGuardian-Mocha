@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import logo from "@/react-app/assets/logo.png";
+import logo from "@/react-app/assets/logo-256.png";
 import { Waves, Map, Target, User, Globe, Shield, FlaskConical, LayoutDashboard, Settings } from "lucide-react";
 import { cn } from "@/react-app/lib/utils";
 import { useUserProfile } from "@/react-app/hooks/useUserProfile";

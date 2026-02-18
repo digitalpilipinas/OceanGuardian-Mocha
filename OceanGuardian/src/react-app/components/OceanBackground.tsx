@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion, Variants, useSpring, useTransform, useMotionValue } from 'framer-motion';
+import React, { useMemo } from 'react';
+import { motion, Variants, useSpring, useTransform, useMotionValue, useReducedMotion } from 'framer-motion';
 
 interface OceanBackgroundProps {
     interactive?: boolean;
@@ -8,6 +8,8 @@ interface OceanBackgroundProps {
 }
 
 const OceanBackground = ({ interactive = false, bubbleDensity = 'medium', variant = 'default' }: OceanBackgroundProps) => {
+    const shouldReduceMotion = useReducedMotion();
+
     // Mouse move parallax effect (only if interactive)
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
@@ -23,18 +25,31 @@ const OceanBackground = ({ interactive = false, bubbleDensity = 'medium', varian
     const bgParallaxX = useSpring(useTransform(mouseX, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
     const bgParallaxY = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 50, damping: 30 });
 
-    const bubbleCount = bubbleDensity === 'high' ? 40 : bubbleDensity === 'medium' ? 20 : 10;
+    const bubbleCount = shouldReduceMotion ? 0 : bubbleDensity === 'high' ? 20 : bubbleDensity === 'medium' ? 12 : 6;
+
+    const bubbles = useMemo(
+        () =>
+            Array.from({ length: bubbleCount }, () => ({
+                width: Math.random() * 15 + 5,
+                height: Math.random() * 15 + 5,
+                left: `${Math.random() * 100}%`,
+                drift: Math.random() * 40 - 20,
+                duration: Math.random() * 10 + 12,
+                delay: Math.random() * 6,
+            })),
+        [bubbleCount]
+    );
 
     const bubbleVariants: Variants = {
-        animate: () => ({
+        animate: (bubble: { drift: number; duration: number; delay: number }) => ({
             y: [0, -1200],
-            x: [0, Math.random() * 50 - 25],
+            x: [0, bubble.drift],
             opacity: [0, 0.4, 0],
             scale: [0.5, 1.5, 0.5],
             transition: {
-                duration: Math.random() * 15 + 15,
+                duration: bubble.duration,
                 repeat: Infinity,
-                delay: Math.random() * 10,
+                delay: bubble.delay,
                 ease: "linear"
             }
         })
@@ -51,33 +66,34 @@ const OceanBackground = ({ interactive = false, bubbleDensity = 'medium', varian
             {/* Noise Overlay */}
             <motion.div
                 style={interactive ? { x: bgParallaxX, y: bgParallaxY } : {}}
-                className="absolute inset-0 opacity-5 z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat"
+                className="absolute inset-0 opacity-5 z-0 [background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:3px_3px]"
             ></motion.div>
 
             {/* Ambient Light Effects - Dynamic */}
             <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={shouldReduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute top-[-10%] left-1/4 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[128px] mix-blend-screen"
             ></motion.div>
             <motion.div
-                animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+                transition={shouldReduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
                 className="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[128px] mix-blend-screen"
             ></motion.div>
 
             {/* Bubble Particles */}
             <div className="absolute inset-0 z-0 overflow-hidden">
-                {[...Array(bubbleCount)].map((_, i) => (
+                {bubbles.map((bubble, i) => (
                     <motion.div
                         key={i}
+                        custom={bubble}
                         variants={bubbleVariants}
                         animate="animate"
                         className="absolute rounded-full bg-cyan-200/10 backdrop-blur-[1px] border border-white/5"
                         style={{
-                            width: Math.random() * 15 + 5,
-                            height: Math.random() * 15 + 5,
-                            left: `${Math.random() * 100}%`,
+                            width: bubble.width,
+                            height: bubble.height,
+                            left: bubble.left,
                             bottom: '-10%'
                         }}
                     />
