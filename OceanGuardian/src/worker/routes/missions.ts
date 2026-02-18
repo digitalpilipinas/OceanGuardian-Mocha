@@ -11,7 +11,55 @@ import {
 
 import { checkAndAwardBadges } from "./gamification";
 
+type TursoClient = ReturnType<typeof getTursoClient>;
+
 const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
+const MISSION_COMPLETION_XP = 100;
+const MISSION_CHAT_ALLOWED_STATUSES = new Set(["rsvp", "checked_in"]);
+
+let missionChatSchemaReady = false;
+let missionChatSchemaPromise: Promise<void> | null = null;
+
+function isIgnorableMissionChatAlterError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes("duplicate column name: client_request_id");
+}
+
+async function ensureMissionChatIdempotencySchema(db: TursoClient): Promise<void> {
+    if (missionChatSchemaReady) return;
+    if (missionChatSchemaPromise) {
+        await missionChatSchemaPromise;
+        return;
+    }
+
+    missionChatSchemaPromise = (async () => {
+        try {
+            await db.execute({
+                sql: "ALTER TABLE mission_chat_messages ADD COLUMN client_request_id TEXT",
+                args: [],
+            });
+        } catch (error) {
+            if (!isIgnorableMissionChatAlterError(error)) {
+                throw error;
+            }
+        }
+
+        await db.execute({
+            sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_mission_chat_request_id
+                  ON mission_chat_messages(mission_id, user_id, client_request_id)
+                  WHERE client_request_id IS NOT NULL`,
+            args: [],
+        });
+
+        missionChatSchemaReady = true;
+    })();
+
+    try {
+        await missionChatSchemaPromise;
+    } finally {
+        missionChatSchemaPromise = null;
+    }
+}
 
 // Get all missions with optional filters
 app.get("/api/missions", async (c) => {
@@ -264,7 +312,7 @@ app.post("/api/missions/:id/check-in", authMiddleware, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const { latitude, longitude } = await c.req.json<{ latitude: number; longitude: number }>();
-    if (!latitude || !longitude) return c.json({ error: "GPS coordinates required" }, 400);
+    if (latitude == null || longitude == null) return c.json({ error: "GPS coordinates required" }, 400);
 
     const db = getTursoClient(c.env);
 
@@ -298,13 +346,34 @@ app.post("/api/missions/:id/check-in", authMiddleware, async (c) => {
         return c.json({ error: "You are too far from the mission location." }, 400);
     }
 
-    // Update status
-    await db.execute({
-        sql: `UPDATE mission_participants
-          SET status = 'checked_in', checked_in_at = datetime('now')
-          WHERE mission_id = ? AND user_id = ?`,
+    const participantResult = await db.execute({
+        sql: "SELECT status FROM mission_participants WHERE mission_id = ? AND user_id = ?",
         args: [id, user.id],
     });
+
+    if (participantResult.rows.length === 0) {
+        return c.json({ error: "You must join this mission before check-in." }, 400);
+    }
+
+    const participantStatus = String(participantResult.rows[0].status || "");
+    if (participantStatus === "checked_in") {
+        return c.json({ success: true, message: "Already checked in." });
+    }
+
+    if (participantStatus === "cancelled") {
+        return c.json({ error: "Cancelled participants cannot check in." }, 400);
+    }
+
+    const updateResult = await db.execute({
+        sql: `UPDATE mission_participants
+          SET status = 'checked_in', checked_in_at = datetime('now')
+          WHERE mission_id = ? AND user_id = ? AND status != 'checked_in'`,
+        args: [id, user.id],
+    });
+
+    if (Number(updateResult.rowsAffected || 0) === 0) {
+        return c.json({ error: "Unable to check in. Please try again." }, 409);
+    }
 
     return c.json({ success: true, message: "Checked in successfully!" });
 });
@@ -327,7 +396,6 @@ app.get("/api/missions/:id/chat", authMiddleware, async (c) => {
     }
 
     const organizerId = String(missionResult.rows[0].organizer_id);
-    const allowedChatStatuses = new Set(["rsvp", "checked_in"]);
     if (organizerId !== user.id) {
         const participantResult = await db.execute({
             sql: "SELECT status FROM mission_participants WHERE mission_id = ? AND user_id = ?",
@@ -335,7 +403,7 @@ app.get("/api/missions/:id/chat", authMiddleware, async (c) => {
         });
         if (
             participantResult.rows.length === 0 ||
-            !allowedChatStatuses.has(String(participantResult.rows[0].status))
+            !MISSION_CHAT_ALLOWED_STATUSES.has(String(participantResult.rows[0].status))
         ) {
             return c.json({ error: "Only organizers or mission participants can view chat." }, 403);
         }
@@ -360,10 +428,15 @@ app.post("/api/missions/:id/chat", authMiddleware, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const { message } = await c.req.json<{ message: string }>();
-    if (!message || message.trim().length === 0) return c.json({ error: "Message empty" }, 400);
+    const payload: { message?: string; client_request_id?: string } = await c.req
+        .json<{ message?: string; client_request_id?: string }>()
+        .catch(() => ({} as { message?: string; client_request_id?: string }));
+    const message = typeof payload.message === "string" ? payload.message.trim() : "";
+    const clientRequestId = typeof payload.client_request_id === "string" ? payload.client_request_id.trim() : "";
+    if (!message) return c.json({ error: "Message empty" }, 400);
 
     const db = getTursoClient(c.env);
+    await ensureMissionChatIdempotencySchema(db);
 
     // Verify participant
     const partResult = await db.execute({
@@ -372,17 +445,48 @@ app.post("/api/missions/:id/chat", authMiddleware, async (c) => {
     });
 
     const participantStatus = String(partResult.rows[0]?.status || "");
-    if (partResult.rows.length === 0 || !new Set(["rsvp", "checked_in"]).has(participantStatus)) {
+    if (partResult.rows.length === 0 || !MISSION_CHAT_ALLOWED_STATUSES.has(participantStatus)) {
         return c.json({ error: "You must join the mission to chat." }, 403);
     }
 
-    await db.execute({
-        sql: `INSERT INTO mission_chat_messages (mission_id, user_id, message)
-          VALUES (?, ?, ?)`,
-        args: [id, user.id, message],
+    if (clientRequestId) {
+        const existingMessage = await db.execute({
+            sql: `SELECT id
+                  FROM mission_chat_messages
+                  WHERE mission_id = ? AND user_id = ? AND client_request_id = ?
+                  LIMIT 1`,
+            args: [id, user.id, clientRequestId],
+        });
+
+        if (existingMessage.rows.length > 0) {
+            const chatMessageId = Number(existingMessage.rows[0].id);
+            const messageResult = await db.execute({
+                sql: `SELECT mcm.*, up.username, up.avatar_url
+                      FROM mission_chat_messages mcm
+                      JOIN user_profiles up ON mcm.user_id = up.id
+                      WHERE mcm.id = ?`,
+                args: [chatMessageId],
+            });
+            return c.json({ success: true, duplicate: true, message: messageResult.rows[0] }, 200);
+        }
+    }
+
+    const insertResult = await db.execute({
+        sql: `INSERT INTO mission_chat_messages (mission_id, user_id, message, client_request_id)
+          VALUES (?, ?, ?, ?)`,
+        args: [id, user.id, message, clientRequestId || null],
     });
 
-    return c.json({ success: true });
+    const chatMessageId = Number(insertResult.lastInsertRowid);
+    const messageResult = await db.execute({
+        sql: `SELECT mcm.*, up.username, up.avatar_url
+              FROM mission_chat_messages mcm
+              JOIN user_profiles up ON mcm.user_id = up.id
+              WHERE mcm.id = ?`,
+        args: [chatMessageId],
+    });
+
+    return c.json({ success: true, message: messageResult.rows[0] });
 });
 
 // Complete Mission & Generate Report (Admin/Ambassador)
@@ -399,7 +503,7 @@ app.post(
 
         // Verify organizer
         const missionResult = await db.execute({
-            sql: "SELECT organizer_id, status FROM missions WHERE id = ?",
+            sql: "SELECT organizer_id, status, title FROM missions WHERE id = ?",
             args: [id],
         });
 
@@ -417,77 +521,110 @@ app.post(
             }
         }
 
-        if (mission.status === "completed") {
-            return c.json({ error: "Mission already completed" }, 400);
+        if (mission.status === "cancelled") {
+            return c.json({ error: "Cancelled missions cannot be completed." }, 400);
         }
 
+        const alreadyCompleted = mission.status === "completed";
         const data = c.req.valid("json");
 
-        // 1. Create Impact Report
+        // Upsert impact report so retries update consistently instead of duplicating.
         await db.execute({
             sql: `INSERT INTO mission_impact_reports (
                 mission_id, total_trash_weight, trash_bags_count, participants_count, duration_minutes, notes
-              ) VALUES (?, ?, ?, ?, ?, ?)`,
-            args: [id, data.total_trash_weight, data.trash_bags_count, data.participants_count, data.duration_minutes, data.notes || null],
+              ) VALUES (?, ?, ?, ?, ?, ?)
+              ON CONFLICT(mission_id) DO UPDATE SET
+                total_trash_weight = excluded.total_trash_weight,
+                trash_bags_count = excluded.trash_bags_count,
+                participants_count = excluded.participants_count,
+                duration_minutes = excluded.duration_minutes,
+                notes = excluded.notes`,
+            args: [
+                id,
+                data.total_trash_weight,
+                data.trash_bags_count,
+                data.participants_count,
+                data.duration_minutes,
+                data.notes || null,
+            ],
         });
 
-        // 2. Update Mission Status
         await db.execute({
-            sql: "UPDATE missions SET status = 'completed' WHERE id = ?",
+            sql: "UPDATE missions SET status = 'completed', updated_at = datetime('now') WHERE id = ?",
             args: [id],
         });
 
-        // 3. Distribute XP to checked-in participants
         const participants = await db.execute({
-            sql: "SELECT user_id FROM mission_participants WHERE mission_id = ? AND status = 'checked_in'",
+            sql: "SELECT user_id, xp_awarded FROM mission_participants WHERE mission_id = ? AND status = 'checked_in'",
             args: [id],
         });
 
-        // Let's simplified: Base 100 XP for completion.
-        const missionXp = 100;
+        let awardedCount = 0;
+        let skippedCount = 0;
 
         for (const row of participants.rows) {
             const userId = row.user_id as string;
-            // Update User Profile
+            const currentAwarded = Number(row.xp_awarded || 0);
+            const xpDelta = MISSION_COMPLETION_XP - currentAwarded;
+
+            if (xpDelta <= 0) {
+                skippedCount++;
+                continue;
+            }
+
             const profileRes = await db.execute({
                 sql: "SELECT xp, total_missions FROM user_profiles WHERE id = ?",
                 args: [userId],
             });
-            if (profileRes.rows.length > 0) {
-                const currentXp = Number(profileRes.rows[0].xp);
-                const newXp = currentXp + missionXp;
-                const newMissions = Number(profileRes.rows[0].total_missions) + 1;
-                const newLevel = calculateLevel(newXp);
+            if (profileRes.rows.length === 0) {
+                continue;
+            }
 
-                await db.execute({
-                    sql: `UPDATE user_profiles SET xp = ?, level = ?, total_missions = ? WHERE id = ?`,
-                    args: [newXp, newLevel, newMissions, userId],
-                });
+            const currentXp = Number(profileRes.rows[0].xp);
+            const currentTotalMissions = Number(profileRes.rows[0].total_missions);
+            const isFirstAward = currentAwarded === 0;
+            const newXp = currentXp + xpDelta;
+            const newTotalMissions = currentTotalMissions + (isFirstAward ? 1 : 0);
+            const newLevel = calculateLevel(newXp);
 
-                // Update participant record
-                await db.execute({
-                    sql: "UPDATE mission_participants SET xp_awarded = ? WHERE mission_id = ? AND user_id = ?",
-                    args: [missionXp, id, userId],
-                });
+            await db.execute({
+                sql: `UPDATE user_profiles
+                      SET xp = ?, level = ?, total_missions = ?, last_active = datetime('now')
+                      WHERE id = ?`,
+                args: [newXp, newLevel, newTotalMissions, userId],
+            });
 
-                // Log activity
+            await db.execute({
+                sql: "UPDATE mission_participants SET xp_awarded = ? WHERE mission_id = ? AND user_id = ?",
+                args: [MISSION_COMPLETION_XP, id, userId],
+            });
+
+            if (isFirstAward) {
                 await db.execute({
                     sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
-                      VALUES (?, 'mission', ?, ?, ?)`,
+                          VALUES (?, 'mission', ?, ?, ?)`,
                     args: [
                         userId,
-                        `Completed mission: ${mission.title || 'Cleanup'}`,
-                        missionXp,
+                        `Completed mission: ${String(mission.title || "Cleanup")}`,
+                        MISSION_COMPLETION_XP,
                         JSON.stringify({ mission_id: id }),
                     ],
                 });
-
-                // Check badges
-                await checkAndAwardBadges(db, userId);
             }
+
+            await checkAndAwardBadges(db, userId);
+            awardedCount++;
         }
 
-        return c.json({ success: true, message: "Mission completed and XP distributed" });
+        return c.json({
+            success: true,
+            message: alreadyCompleted
+                ? "Mission was already completed. Rewards were reconciled."
+                : "Mission completed and XP distributed.",
+            already_completed: alreadyCompleted,
+            awarded_count: awardedCount,
+            skipped_count: skippedCount,
+        });
     }
 );
 

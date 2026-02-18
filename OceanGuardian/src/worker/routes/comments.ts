@@ -9,7 +9,52 @@ const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>
 
 const CreateCommentSchema = z.object({
     content: z.string().min(1).max(1000),
+    client_request_id: z.string().uuid().optional(),
 });
+
+let commentSchemaReady = false;
+let commentSchemaPromise: Promise<void> | null = null;
+
+function isIgnorableCommentAlterError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes("duplicate column name: client_request_id");
+}
+
+async function ensureCommentIdempotencySchema(db: ReturnType<typeof getTursoClient>): Promise<void> {
+    if (commentSchemaReady) return;
+    if (commentSchemaPromise) {
+        await commentSchemaPromise;
+        return;
+    }
+
+    commentSchemaPromise = (async () => {
+        try {
+            await db.execute({
+                sql: "ALTER TABLE sighting_comments ADD COLUMN client_request_id TEXT",
+                args: [],
+            });
+        } catch (error) {
+            if (!isIgnorableCommentAlterError(error)) {
+                throw error;
+            }
+        }
+
+        await db.execute({
+            sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_sighting_comments_request_id
+                  ON sighting_comments(sighting_id, user_id, client_request_id)
+                  WHERE client_request_id IS NOT NULL`,
+            args: [],
+        });
+
+        commentSchemaReady = true;
+    })();
+
+    try {
+        await commentSchemaPromise;
+    } finally {
+        commentSchemaPromise = null;
+    }
+}
 
 // Get comments for a sighting
 app.get("/api/sightings/:id/comments", async (c) => {
@@ -40,8 +85,11 @@ app.post(
         const user = c.get("user");
         if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-        const { content } = c.req.valid("json");
+        const { content, client_request_id: clientRequestIdRaw } = c.req.valid("json");
+        const clientRequestId = clientRequestIdRaw?.trim() || null;
         const db = getTursoClient(c.env);
+
+        await ensureCommentIdempotencySchema(db);
 
         // Verify sighting exists
         const sightingCheck = await db.execute({
@@ -56,10 +104,35 @@ app.post(
         const sightingOwnerId = sightingCheck.rows[0].user_id as string;
         const sightingDescription = sightingCheck.rows[0].description as string;
 
+        if (clientRequestId) {
+            const existingComment = await db.execute({
+                sql: `SELECT c.id
+                      FROM sighting_comments c
+                      WHERE c.sighting_id = ? AND c.user_id = ? AND c.client_request_id = ?
+                      LIMIT 1`,
+                args: [sightingId, user.id, clientRequestId],
+            });
+
+            if (existingComment.rows.length > 0) {
+                const existingCommentId = Number(existingComment.rows[0].id);
+                const commentResult = await db.execute({
+                    sql: `
+                      SELECT c.*, up.username, up.avatar_url, up.level
+                      FROM sighting_comments c
+                      JOIN user_profiles up ON c.user_id = up.id
+                      WHERE c.id = ?
+                    `,
+                    args: [existingCommentId],
+                });
+
+                return c.json({ ...commentResult.rows[0], duplicate: true }, 200);
+            }
+        }
+
         // Insert comment
         const result = await db.execute({
-            sql: "INSERT INTO sighting_comments (sighting_id, user_id, content) VALUES (?, ?, ?)",
-            args: [sightingId, user.id, content],
+            sql: "INSERT INTO sighting_comments (sighting_id, user_id, content, client_request_id) VALUES (?, ?, ?, ?)",
+            args: [sightingId, user.id, content, clientRequestId],
         });
 
         const commentId = Number(result.lastInsertRowid);

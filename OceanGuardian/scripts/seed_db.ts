@@ -41,7 +41,9 @@ async function main() {
         "seed_learning.sql",         // ensuring content exists
         "seed_learning_extended.sql", // user progress
         "update_seed_avatars.sql",    // add avatars to users
-        "update_seed_lessons.sql"    // add cover images to lessons
+        "update_seed_lessons.sql",    // add cover images to lessons
+        "sightings_request_id.sql",   // idempotency key for sightings
+        "crud_idempotency.sql",       // idempotency keys for comments and mission chat
     ];
 
     try {

@@ -44,6 +44,64 @@ const severityLevels = [
   { value: 5, label: "Critical" },
 ];
 
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function isRetryableStatus(status: number): boolean {
+  return RETRYABLE_STATUS_CODES.has(status);
+}
+
+function buildSightingRequestBody(sighting: SightingData): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    type: sighting.type,
+    subcategory: sighting.subcategory,
+    description: sighting.description,
+    severity: sighting.severity,
+    latitude: sighting.latitude,
+    longitude: sighting.longitude,
+    client_request_id: sighting.id,
+  };
+
+  if (sighting.type === "coral") {
+    if (sighting.waterTemp) body.water_temp = parseFloat(sighting.waterTemp);
+    if (sighting.bleachPercent) body.bleach_percent = parseInt(sighting.bleachPercent, 10);
+    if (sighting.depth) body.depth = parseFloat(sighting.depth);
+  }
+
+  return body;
+}
+
+async function readApiError(response: Response): Promise<string> {
+  try {
+    const json = await response.json();
+    if (typeof json?.error === "string" && json.error.length > 0) {
+      return json.error;
+    }
+  } catch {
+    // fall through
+  }
+  return response.statusText || "Request failed";
+}
+
+function emitDataRefreshEvents() {
+  window.dispatchEvent(new Event("og:sightings-refresh"));
+  window.dispatchEvent(new Event("og:user-data-refresh"));
+}
+
+type SightingSubmitResponse = {
+  sighting?: { id?: number };
+  xp_earned?: number;
+  leveled_up?: boolean;
+  old_level?: number;
+  new_level?: number;
+  new_badges?: Array<{
+    name: string;
+    description: string;
+    icon: string;
+    rarity: string;
+    category: string;
+  }>;
+};
+
 /** Compress an image file to < 1MB using Canvas API */
 async function compressImage(file: File, maxSizeKB = 1024): Promise<File> {
   // If already small enough, return as-is
@@ -156,7 +214,11 @@ export default function ReportSighting() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<{ xp: number } | null>(null);
+  const [submitResult, setSubmitResult] = useState<{
+    xp: number;
+    pendingSync?: boolean;
+    pendingPhotoUpload?: boolean;
+  } | null>(null);
   const [userLevel, setUserLevel] = useState<number>(0);
 
   // Fetch user level for coral gate
@@ -255,9 +317,49 @@ export default function ReportSighting() {
 
   // ... inside component ...
 
+  const triggerGamificationFromResult = (result: SightingSubmitResponse) => {
+    if (result.leveled_up && typeof result.old_level === "number" && typeof result.new_level === "number") {
+      triggerLevelUp(result.old_level, result.new_level);
+    }
+    if (result.new_badges && Array.isArray(result.new_badges)) {
+      for (const badge of result.new_badges) {
+        triggerBadgeUnlock({
+          name: badge.name as string,
+          description: badge.description as string,
+          icon: badge.icon as string,
+          rarity: badge.rarity as string,
+          category: badge.category as string,
+        });
+      }
+    }
+  };
+
+  const queuePendingSighting = async (
+    pendingData: SightingData,
+    options?: { xp?: number; pendingSync?: boolean; pendingPhotoUpload?: boolean },
+  ): Promise<boolean> => {
+    try {
+      await offlineStorage.saveSighting(pendingData);
+      setSubmitResult({
+        xp: options?.xp ?? 0,
+        pendingSync: options?.pendingSync ?? true,
+        pendingPhotoUpload: options?.pendingPhotoUpload ?? false,
+      });
+      return true;
+    } catch (queueError) {
+      console.error("Failed to save report locally", queueError);
+      alert("Could not save report to local outbox. Please try again.");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    let pendingData: SightingData | null = null;
 
     try {
       const [latStr, lngStr] = formData.location.split(",").map((s) => s.trim());
@@ -270,100 +372,116 @@ export default function ReportSighting() {
         return;
       }
 
-      // Check for offline mode
-      if (!navigator.onLine) {
-        const offlineData: SightingData = {
-          id: crypto.randomUUID(),
-          userId: user.id,
-          timestamp: Date.now(),
-          type: formData.type,
-          subcategory: formData.subcategory,
-          description: formData.description,
-          severity: formData.severity,
-          location: formData.location,
-          latitude,
-          longitude,
-          waterTemp: formData.waterTemp,
-          bleachPercent: formData.bleachPercent,
-          depth: formData.depth,
-          photoBlob: photo, // Store the blob directly
-        };
-
-        await offlineStorage.saveSighting(offlineData);
-
-        // Mock success result for UI
-        setSubmitResult({ xp: 0 }); // 0 XP for now, will get when synced
-        setIsSubmitting(false);
-        return;
-      }
-
-      const body: Record<string, unknown> = {
+      pendingData = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        timestamp: Date.now(),
         type: formData.type,
         subcategory: formData.subcategory,
         description: formData.description,
         severity: formData.severity,
+        location: formData.location,
         latitude,
         longitude,
+        waterTemp: formData.waterTemp,
+        bleachPercent: formData.bleachPercent,
+        depth: formData.depth,
+        photoBlob: photo,
+        serverSightingId: null,
       };
 
-      // Add coral-specific fields
-      if (formData.type === "coral") {
-        if (formData.waterTemp) body.water_temp = parseFloat(formData.waterTemp);
-        if (formData.bleachPercent) body.bleach_percent = parseInt(formData.bleachPercent);
-        if (formData.depth) body.depth = parseFloat(formData.depth);
+      if (!navigator.onLine) {
+        await queuePendingSighting(pendingData);
+        return;
       }
 
-      const res = await fetch("/api/sightings", {
+      const createRes = await fetch("/api/sightings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(buildSightingRequestBody(pendingData)),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to submit sighting");
+      if (!createRes.ok) {
+        const errorMessage = await readApiError(createRes);
+        if (isRetryableStatus(createRes.status)) {
+          await queuePendingSighting({
+            ...pendingData,
+            lastError: `Create failed (${createRes.status}): ${errorMessage}`,
+          });
+          return;
+        }
+        throw new Error(errorMessage || "Failed to submit sighting");
       }
 
-      const result = await res.json();
-      const sightingId = result.sighting?.id;
-      let totalXp = result.xp_earned || 0;
+      const result = await createRes.json() as SightingSubmitResponse;
+      const sightingId = Number(result.sighting?.id);
+      if (!Number.isFinite(sightingId) || sightingId <= 0) {
+        await queuePendingSighting({
+          ...pendingData,
+          lastError: "Sighting save response did not include a valid id",
+        });
+        return;
+      }
 
-      // Upload photo if provided
+      let totalXp = Number(result.xp_earned || 0);
+      triggerGamificationFromResult(result);
+      emitDataRefreshEvents();
+
       if (photo && sightingId) {
         const photoForm = new FormData();
         photoForm.append("photo", photo);
 
-        const photoRes = await fetch(`/api/sightings/${sightingId}/photo`, {
-          method: "POST",
-          body: photoForm,
-        });
+        try {
+          const photoRes = await fetch(`/api/sightings/${sightingId}/photo`, {
+            method: "POST",
+            body: photoForm,
+          });
 
-        if (photoRes.ok) {
-          const photoResult = await photoRes.json();
-          totalXp += photoResult.xp_bonus || 0;
+          if (!photoRes.ok) {
+            const photoError = await readApiError(photoRes);
+            if (isRetryableStatus(photoRes.status)) {
+              await queuePendingSighting(
+                {
+                  ...pendingData,
+                  serverSightingId: sightingId,
+                  lastError: `Photo upload failed (${photoRes.status}): ${photoError}`,
+                },
+                { xp: totalXp, pendingSync: false, pendingPhotoUpload: true },
+              );
+              return;
+            }
+            throw new Error(`Report saved, but photo upload failed: ${photoError}`);
+          }
+
+          const photoResult = await photoRes.json() as { xp_bonus?: number };
+          totalXp += Number(photoResult.xp_bonus || 0);
+        } catch (photoErr) {
+          if (photoErr instanceof TypeError) {
+            await queuePendingSighting(
+              {
+                ...pendingData,
+                serverSightingId: sightingId,
+                lastError: "Photo upload network error. Will retry automatically.",
+              },
+              { xp: totalXp, pendingSync: false, pendingPhotoUpload: true },
+            );
+            return;
+          }
+          throw photoErr;
         }
       }
 
       setSubmitResult({ xp: totalXp });
-
-      // Trigger gamification modals
-      if (result.leveled_up) {
-        triggerLevelUp(result.old_level, result.new_level);
-      }
-      if (result.new_badges && Array.isArray(result.new_badges)) {
-        for (const badge of result.new_badges) {
-          triggerBadgeUnlock({
-            name: badge.name as string,
-            description: badge.description as string,
-            icon: badge.icon as string,
-            rarity: badge.rarity as string,
-            category: badge.category as string,
-          });
-        }
-      }
-
-      // No auto-redirect — let user share or manually navigate
+      setIsSubmitting(false);
+      emitDataRefreshEvents();
     } catch (err) {
+      if (pendingData && err instanceof TypeError) {
+        await queuePendingSighting({
+          ...pendingData,
+          lastError: "Network error while submitting. Will retry automatically.",
+        });
+        return;
+      }
       console.error("Submit error:", err);
       alert(err instanceof Error ? err.message : "Failed to submit sighting");
       setIsSubmitting(false);
@@ -372,6 +490,9 @@ export default function ReportSighting() {
 
   // Success state
   if (submitResult) {
+    const isPendingSync = submitResult.pendingSync === true;
+    const isPendingPhotoUpload = submitResult.pendingPhotoUpload === true;
+
     const handleShareSighting = async () => {
       console.log("[analytics] sighting_share_clicked");
       const typeLabel = formData.type ? sightingTypes.find(t => t.value === formData.type)?.label || formData.type : "marine";
@@ -397,21 +518,27 @@ export default function ReportSighting() {
             </div>
             <div>
               <h2 className="text-3xl font-black text-white tracking-tighter">
-                {submitResult.xp > 0 ? "Protocol Complete" : "Saved to Outbox"}
+                {isPendingSync ? "Saved to Outbox" : isPendingPhotoUpload ? "Report Saved" : "Protocol Complete"}
               </h2>
               <p className="text-sm font-bold text-white/40 mt-3 italic">
-                {submitResult.xp > 0
+                {isPendingSync
+                  ? "Report queued securely and will auto-upload when network/server is available."
+                  : isPendingPhotoUpload
+                    ? "Report is saved in the database. Photo upload is queued and will retry automatically."
+                    : submitResult.xp > 0
                   ? "Data transmission successful. Thank you for protecting our oceans."
-                  : "Device is offline. Data securely stored and will auto-upload when connection is restored."
+                  : "Report saved. Additional updates will sync automatically."
                 }
               </p>
             </div>
 
-            <div className={`p-6 rounded-[2rem] border border-white/10 shadow-inner ${submitResult.xp > 0 ? "bg-white/5" : "bg-yellow-500/10 border-yellow-500/20"}`}>
-              {submitResult.xp > 0 ? (
+            <div className={`p-6 rounded-[2rem] border border-white/10 shadow-inner ${isPendingSync ? "bg-yellow-500/10 border-yellow-500/20" : "bg-white/5"}`}>
+              {!isPendingSync ? (
                 <>
                   <p className="text-4xl font-black text-white tracking-tighter">+{submitResult.xp} <span className="text-primary brightness-125">XP</span></p>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mt-2">Guardian Contribution Reward</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mt-2">
+                    {isPendingPhotoUpload ? "Photo bonus will apply after upload sync" : "Guardian Contribution Reward"}
+                  </p>
                 </>
               ) : (
                 <div className="flex flex-col items-center gap-2">

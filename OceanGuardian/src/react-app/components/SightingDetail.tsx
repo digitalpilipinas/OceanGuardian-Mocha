@@ -143,7 +143,10 @@ export default function SightingDetail({ sighting, onClose }: SightingDetailProp
             const res = await fetch(`/api/sightings/${sighting.id}/comments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: newComment })
+                body: JSON.stringify({
+                    content: newComment,
+                    client_request_id: crypto.randomUUID(),
+                })
             });
 
             if (res.ok) {

@@ -48,6 +48,7 @@ export const CreateSightingSchema = z.object({
     bleach_percent: z.number().min(0).max(100).optional(),
     water_temp: z.number().optional(),
     depth: z.number().min(0).optional(),
+    client_request_id: z.string().uuid().optional(),
     image_key: z.string().optional(),
     ai_analysis: z.string().optional(),
 });
@@ -76,6 +77,7 @@ export const SightingSchema = z.object({
     ai_analysis: z.string().nullable(),
     created_at: z.string(),
     updated_at: z.string(),
+    client_request_id: z.string().nullable().optional(),
     user_name: z.string().optional(),
 });
 

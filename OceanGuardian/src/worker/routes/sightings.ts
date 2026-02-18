@@ -6,6 +6,16 @@ import { CreateSightingSchema, calculateLevel, type UserProfile } from "@/shared
 import type { Sighting } from "@/shared/types";
 import { checkAndAwardBadges } from "./gamification";
 
+type TursoClient = ReturnType<typeof getTursoClient>;
+
+type RewardState = {
+  xpEarned: number;
+  leveledUp: boolean;
+  oldLevel: number;
+  newLevel: number;
+  newBadges: unknown[];
+};
+
 const app = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB hard cap for uploads
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -14,6 +24,9 @@ const IMAGE_EXTENSION_BY_MIME: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
 };
+
+let requestIdSchemaReady = false;
+let requestIdSchemaPromise: Promise<void> | null = null;
 
 function validateImageFile(file: File): string | null {
   if (file.size > MAX_IMAGE_BYTES) {
@@ -27,11 +40,167 @@ function validateImageFile(file: File): string | null {
   return null;
 }
 
+function isIgnorableClientRequestIdAlterError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("duplicate column name: client_request_id");
+}
+
+async function ensureClientRequestIdSchema(db: TursoClient): Promise<void> {
+  if (requestIdSchemaReady) return;
+  if (requestIdSchemaPromise) {
+    await requestIdSchemaPromise;
+    return;
+  }
+
+  requestIdSchemaPromise = (async () => {
+    try {
+      await db.execute({
+        sql: "ALTER TABLE sightings ADD COLUMN client_request_id TEXT",
+        args: [],
+      });
+    } catch (error) {
+      if (!isIgnorableClientRequestIdAlterError(error)) {
+        throw error;
+      }
+    }
+
+    await db.execute({
+      sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_sightings_user_request_id
+            ON sightings(user_id, client_request_id)
+            WHERE client_request_id IS NOT NULL`,
+      args: [],
+    });
+
+    requestIdSchemaReady = true;
+  })();
+
+  try {
+    await requestIdSchemaPromise;
+  } finally {
+    requestIdSchemaPromise = null;
+  }
+}
+
+async function getSightingWithUser(db: TursoClient, sightingId: number): Promise<Record<string, unknown> | null> {
+  const sighting = await db.execute({
+    sql: `SELECT s.*, up.username as user_name, up.level as user_level
+          FROM sightings s
+          LEFT JOIN user_profiles up ON s.user_id = up.id
+          WHERE s.id = ?`,
+    args: [sightingId],
+  });
+
+  if (sighting.rows.length === 0) {
+    return null;
+  }
+
+  return sighting.rows[0] as Record<string, unknown>;
+}
+
+async function applySightingRewardsIfNeeded(
+  db: TursoClient,
+  userId: string,
+  sightingId: number,
+  sightingType: string,
+  subcategory: string
+): Promise<RewardState> {
+  const rewardLog = await db.execute({
+    sql: `SELECT xp_earned
+          FROM activity_log
+          WHERE user_id = ?
+            AND type = 'sighting'
+            AND json_extract(metadata, '$.sighting_id') = ?
+          ORDER BY id DESC
+          LIMIT 1`,
+    args: [userId, sightingId],
+  });
+
+  if (rewardLog.rows.length > 0) {
+    const profile = await db.execute({
+      sql: "SELECT level FROM user_profiles WHERE id = ?",
+      args: [userId],
+    });
+    const currentLevel = Number(profile.rows[0]?.level || 1);
+
+    return {
+      xpEarned: Number(rewardLog.rows[0].xp_earned || 0),
+      leveledUp: false,
+      oldLevel: currentLevel,
+      newLevel: currentLevel,
+      newBadges: [],
+    };
+  }
+
+  let xpEarned = 10;
+  if (sightingType === "coral") xpEarned = 20;
+
+  const profileResult = await db.execute({
+    sql: "SELECT xp, total_sightings FROM user_profiles WHERE id = ?",
+    args: [userId],
+  });
+
+  if (profileResult.rows.length === 0) {
+    return {
+      xpEarned: 0,
+      leveledUp: false,
+      oldLevel: 1,
+      newLevel: 1,
+      newBadges: [],
+    };
+  }
+
+  const currentXp = Number(profileResult.rows[0].xp);
+  const oldLevel = calculateLevel(currentXp);
+  const updatedXp = currentXp + xpEarned;
+  const newLevel = calculateLevel(updatedXp);
+  const leveledUp = newLevel > oldLevel;
+  const newSightings = Number(profileResult.rows[0].total_sightings) + 1;
+
+  await db.execute({
+    sql: `UPDATE user_profiles
+          SET xp = ?, level = ?, total_sightings = ?, last_active = datetime('now')
+          WHERE id = ?`,
+    args: [updatedXp, newLevel, newSightings, userId],
+  });
+
+  await db.execute({
+    sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+          VALUES (?, 'sighting', ?, ?, ?)`,
+    args: [
+      userId,
+      `Reported ${sightingType}: ${subcategory}`,
+      xpEarned,
+      JSON.stringify({ sighting_id: sightingId, type: sightingType }),
+    ],
+  });
+
+  if (leveledUp) {
+    await db.execute({
+      sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+            VALUES (?, 'level_up', ?, 0, ?)`,
+      args: [
+        userId,
+        `Leveled up from ${oldLevel} to ${newLevel}!`,
+        JSON.stringify({ old_level: oldLevel, new_level: newLevel }),
+      ],
+    });
+  }
+
+  const newBadges = await checkAndAwardBadges(db, userId);
+
+  return {
+    xpEarned,
+    leveledUp,
+    oldLevel,
+    newLevel,
+    newBadges,
+  };
+}
+
 // Get all sightings
 app.get("/api/sightings", async (c) => {
   const db = getTursoClient(c.env);
 
-  // Parse optional query filters
   const type = c.req.query("type");
   const status = c.req.query("status");
   const limit = parseInt(c.req.query("limit") || "100");
@@ -51,7 +220,6 @@ app.get("/api/sightings", async (c) => {
     sql += " AND s.status = ?";
     args.push(status);
   } else {
-    // By default, don't show removed sightings
     sql += " AND s.status != 'removed'";
   }
 
@@ -92,10 +260,49 @@ app.post(
     if (!user) {
       return c.json({ error: "Unauthorized" }, 401);
     }
+
     const data = c.req.valid("json");
     const db = getTursoClient(c.env);
 
-    // --- Rate Limiting: max 10 reports per hour ---
+    await ensureClientRequestIdSchema(db);
+
+    const clientRequestId = data.client_request_id?.trim() || null;
+    if (clientRequestId) {
+      const existingByRequest = await db.execute({
+        sql: "SELECT id FROM sightings WHERE user_id = ? AND client_request_id = ? LIMIT 1",
+        args: [user.id, clientRequestId],
+      });
+
+      if (existingByRequest.rows.length > 0) {
+        const existingSightingId = Number(existingByRequest.rows[0].id);
+        const existingSighting = await getSightingWithUser(db, existingSightingId);
+        if (!existingSighting) {
+          return c.json({ error: "Sighting not found" }, 404);
+        }
+
+        const rewardState = await applySightingRewardsIfNeeded(
+          db,
+          user.id,
+          existingSightingId,
+          String(existingSighting.type || data.type),
+          String(existingSighting.subcategory || data.subcategory)
+        );
+
+        return c.json(
+          {
+            sighting: existingSighting,
+            xp_earned: rewardState.xpEarned,
+            leveled_up: rewardState.leveledUp,
+            old_level: rewardState.oldLevel,
+            new_level: rewardState.newLevel,
+            new_badges: rewardState.newBadges,
+            duplicate: true,
+          },
+          200
+        );
+      }
+    }
+
     const rateCheck = await db.execute({
       sql: `SELECT COUNT(*) as count FROM activity_log
             WHERE user_id = ? AND type = 'sighting'
@@ -107,9 +314,7 @@ app.post(
       return c.json({ error: "Rate limit exceeded. Max 10 reports per hour." }, 429);
     }
 
-    // --- Coral validation: Level 6+, GPS required ---
     if (data.type === "coral") {
-      // Check user level
       const profileCheck = await db.execute({
         sql: "SELECT level FROM user_profiles WHERE id = ?",
         args: [user.id],
@@ -118,15 +323,13 @@ app.post(
       if (userLevel < 6) {
         return c.json({ error: "Coral reports require Level 6+. Keep reporting to level up!" }, 403);
       }
-      if (!data.latitude || !data.longitude) {
+      if (data.latitude == null || data.longitude == null) {
         return c.json({ error: "Coral reports require GPS coordinates." }, 400);
       }
     }
 
-    // Insert sighting
     let imageKey: string | null = null;
     if (typeof data.image_key === "string" && data.image_key.trim().length > 0) {
-      // Only allow keys uploaded via the coral scan flow for the same user.
       const normalizedKey = data.image_key.trim();
       const allowedPrefix = `coral-analysis/${user.id}/`;
       if (!normalizedKey.startsWith(allowedPrefix)) {
@@ -135,109 +338,82 @@ app.post(
       imageKey = normalizedKey;
     }
 
-    const result = await db.execute({
-      sql: `INSERT INTO sightings (
-              user_id, type, subcategory, description, severity,
-              latitude, longitude, address, bleach_percent, water_temp, depth,
-              image_key, ai_analysis
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        user.id,
-        data.type,
-        data.subcategory,
-        data.description,
-        data.severity,
-        data.latitude,
-        data.longitude,
-        data.address || null,
-        data.bleach_percent || null,
-        data.water_temp || null,
-        data.depth || null,
-        imageKey,
-        data.ai_analysis || null,
-      ],
-    });
+    let sightingId: number | null = null;
+    let createdNow = true;
 
-    const sightingId = Number(result.lastInsertRowid);
-
-    // Calculate XP reward
-    let xpEarned = 10; // Base report XP
-    if (data.type === "coral") xpEarned = 20;
-
-    // Update user profile: add XP, increment total_sightings, recalculate level
-    const profileResult = await db.execute({
-      sql: "SELECT xp, total_sightings FROM user_profiles WHERE id = ?",
-      args: [user.id],
-    });
-
-    let leveledUp = false;
-    let oldLevel = 1;
-    let newLevel = 1;
-    let newBadges: unknown[] = [];
-
-    if (profileResult.rows.length > 0) {
-      const currentXp = Number(profileResult.rows[0].xp);
-      oldLevel = calculateLevel(currentXp);
-      const updatedXp = currentXp + xpEarned;
-      newLevel = calculateLevel(updatedXp);
-      leveledUp = newLevel > oldLevel;
-      const newSightings = Number(profileResult.rows[0].total_sightings) + 1;
-
-      await db.execute({
-        sql: `UPDATE user_profiles
-              SET xp = ?, level = ?, total_sightings = ?, last_active = datetime('now')
-              WHERE id = ?`,
-        args: [updatedXp, newLevel, newSightings, user.id],
-      });
-
-      // Log activity
-      await db.execute({
-        sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
-              VALUES (?, 'sighting', ?, ?, ?)`,
+    try {
+      const insertResult = await db.execute({
+        sql: `INSERT INTO sightings (
+                user_id, type, subcategory, description, severity,
+                latitude, longitude, address, bleach_percent, water_temp, depth,
+                image_key, ai_analysis, client_request_id
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           user.id,
-          `Reported ${data.type}: ${data.subcategory}`,
-          xpEarned,
-          JSON.stringify({ sighting_id: sightingId, type: data.type }),
+          data.type,
+          data.subcategory,
+          data.description,
+          data.severity,
+          data.latitude,
+          data.longitude,
+          data.address || null,
+          data.bleach_percent || null,
+          data.water_temp || null,
+          data.depth || null,
+          imageKey,
+          data.ai_analysis || null,
+          clientRequestId,
         ],
       });
-
-      // Log level-up activity if applicable
-      if (leveledUp) {
-        await db.execute({
-          sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
-                VALUES (?, 'level_up', ?, 0, ?)`,
-          args: [
-            user.id,
-            `Leveled up from ${oldLevel} to ${newLevel}!`,
-            JSON.stringify({ old_level: oldLevel, new_level: newLevel }),
-          ],
-        });
+      sightingId = Number(insertResult.lastInsertRowid);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isRequestIdConflict = message.includes("client_request_id");
+      if (!clientRequestId || !isRequestIdConflict) {
+        throw error;
       }
 
-      // Check and award badges
-      newBadges = await checkAndAwardBadges(db, user.id);
+      createdNow = false;
+      const existingByRequest = await db.execute({
+        sql: "SELECT id FROM sightings WHERE user_id = ? AND client_request_id = ? LIMIT 1",
+        args: [user.id, clientRequestId],
+      });
+
+      if (existingByRequest.rows.length === 0) {
+        throw error;
+      }
+
+      sightingId = Number(existingByRequest.rows[0].id);
     }
 
-    // Return the created sighting
-    const sighting = await db.execute({
-      sql: `SELECT s.*, up.username as user_name, up.level as user_level
-            FROM sightings s
-            LEFT JOIN user_profiles up ON s.user_id = up.id
-            WHERE s.id = ?`,
-      args: [sightingId],
-    });
+    if (!sightingId || sightingId <= 0) {
+      return c.json({ error: "Failed to create sighting" }, 500);
+    }
+
+    const sighting = await getSightingWithUser(db, sightingId);
+    if (!sighting) {
+      return c.json({ error: "Sighting not found after create" }, 500);
+    }
+
+    const rewardState = await applySightingRewardsIfNeeded(
+      db,
+      user.id,
+      sightingId,
+      String(sighting.type || data.type),
+      String(sighting.subcategory || data.subcategory)
+    );
 
     return c.json(
       {
-        sighting: sighting.rows[0],
-        xp_earned: xpEarned,
-        leveled_up: leveledUp,
-        old_level: oldLevel,
-        new_level: newLevel,
-        new_badges: newBadges,
+        sighting,
+        xp_earned: rewardState.xpEarned,
+        leveled_up: rewardState.leveledUp,
+        old_level: rewardState.oldLevel,
+        new_level: rewardState.newLevel,
+        new_badges: rewardState.newBadges,
+        duplicate: !createdNow,
       },
-      201
+      createdNow ? 201 : 200
     );
   }
 );
@@ -251,9 +427,8 @@ app.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
   }
   const db = getTursoClient(c.env);
 
-  // Verify ownership
   const sighting = await db.execute({
-    sql: "SELECT * FROM sightings WHERE id = ? AND user_id = ?",
+    sql: "SELECT id, image_key FROM sightings WHERE id = ? AND user_id = ?",
     args: [id, user.id],
   });
 
@@ -261,7 +436,6 @@ app.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
     return c.json({ error: "Sighting not found or unauthorized" }, 404);
   }
 
-  // Get the uploaded file
   const formData = await c.req.formData();
   const file = formData.get("photo");
 
@@ -275,7 +449,6 @@ app.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
     return c.json({ error: validationError }, 400);
   }
 
-  // Upload to R2
   const ext = IMAGE_EXTENSION_BY_MIME[fileData.type] || "jpg";
   const key = `sightings/${id}/${Date.now()}.${ext}`;
 
@@ -283,28 +456,80 @@ app.post("/api/sightings/:id/photo", authMiddleware, async (c) => {
     httpMetadata: { contentType: fileData.type },
   });
 
-  // Update sighting with image key
-  await db.execute({
-    sql: "UPDATE sightings SET image_key = ?, updated_at = datetime('now') WHERE id = ?",
+  const firstPhotoUpdate = await db.execute({
+    sql: "UPDATE sightings SET image_key = ?, updated_at = datetime('now') WHERE id = ? AND image_key IS NULL",
     args: [key, id],
   });
+  const isFirstPhotoForSighting = Number(firstPhotoUpdate.rowsAffected || 0) > 0;
 
-  // Award bonus XP for photo
-  const profileResult = await db.execute({
-    sql: "SELECT xp FROM user_profiles WHERE id = ?",
-    args: [user.id],
-  });
-
-  if (profileResult.rows.length > 0) {
-    const newXp = Number(profileResult.rows[0].xp) + 5;
-    const newLevel = calculateLevel(newXp);
+  if (!isFirstPhotoForSighting) {
     await db.execute({
-      sql: "UPDATE user_profiles SET xp = ?, level = ? WHERE id = ?",
-      args: [newXp, newLevel, user.id],
+      sql: "UPDATE sightings SET image_key = ?, updated_at = datetime('now') WHERE id = ?",
+      args: [key, id],
     });
   }
 
-  return c.json({ imageKey: key, xp_bonus: 5 });
+  let xpBonus = 0;
+  let leveledUp = false;
+  let oldLevel = 1;
+  let newLevel = 1;
+  let newBadges: unknown[] = [];
+
+  if (isFirstPhotoForSighting) {
+    const profileResult = await db.execute({
+      sql: "SELECT xp FROM user_profiles WHERE id = ?",
+      args: [user.id],
+    });
+
+    if (profileResult.rows.length > 0) {
+      const currentXp = Number(profileResult.rows[0].xp);
+      oldLevel = calculateLevel(currentXp);
+
+      const updatedXp = currentXp + 5;
+      xpBonus = 5;
+      newLevel = calculateLevel(updatedXp);
+      leveledUp = newLevel > oldLevel;
+
+      await db.execute({
+        sql: "UPDATE user_profiles SET xp = ?, level = ?, last_active = datetime('now') WHERE id = ?",
+        args: [updatedXp, newLevel, user.id],
+      });
+
+      await db.execute({
+        sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+              VALUES (?, 'sighting_photo', ?, ?, ?)`,
+        args: [
+          user.id,
+          "Uploaded a verification photo",
+          xpBonus,
+          JSON.stringify({ sighting_id: Number(id) }),
+        ],
+      });
+
+      if (leveledUp) {
+        await db.execute({
+          sql: `INSERT INTO activity_log (user_id, type, description, xp_earned, metadata)
+                VALUES (?, 'level_up', ?, 0, ?)`,
+          args: [
+            user.id,
+            `Leveled up from ${oldLevel} to ${newLevel}!`,
+            JSON.stringify({ old_level: oldLevel, new_level: newLevel }),
+          ],
+        });
+      }
+
+      newBadges = await checkAndAwardBadges(db, user.id);
+    }
+  }
+
+  return c.json({
+    imageKey: key,
+    xp_bonus: xpBonus,
+    leveled_up: leveledUp,
+    old_level: oldLevel,
+    new_level: newLevel,
+    new_badges: newBadges,
+  });
 });
 
 // Get photo for a sighting
@@ -321,18 +546,16 @@ app.get("/api/sightings/:id/photo", async (c) => {
     return c.json({ error: "Photo not found" }, 404);
   }
 
-  // Check if it's a seeded image key and redirect to Unsplash
   const seedMap: Record<string, string> = {
-    "sightings/bottle.jpg": "https://images.unsplash.com/photo-1621451537084-482c73073a0f?q=80&w=800&auto=format&fit=crop", // Plastic bottle on beach
-    "sightings/coral_healthy.jpg": "https://images.unsplash.com/photo-1546026423-cc4642628d2b?q=80&w=800&auto=format&fit=crop", // Healthy coral
-    "sightings/turtle.jpg": "https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?q=80&w=800&auto=format&fit=crop", // Turtle
-    "sightings/net.jpg": "https://images.unsplash.com/photo-1618477388954-7852f32655ec?q=80&w=800&auto=format&fit=crop", // Fishing net/ghost gear
-    "sightings/bleached.jpg": "https://images.unsplash.com/photo-1583212235753-bce29b451c8a?q=80&w=800&auto=format&fit=crop", // Bleached coral
+    "sightings/bottle.jpg": "https://images.unsplash.com/photo-1621451537084-482c73073a0f?q=80&w=800&auto=format&fit=crop",
+    "sightings/coral_healthy.jpg": "https://images.unsplash.com/photo-1546026423-cc4642628d2b?q=80&w=800&auto=format&fit=crop",
+    "sightings/turtle.jpg": "https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?q=80&w=800&auto=format&fit=crop",
+    "sightings/net.jpg": "https://images.unsplash.com/photo-1618477388954-7852f32655ec?q=80&w=800&auto=format&fit=crop",
+    "sightings/bleached.jpg": "https://images.unsplash.com/photo-1583212235753-bce29b451c8a?q=80&w=800&auto=format&fit=crop",
   };
 
   const imageKey = result.rows[0].image_key as string;
 
-  // If it's a full URL, redirect directly
   if (imageKey.startsWith("http")) {
     try {
       const parsed = new URL(imageKey);
@@ -382,7 +605,6 @@ app.delete("/api/sightings/:id", authMiddleware, async (c) => {
 
   const sighting = result.rows[0];
 
-  // Delete image from R2 if exists
   if (sighting.image_key) {
     const imageKey = String(sighting.image_key);
     const userScopedCoralPrefix = `coral-analysis/${user.id}/`;

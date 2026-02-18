@@ -25,6 +25,16 @@ export function useUserProfile() {
 
     useEffect(() => {
         fetchProfile();
+
+        const handleRefresh = () => {
+            void fetchProfile();
+        };
+
+        window.addEventListener("og:user-data-refresh", handleRefresh);
+
+        return () => {
+            window.removeEventListener("og:user-data-refresh", handleRefresh);
+        };
     }, []);
 
     const logout = async () => {

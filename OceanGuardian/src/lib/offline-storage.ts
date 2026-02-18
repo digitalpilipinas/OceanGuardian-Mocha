@@ -19,6 +19,12 @@ export interface SightingData {
     bleachPercent?: string;
     depth?: string;
     photoBlob?: Blob | null; // The compressed image
+    imageKey?: string | null; // R2 key from pre-upload flows like Coral Scan
+    aiAnalysis?: string;
+    serverSightingId?: number | null; // Assigned once the backend sighting row exists
+    attemptCount?: number;
+    lastAttemptAt?: number;
+    lastError?: string;
 }
 
 export const offlineStorage = {

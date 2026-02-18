@@ -3,19 +3,77 @@ import { Button } from "@/react-app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/react-app/components/ui/card";
 import { Loader2, Upload, Camera, Info } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useUserProfile } from "@/react-app/hooks/useUserProfile";
+import { offlineStorage, type SightingData } from "@/lib/offline-storage";
+
+type CoralAnalysisResult = {
+    bleachPercent: number;
+    severity: "Healthy" | "Low" | "Moderate" | "High" | "Severe";
+    color: string;
+    recommendation: string;
+    confidence: number;
+    modelVersion: string;
+    imageKey: string;
+};
+
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function isRetryableStatus(status: number): boolean {
+    return RETRYABLE_STATUS_CODES.has(status);
+}
+
+function mapCoralSeverityToLevel(severity: CoralAnalysisResult["severity"]): number {
+    if (severity === "Healthy") return 1;
+    if (severity === "Low") return 2;
+    if (severity === "Moderate") return 3;
+    if (severity === "High") return 4;
+    return 5;
+}
+
+async function readApiError(response: Response): Promise<string> {
+    try {
+        const json = await response.json();
+        if (typeof json?.error === "string" && json.error.length > 0) {
+            return json.error;
+        }
+    } catch {
+        // fall through
+    }
+    return response.statusText || "Request failed";
+}
+
+function emitRefreshEvents() {
+    window.dispatchEvent(new Event("og:sightings-refresh"));
+    window.dispatchEvent(new Event("og:user-data-refresh"));
+}
+
+async function getCurrentPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 15000,
+        });
+    });
+}
+
+type SightingSubmitResponse = {
+    sighting?: { id?: number };
+};
 
 export default function CoralScan() {
     const navigate = useNavigate();
+    const { profile: user } = useUserProfile();
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
-    const [result, setResult] = useState<any>(null); // { bleachPercent, severity, color, recommendation, imageKey, confidence }
+    const [result, setResult] = useState<CoralAnalysisResult | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
-            const f = e.target.files[0];
-            setFile(f);
-            setPreview(URL.createObjectURL(f));
+            const selected = e.target.files[0];
+            setFile(selected);
+            setPreview(URL.createObjectURL(selected));
             setResult(null);
         }
     };
@@ -33,8 +91,8 @@ export default function CoralScan() {
                 body: formData,
             });
 
-            if (!res.ok) throw new Error("Analysis failed");
-            const data = await res.json();
+            if (!res.ok) throw new Error(await readApiError(res));
+            const data = await res.json() as CoralAnalysisResult;
             setResult(data);
         } catch (error) {
             console.error(error);
@@ -44,99 +102,123 @@ export default function CoralScan() {
         }
     };
 
-    const [saving, setSaving] = useState(false);
+    const savePendingReport = async (pendingData: SightingData, alertMessage: string) => {
+        try {
+            await offlineStorage.saveSighting(pendingData);
+            emitRefreshEvents();
+            alert(alertMessage);
+            navigate("/map");
+        } catch (queueError) {
+            console.error("Failed to save coral report to outbox", queueError);
+            alert("Could not save report to local outbox. Please try again.");
+        }
+    };
 
     const handleSaveReport = async () => {
-        // This would ideally pre-fill the Report Sighting form or post directly.
-        // Since we recycled the sightings table, we can just navigate to ReportSighting 
-        // but pass state, or we can confirm here. 
-        // Plan: Navigate to report page with state, or simple "Submit" if location is known?
-        // Let's keep it simple: "Keep Result & Report" -> Navigate to normal report flow? 
-        // OR we just use this as a standalone tool that doesn't save to "sightings" DB until "Submit Report"?
-        // The implementation plan says: "User Flow: Scan Coral -> Result -> Saved". 
-        // Since we reused sightings, we need to create a sighting record. 
-        // We can do a quick POST to /api/sightings with type='coral' using the data we have.
-        // However, we need location. Let's ask for location or auto-detect before saving.
-
-        // For now, let's just show the result and have a "Submit Full Report" button that goes to the map or report page?
-        // Actually, let's just use the `imageKey` and data to submit a sighting right here if we can get location.
-
-        // MVP: Just show the result. Saving to DB is part of "Report Sighting" flow usually. 
-        // BUT the prompt says "Scan Coral feature... Scientist validation queue". 
-        // So it MUST be saved.
-        // Let's implement a simple location capture here and save.
-
+        if (!result) return;
+        if (!user?.id) {
+            alert("Please sign in to save this coral report.");
+            navigate("/login");
+            return;
+        }
         if (!navigator.geolocation) {
-            alert("Geolocation needed to save report.");
+            alert("Geolocation is required to save coral reports.");
             return;
         }
 
         setSaving(true);
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            try {
-                const sightingData = {
-                    type: "coral",
-                    subcategory: "Analyzed Scan",
-                    description: `AI Analysis: ${result.severity} (${result.bleachPercent}% bleaching). ${result.recommendation}`,
-                    severity: result.severity === 'Healthy' ? 1 :
-                        result.severity === 'Low' ? 2 :
-                            result.severity === 'Moderate' ? 3 :
-                                result.severity === 'High' ? 4 : 5,
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    bleach_percent: result.bleachPercent,
-                    ai_analysis: JSON.stringify(result),
-                    // We need to attach the image. We already uploaded it and got a key? 
-                    // Wait, /api/coral/analyze returns imageKey. 
-                    // But /api/sightings POST doesn't accept imageKey directly in body usually, 
-                    // it expects a separate Photo upload or we need to modify it.
-                    // Currently, /api/sightings creates the record, then /api/sightings/:id/photo uploads.
-                    // BUT we have the key already from analyze. 
-                    // We should probably modify /api/sightings to accept an `image_key` if provided (e.g. from AI scan).
-                    // OR: we just assume the user will re-upload or we simple-fix this later. 
-                    // Let's just create the sighting and then update it with the image_key manually via a specialized call or modify the create endpoint.
-                    // Easier: Modify `src/worker/routes/sightings.ts` to allow `image_key` in POST body.
+        let pendingData: SightingData | null = null;
 
-                    // Note: image_key is not natively supported in create sighting yet, 
-                    // but we will send it anyway as per our plan to support it in the backend if we modify it.
-                    // For now, let's rely on the fact that we might need to update it or just let the backend handle it if we updated the schema/route.
-                    image_key: result.imageKey
-                };
+        try {
+            const position = await getCurrentPosition();
 
-                const res = await fetch("/api/sightings", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(sightingData),
-                });
+            pendingData = {
+                id: crypto.randomUUID(),
+                userId: user.id,
+                timestamp: Date.now(),
+                type: "coral",
+                subcategory: "Analyzed Scan",
+                description: `AI Analysis: ${result.severity} (${result.bleachPercent}% bleaching). ${result.recommendation}`,
+                severity: mapCoralSeverityToLevel(result.severity),
+                location: `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                bleachPercent: String(result.bleachPercent),
+                imageKey: result.imageKey,
+                aiAnalysis: JSON.stringify(result),
+                serverSightingId: null,
+            };
 
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error || "Failed to save report");
-                }
-
-                await res.json();
-                // If we have an imageKey from analysis, we need to link it.
-                // The analysis endpoint saved it to `coral-analysis/...`. 
-                // The sightings endpoint expects `sightings/...`. 
-                // It's fine, we can just update the record with the key.
-                // But `sightings.ts` doesn't expose a "set key" endpoint easily without file upload.
-                // Let's Update sightings.ts quickly to allow `image_key` in POST body.
-
-                // For now, let's Alert success and redirect.
-                alert("Report saved successfully! Your contribution helps protect our oceans.");
-                navigate("/map");
-
-            } catch (e: any) {
-                console.error(e);
-                alert(`Error saving report: ${e.message}`);
-            } finally {
-                setSaving(false);
+            if (!navigator.onLine) {
+                await savePendingReport(
+                    pendingData,
+                    "Coral report saved to outbox. It will sync automatically when connection is restored.",
+                );
+                return;
             }
-        }, (err) => {
-            console.error(err);
-            alert("Could not get location. Please enable location services.");
+
+            const createBody: Record<string, unknown> = {
+                type: "coral",
+                subcategory: pendingData.subcategory,
+                description: pendingData.description,
+                severity: pendingData.severity,
+                latitude: pendingData.latitude,
+                longitude: pendingData.longitude,
+                bleach_percent: Number(result.bleachPercent),
+                image_key: result.imageKey,
+                ai_analysis: pendingData.aiAnalysis,
+                client_request_id: pendingData.id,
+            };
+
+            const res = await fetch("/api/sightings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(createBody),
+            });
+
+            if (!res.ok) {
+                const errorMessage = await readApiError(res);
+                if (isRetryableStatus(res.status)) {
+                    await savePendingReport(
+                        { ...pendingData, lastError: `Create failed (${res.status}): ${errorMessage}` },
+                        "Coral report queued for retry. It will sync automatically.",
+                    );
+                    return;
+                }
+                throw new Error(errorMessage || "Failed to save report");
+            }
+
+            const submitResult = await res.json() as SightingSubmitResponse;
+            const sightingId = Number(submitResult.sighting?.id);
+            if (!Number.isFinite(sightingId) || sightingId <= 0) {
+                await savePendingReport(
+                    { ...pendingData, lastError: "Create response did not include a valid sighting id." },
+                    "Coral report queued for retry due to incomplete response.",
+                );
+                return;
+            }
+
+            emitRefreshEvents();
+            alert("Report saved successfully! Your contribution helps protect our oceans.");
+            navigate("/map");
+        } catch (error) {
+            if (error instanceof TypeError && pendingData) {
+                await savePendingReport(
+                    {
+                        ...pendingData,
+                        lastError: "Network error while saving coral report.",
+                    },
+                    "Coral report queued for retry due to network error.",
+                );
+                return;
+            }
+
+            const message = error instanceof Error ? error.message : "Error saving report";
+            console.error(error);
+            alert(message);
+        } finally {
             setSaving(false);
-        });
+        }
     };
 
     return (
@@ -191,7 +273,6 @@ export default function CoralScan() {
 
                     {result && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                            {/* Score Indicator */}
                             <div className="text-center space-y-2">
                                 <div
                                     className="inline-flex items-center justify-center w-24 h-24 rounded-full border-4 text-3xl font-bold bg-background shadow-lg"
@@ -207,7 +288,6 @@ export default function CoralScan() {
                                 </div>
                             </div>
 
-                            {/* Recommendations */}
                             <div className="bg-muted/30 p-4 rounded-lg space-y-2 border-l-4" style={{ borderColor: result.color }}>
                                 <h4 className="font-semibold flex items-center gap-2">
                                     <Info className="w-4 h-4" /> Recommendation
@@ -215,7 +295,6 @@ export default function CoralScan() {
                                 <p className="text-sm">{result.recommendation}</p>
                             </div>
 
-                            {/* Actions */}
                             <div className="flex gap-3">
                                 <Button variant="outline" className="flex-1" onClick={() => { setFile(null); setPreview(null); setResult(null); }}>
                                     Scan Another

@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 // import MarkerClusterGroup from "react-leaflet-cluster";
 import { DivIcon, LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Card, CardContent } from "@/react-app/components/ui/card";
 import { Button } from "@/react-app/components/ui/button";
@@ -124,26 +124,37 @@ export default function MapView() {
   const [loading, setLoading] = useState(true);
   const [selectedSighting, setSelectedSighting] = useState<Sighting | null>(null);
 
-  // Fetch sightings from API
-  useEffect(() => {
-    const fetchSightings = async () => {
-      try {
-        const res = await fetch("/api/sightings");
-        if (res.ok) {
-          const data = await res.json();
-          setAllSightings(data);
-        }
-      } catch (err) {
-        console.error("Failed to load sightings:", err);
-      } finally {
-        setLoading(false);
+  const fetchSightings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sightings");
+      if (res.ok) {
+        const data = await res.json();
+        setAllSightings(data);
       }
+    } catch (err) {
+      console.error("Failed to load sightings:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      void fetchSightings();
     };
 
-    fetchSightings();
-    const interval = setInterval(fetchSightings, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    void fetchSightings();
+    const interval = setInterval(() => {
+      void fetchSightings();
+    }, 30000);
+
+    window.addEventListener("og:sightings-refresh", handleRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("og:sightings-refresh", handleRefresh);
+    };
+  }, [fetchSightings]);
 
   // Apply all filters
   const filteredSightings = useMemo(() => {

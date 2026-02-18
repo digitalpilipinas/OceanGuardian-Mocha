@@ -50,7 +50,10 @@ export default function MissionChat({ missionId }: MissionChatProps) {
             const res = await fetch(`/api/missions/${missionId}/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: newMessage }),
+                body: JSON.stringify({
+                    message: newMessage,
+                    client_request_id: crypto.randomUUID(),
+                }),
             });
 
             if (res.ok) {
