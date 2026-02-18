@@ -3,6 +3,9 @@
   "name": "oceanguardian",
   "main": "./OceanGuardian/src/worker/index.ts",
   "tsconfig": "./OceanGuardian/tsconfig.worker.json",
+  "build": {
+    "command": "npm --prefix OceanGuardian ci && npm --prefix OceanGuardian run build"
+  },
   "compatibility_date": "2025-06-17",
   "compatibility_flags": [
     "nodejs_compat"
