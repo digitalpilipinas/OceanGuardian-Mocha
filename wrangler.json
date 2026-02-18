@@ -1,7 +1,8 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "./OceanGuardian/node_modules/wrangler/config-schema.json",
   "name": "oceanguardian",
-  "main": "./src/worker/index.ts",
+  "main": "./OceanGuardian/src/worker/index.ts",
+  "tsconfig": "./OceanGuardian/tsconfig.worker.json",
   "compatibility_date": "2025-06-17",
   "compatibility_flags": [
     "nodejs_compat"
@@ -11,7 +12,7 @@
   },
   "upload_source_maps": true,
   "assets": {
-    "directory": "./dist",
+    "directory": "./OceanGuardian/dist",
     "not_found_handling": "single-page-application"
   },
   "r2_buckets": [

@@ -98,10 +98,13 @@ npm install -g wrangler
 # 2. Login to Cloudflare
 wrangler login
 
-# 3. Build the application
-npm run build
+# 3. Install app dependencies
+npm --prefix OceanGuardian ci
 
-# 4. Deploy to Cloudflare Workers
+# 4. Build the application
+npm --prefix OceanGuardian run build
+
+# 5. Deploy to Cloudflare Workers (uses root wrangler.json)
 wrangler deploy
 ```
 

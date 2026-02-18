@@ -366,7 +366,7 @@ wrangler status
   ```
 
 **Issue: "404 Not Found after deployment"**
-- Solution: Verify `wrangler.json` has `"assets": {"not_found_handling": "single-page-application"}`
+- Solution: Verify `wrangler.json` has `"assets": {"directory": "./dist", "not_found_handling": "single-page-application"}`
 
 ### Cloudflare Free Tier Limits
 
