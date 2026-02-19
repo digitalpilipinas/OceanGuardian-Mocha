@@ -41,6 +41,7 @@ export default function SignIn() {
             const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(payload),
             });
 
@@ -75,7 +76,10 @@ export default function SignIn() {
     const handleGuestLogin = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/auth/guest", { method: "POST" });
+            const res = await fetch("/api/auth/guest", {
+                method: "POST",
+                credentials: "include",
+            });
             if (res.ok) {
                 toast({
                     title: "Guest Session Started",
@@ -84,16 +88,17 @@ export default function SignIn() {
                 window.dispatchEvent(new Event("og:user-data-refresh"));
                 navigate(safeRedirect);
             } else {
+                const data = await res.json().catch(() => null) as { error?: string, details?: string } | null;
                 toast({
                     title: "Error",
-                    description: "Failed to start guest session.",
+                    description: data?.details || data?.error || "Failed to start guest session.",
                     variant: "destructive",
                 });
             }
-        } catch {
+        } catch (error) {
             toast({
                 title: "Error",
-                description: "Something went wrong.",
+                description: error instanceof Error ? error.message : "Something went wrong.",
                 variant: "destructive",
             });
         } finally {

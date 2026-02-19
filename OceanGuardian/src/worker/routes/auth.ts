@@ -286,29 +286,78 @@ auth.post("/api/auth/otp/verify", async (c) => {
 // ──────────────────────────────────────
 auth.post("/api/auth/guest", async (c) => {
   const db = getTursoClient(c.env);
-  const guestId = `guest_${crypto.randomUUID().substring(0, 8)}`;
+  const guestSuffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  const guestId = `guest_${guestSuffix}`;
+  const guestUsername = `Guest ${guestSuffix.toUpperCase()}`;
+  const guestEmail = `${guestId}@guest.oceanguardian.local`;
 
-  await db.execute({
-    sql: "INSERT INTO user_profiles (id, username, role, avatar_url) VALUES (?, ?, 'guest', ?)",
-    args: [guestId, "Guest Guardian", "/src/react-app/assets/logo.png"],
-  });
+  console.log(`[Auth] Attempting guest login for ${guestId}`);
 
-  const sessionToken = crypto.randomUUID();
-  const sessionExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  await db.execute({
-    sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
-    args: [sessionToken, guestId, sessionExpires],
-  });
+  // Debug env vars (redacted)
+  if (!c.env.TURSO_DB_URL) console.error("[Auth] Missing TURSO_DB_URL");
+  if (!c.env.TURSO_DB_AUTH_TOKEN) console.error("[Auth] Missing TURSO_DB_AUTH_TOKEN");
 
-  setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    path: "/",
-    secure: sessionCookieSecure(c),
-    sameSite: "Lax",
-    maxAge: GUEST_SESSION_MAX_AGE_SECONDS,
-  });
+  try {
+    // Attempt direct insert with known schema structure
+    // We assume these columns exist based on migrations/turso-schema.sql
+    try {
+      await db.execute({
+        sql: `INSERT INTO user_profiles (id, username, email, role, avatar_url) VALUES (?, ?, ?, ?, ?)`,
+        args: [guestId, guestUsername, guestEmail, 'guest', '/src/react-app/assets/logo.png'],
+      });
+      console.log(`[Auth] Guest account created: ${guestId}`);
+    } catch (insertError) {
+      console.warn(`[Auth] Primary guest creation failed, attempting fallback. Error: ${insertError instanceof Error ? insertError.message : String(insertError)}`);
 
-  return c.json({ success: true });
+      // Fallback: Try with 'player' role if 'guest' role is not supported by check constraint
+      try {
+        await db.execute({
+          sql: `INSERT INTO user_profiles (id, username, email, role, avatar_url) VALUES (?, ?, ?, ?, ?)`,
+          args: [guestId, guestUsername, guestEmail, 'player', '/src/react-app/assets/logo.png'],
+        });
+        console.log(`[Auth] Guest account created with fallback role: ${guestId}`);
+      } catch (fallbackError) {
+        console.error(`[Auth] Fallback guest creation failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+
+        // If avatar_url is the issue (e.g. missing column), try without it
+        try {
+          console.log(`[Auth] Attempting minimal fallback (no avatar)`);
+          await db.execute({
+            sql: `INSERT INTO user_profiles (id, username, email, role) VALUES (?, ?, ?, ?)`,
+            args: [guestId, guestUsername, guestEmail, 'player'],
+          });
+          console.log(`[Auth] Guest account created with minimal fallback: ${guestId}`);
+        } catch (finalError) {
+          console.error(`[Auth] All guest creation attempts failed: ${finalError instanceof Error ? finalError.message : String(finalError)}`);
+          throw finalError;
+        }
+      }
+    }
+
+    const sessionToken = crypto.randomUUID();
+    const sessionExpires = new Date(Date.now() + GUEST_SESSION_MAX_AGE_SECONDS * 1000).toISOString();
+    await db.execute({
+      sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
+      args: [sessionToken, guestId, sessionExpires],
+    });
+
+    setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      path: "/",
+      secure: sessionCookieSecure(c),
+      sameSite: "Lax",
+      maxAge: GUEST_SESSION_MAX_AGE_SECONDS,
+    });
+
+    return c.json({ success: true });
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Auth] Guest auth critical error: ${error instanceof Error ? error.stack : errorMsg}`);
+    return c.json({
+      error: "Failed to start guest session.",
+      details: errorMsg
+    }, 500);
+  }
 });
 
 // ──────────────────────────────────────
