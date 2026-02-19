@@ -9,6 +9,7 @@ import type { UserProfile } from "@/shared/types";
 const auth = new Hono<{ Bindings: Env; Variables: { user: UserProfile | null } }>();
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const GUEST_SESSION_MAX_AGE_SECONDS = 24 * 60 * 60;
+const GUEST_MODE_COOKIE_NAME = "og_guest_mode";
 
 type RateLimitState = {
   count: number;
@@ -111,6 +112,7 @@ auth.post("/api/auth/signup", async (c) => {
     sameSite: "Lax",
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
+  deleteCookie(c, GUEST_MODE_COOKIE_NAME);
 
   return c.json({ success: true });
 });
@@ -170,6 +172,7 @@ auth.post("/api/auth/login", async (c) => {
     sameSite: "Lax",
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
+  deleteCookie(c, GUEST_MODE_COOKIE_NAME);
 
   return c.json({ success: true });
 });
@@ -277,6 +280,7 @@ auth.post("/api/auth/otp/verify", async (c) => {
     sameSite: "Lax",
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
+  deleteCookie(c, GUEST_MODE_COOKIE_NAME);
 
   return c.json({ success: true });
 });
@@ -285,75 +289,16 @@ auth.post("/api/auth/otp/verify", async (c) => {
 //  Guest Login
 // ──────────────────────────────────────
 auth.post("/api/auth/guest", async (c) => {
-  const db = getTursoClient(c.env);
-  const guestSuffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  const guestId = `guest_${guestSuffix}`;
-  const guestUsername = `Guest ${guestSuffix.toUpperCase()}`;
-  const guestEmail = `${guestId}@guest.oceanguardian.local`;
-
-  try {
-    const tableInfo = await db.execute({ sql: "PRAGMA table_info(user_profiles)" });
-    const availableColumns = new Set(tableInfo.rows.map((row) => String(row.name)));
-
-    const profileColumns = ["id", "username"];
-    const profileArgs: (string | number | null)[] = [guestId, guestUsername];
-
-    if (availableColumns.has("email")) {
-      profileColumns.push("email");
-      profileArgs.push(guestEmail);
-    }
-    if (availableColumns.has("role")) {
-      profileColumns.push("role");
-      profileArgs.push("guest");
-    }
-    if (availableColumns.has("avatar_url")) {
-      profileColumns.push("avatar_url");
-      profileArgs.push("/src/react-app/assets/logo.png");
-    }
-
-    const placeholders = profileColumns.map(() => "?").join(", ");
-    const insertProfileSql = `INSERT INTO user_profiles (${profileColumns.join(", ")}) VALUES (${placeholders})`;
-
-    try {
-      await db.execute({
-        sql: insertProfileSql,
-        args: profileArgs,
-      });
-    } catch (insertError) {
-      // Older schemas may reject the "guest" role value.
-      const roleIndex = profileColumns.indexOf("role");
-      if (roleIndex === -1) {
-        throw insertError;
-      }
-
-      const fallbackArgs = [...profileArgs];
-      fallbackArgs[roleIndex] = "player";
-      await db.execute({
-        sql: insertProfileSql,
-        args: fallbackArgs,
-      });
-    }
-
-    const sessionToken = crypto.randomUUID();
-    const sessionExpires = new Date(Date.now() + GUEST_SESSION_MAX_AGE_SECONDS * 1000).toISOString();
-    await db.execute({
-      sql: "INSERT INTO auth_sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
-      args: [sessionToken, guestId, sessionExpires],
-    });
-
-    setCookie(c, SESSION_COOKIE_NAME, sessionToken, {
-      httpOnly: true,
-      path: "/",
-      secure: sessionCookieSecure(c),
-      sameSite: "Lax",
-      maxAge: GUEST_SESSION_MAX_AGE_SECONDS,
-    });
-
-    return c.json({ success: true });
-  } catch (error) {
-    console.error("Guest auth error:", error);
-    return c.json({ error: "Failed to start guest session." }, 500);
-  }
+  // View-only guest mode: no DB user/session is created.
+  deleteCookie(c, SESSION_COOKIE_NAME, { path: "/" });
+  setCookie(c, GUEST_MODE_COOKIE_NAME, "1", {
+    httpOnly: true,
+    path: "/",
+    secure: sessionCookieSecure(c),
+    sameSite: "Lax",
+    maxAge: GUEST_SESSION_MAX_AGE_SECONDS,
+  });
+  return c.json({ success: true });
 });
 
 // ──────────────────────────────────────
@@ -370,7 +315,8 @@ auth.post("/api/auth/logout", async (c) => {
     const db = getTursoClient(c.env);
     await db.execute({ sql: "DELETE FROM auth_sessions WHERE id = ?", args: [sessionToken] });
   }
-  deleteCookie(c, SESSION_COOKIE_NAME);
+  deleteCookie(c, SESSION_COOKIE_NAME, { path: "/" });
+  deleteCookie(c, GUEST_MODE_COOKIE_NAME, { path: "/" });
   return c.json({ success: true });
 });
 
