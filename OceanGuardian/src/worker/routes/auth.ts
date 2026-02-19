@@ -291,47 +291,47 @@ auth.post("/api/auth/guest", async (c) => {
   const guestUsername = `Guest ${guestSuffix.toUpperCase()}`;
   const guestEmail = `${guestId}@guest.oceanguardian.local`;
 
-  console.log(`[Auth] Attempting guest login for ${guestId}`);
-
-  // Debug env vars (redacted)
-  if (!c.env.TURSO_DB_URL) console.error("[Auth] Missing TURSO_DB_URL");
-  if (!c.env.TURSO_DB_AUTH_TOKEN) console.error("[Auth] Missing TURSO_DB_AUTH_TOKEN");
-
   try {
-    // Attempt direct insert with known schema structure
-    // We assume these columns exist based on migrations/turso-schema.sql
+    const tableInfo = await db.execute({ sql: "PRAGMA table_info(user_profiles)" });
+    const availableColumns = new Set(tableInfo.rows.map((row) => String(row.name)));
+
+    const profileColumns = ["id", "username"];
+    const profileArgs: (string | number | null)[] = [guestId, guestUsername];
+
+    if (availableColumns.has("email")) {
+      profileColumns.push("email");
+      profileArgs.push(guestEmail);
+    }
+    if (availableColumns.has("role")) {
+      profileColumns.push("role");
+      profileArgs.push("guest");
+    }
+    if (availableColumns.has("avatar_url")) {
+      profileColumns.push("avatar_url");
+      profileArgs.push("/src/react-app/assets/logo.png");
+    }
+
+    const placeholders = profileColumns.map(() => "?").join(", ");
+    const insertProfileSql = `INSERT INTO user_profiles (${profileColumns.join(", ")}) VALUES (${placeholders})`;
+
     try {
       await db.execute({
-        sql: `INSERT INTO user_profiles (id, username, email, role, avatar_url) VALUES (?, ?, ?, ?, ?)`,
-        args: [guestId, guestUsername, guestEmail, 'guest', '/src/react-app/assets/logo.png'],
+        sql: insertProfileSql,
+        args: profileArgs,
       });
-      console.log(`[Auth] Guest account created: ${guestId}`);
     } catch (insertError) {
-      console.warn(`[Auth] Primary guest creation failed, attempting fallback. Error: ${insertError instanceof Error ? insertError.message : String(insertError)}`);
-
-      // Fallback: Try with 'player' role if 'guest' role is not supported by check constraint
-      try {
-        await db.execute({
-          sql: `INSERT INTO user_profiles (id, username, email, role, avatar_url) VALUES (?, ?, ?, ?, ?)`,
-          args: [guestId, guestUsername, guestEmail, 'player', '/src/react-app/assets/logo.png'],
-        });
-        console.log(`[Auth] Guest account created with fallback role: ${guestId}`);
-      } catch (fallbackError) {
-        console.error(`[Auth] Fallback guest creation failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
-
-        // If avatar_url is the issue (e.g. missing column), try without it
-        try {
-          console.log(`[Auth] Attempting minimal fallback (no avatar)`);
-          await db.execute({
-            sql: `INSERT INTO user_profiles (id, username, email, role) VALUES (?, ?, ?, ?)`,
-            args: [guestId, guestUsername, guestEmail, 'player'],
-          });
-          console.log(`[Auth] Guest account created with minimal fallback: ${guestId}`);
-        } catch (finalError) {
-          console.error(`[Auth] All guest creation attempts failed: ${finalError instanceof Error ? finalError.message : String(finalError)}`);
-          throw finalError;
-        }
+      // Older schemas may reject the "guest" role value.
+      const roleIndex = profileColumns.indexOf("role");
+      if (roleIndex === -1) {
+        throw insertError;
       }
+
+      const fallbackArgs = [...profileArgs];
+      fallbackArgs[roleIndex] = "player";
+      await db.execute({
+        sql: insertProfileSql,
+        args: fallbackArgs,
+      });
     }
 
     const sessionToken = crypto.randomUUID();
@@ -351,12 +351,8 @@ auth.post("/api/auth/guest", async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Auth] Guest auth critical error: ${error instanceof Error ? error.stack : errorMsg}`);
-    return c.json({
-      error: "Failed to start guest session.",
-      details: errorMsg
-    }, 500);
+    console.error("Guest auth error:", error);
+    return c.json({ error: "Failed to start guest session." }, 500);
   }
 });
 

@@ -88,10 +88,10 @@ export default function SignIn() {
                 window.dispatchEvent(new Event("og:user-data-refresh"));
                 navigate(safeRedirect);
             } else {
-                const data = await res.json().catch(() => null) as { error?: string, details?: string } | null;
+                const data = await res.json().catch(() => null) as { error?: string } | null;
                 toast({
                     title: "Error",
-                    description: data?.details || data?.error || "Failed to start guest session.",
+                    description: data?.error || "Failed to start guest session.",
                     variant: "destructive",
                 });
             }
