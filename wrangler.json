@@ -1,6 +1,6 @@
 {
   "$schema": "./OceanGuardian/node_modules/wrangler/config-schema.json",
-  "name": "oceanguardian",
+  "name": "oceanguardian-mocha",
   "main": "./OceanGuardian/src/worker/index.ts",
   "tsconfig": "./OceanGuardian/tsconfig.worker.json",
   "build": {
